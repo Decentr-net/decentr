@@ -17,10 +17,10 @@ func NewGenesisState(records []PDV) GenesisState {
 func ValidateGenesis(data GenesisState) error {
 	for _, record := range data.PDVRecords {
 		if record.Owner == nil {
-			return fmt.Errorf("invalid WhoisRecord: Value: %s. Error: Missing Owner", record.Value)
+			return fmt.Errorf("invalid PDVRecord: Value: %s. Error: Missing Owner", record.Value)
 		}
 		if record.Value == "" {
-			return fmt.Errorf("invalid WhoisRecord: Owner: %s. Error: Missing Value", record.Owner)
+			return fmt.Errorf("invalid PDVRecord: Owner: %s. Error: Missing Value", record.Owner)
 		}
 	}
 	return nil

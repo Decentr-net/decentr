@@ -38,13 +38,9 @@ func main() {
 	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
 	config.Seal()
 
-	// TODO: setup keybase, viper object, etc. to be passed into
-	// the below functions and eliminate global vars, like we do
-	// with the cdc
-
 	rootCmd := &cobra.Command{
-		Use:   "appcli",
-		Short: "Command line interface for interacting with appd",
+		Use:   "decentrcli",
+		Short: "Command line interface for interacting with decentrd",
 	}
 
 	// Add --chain-id to persistent flags and mark it required
