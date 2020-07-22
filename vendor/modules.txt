@@ -1,0 +1,501 @@
+# github.com/99designs/keyring v1.1.3
+github.com/99designs/keyring
+# github.com/ChainSafe/go-schnorrkel v0.0.0-20200102211924-4bcbc698314f
+github.com/ChainSafe/go-schnorrkel
+# github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d
+github.com/bartekn/go-bip39
+# github.com/beorn7/perks v1.0.1
+github.com/beorn7/perks/quantile
+# github.com/bgentry/speakeasy v0.1.0
+github.com/bgentry/speakeasy
+# github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
+github.com/btcsuite/btcd/btcec
+# github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
+github.com/btcsuite/btcutil/bech32
+# github.com/cespare/xxhash/v2 v2.1.1
+github.com/cespare/xxhash/v2
+# github.com/cosmos/cosmos-sdk v0.38.2
+github.com/cosmos/cosmos-sdk/baseapp
+github.com/cosmos/cosmos-sdk/client
+github.com/cosmos/cosmos-sdk/client/context
+github.com/cosmos/cosmos-sdk/client/debug
+github.com/cosmos/cosmos-sdk/client/flags
+github.com/cosmos/cosmos-sdk/client/input
+github.com/cosmos/cosmos-sdk/client/keys
+github.com/cosmos/cosmos-sdk/client/lcd
+github.com/cosmos/cosmos-sdk/client/lcd/statik
+github.com/cosmos/cosmos-sdk/client/rpc
+github.com/cosmos/cosmos-sdk/codec
+github.com/cosmos/cosmos-sdk/crypto
+github.com/cosmos/cosmos-sdk/crypto/keys
+github.com/cosmos/cosmos-sdk/crypto/keys/hd
+github.com/cosmos/cosmos-sdk/crypto/keys/keyerror
+github.com/cosmos/cosmos-sdk/crypto/keys/mintkey
+github.com/cosmos/cosmos-sdk/server
+github.com/cosmos/cosmos-sdk/server/config
+github.com/cosmos/cosmos-sdk/simapp
+github.com/cosmos/cosmos-sdk/simapp/helpers
+github.com/cosmos/cosmos-sdk/simapp/params
+github.com/cosmos/cosmos-sdk/store
+github.com/cosmos/cosmos-sdk/store/cache
+github.com/cosmos/cosmos-sdk/store/cachekv
+github.com/cosmos/cosmos-sdk/store/cachemulti
+github.com/cosmos/cosmos-sdk/store/dbadapter
+github.com/cosmos/cosmos-sdk/store/gaskv
+github.com/cosmos/cosmos-sdk/store/iavl
+github.com/cosmos/cosmos-sdk/store/prefix
+github.com/cosmos/cosmos-sdk/store/rootmulti
+github.com/cosmos/cosmos-sdk/store/tracekv
+github.com/cosmos/cosmos-sdk/store/transient
+github.com/cosmos/cosmos-sdk/store/types
+github.com/cosmos/cosmos-sdk/tests
+github.com/cosmos/cosmos-sdk/types
+github.com/cosmos/cosmos-sdk/types/errors
+github.com/cosmos/cosmos-sdk/types/module
+github.com/cosmos/cosmos-sdk/types/rest
+github.com/cosmos/cosmos-sdk/version
+github.com/cosmos/cosmos-sdk/x/auth
+github.com/cosmos/cosmos-sdk/x/auth/ante
+github.com/cosmos/cosmos-sdk/x/auth/client/cli
+github.com/cosmos/cosmos-sdk/x/auth/client/rest
+github.com/cosmos/cosmos-sdk/x/auth/client/utils
+github.com/cosmos/cosmos-sdk/x/auth/exported
+github.com/cosmos/cosmos-sdk/x/auth/keeper
+github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_34
+github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_38
+github.com/cosmos/cosmos-sdk/x/auth/simulation
+github.com/cosmos/cosmos-sdk/x/auth/types
+github.com/cosmos/cosmos-sdk/x/auth/vesting
+github.com/cosmos/cosmos-sdk/x/auth/vesting/exported
+github.com/cosmos/cosmos-sdk/x/auth/vesting/types
+github.com/cosmos/cosmos-sdk/x/bank
+github.com/cosmos/cosmos-sdk/x/bank/client/cli
+github.com/cosmos/cosmos-sdk/x/bank/client/rest
+github.com/cosmos/cosmos-sdk/x/bank/internal/keeper
+github.com/cosmos/cosmos-sdk/x/bank/internal/types
+github.com/cosmos/cosmos-sdk/x/bank/simulation
+github.com/cosmos/cosmos-sdk/x/crisis
+github.com/cosmos/cosmos-sdk/x/crisis/client/cli
+github.com/cosmos/cosmos-sdk/x/crisis/internal/keeper
+github.com/cosmos/cosmos-sdk/x/crisis/internal/types
+github.com/cosmos/cosmos-sdk/x/distribution
+github.com/cosmos/cosmos-sdk/x/distribution/client
+github.com/cosmos/cosmos-sdk/x/distribution/client/cli
+github.com/cosmos/cosmos-sdk/x/distribution/client/common
+github.com/cosmos/cosmos-sdk/x/distribution/client/rest
+github.com/cosmos/cosmos-sdk/x/distribution/keeper
+github.com/cosmos/cosmos-sdk/x/distribution/legacy/v0_34
+github.com/cosmos/cosmos-sdk/x/distribution/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/distribution/legacy/v0_38
+github.com/cosmos/cosmos-sdk/x/distribution/simulation
+github.com/cosmos/cosmos-sdk/x/distribution/types
+github.com/cosmos/cosmos-sdk/x/evidence
+github.com/cosmos/cosmos-sdk/x/evidence/client
+github.com/cosmos/cosmos-sdk/x/evidence/client/cli
+github.com/cosmos/cosmos-sdk/x/evidence/client/rest
+github.com/cosmos/cosmos-sdk/x/evidence/exported
+github.com/cosmos/cosmos-sdk/x/evidence/internal/keeper
+github.com/cosmos/cosmos-sdk/x/evidence/internal/types
+github.com/cosmos/cosmos-sdk/x/genaccounts/legacy/v0_34
+github.com/cosmos/cosmos-sdk/x/genaccounts/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/genutil
+github.com/cosmos/cosmos-sdk/x/genutil/client/cli
+github.com/cosmos/cosmos-sdk/x/genutil/client/rest
+github.com/cosmos/cosmos-sdk/x/genutil/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/genutil/legacy/v0_38
+github.com/cosmos/cosmos-sdk/x/genutil/types
+github.com/cosmos/cosmos-sdk/x/gov
+github.com/cosmos/cosmos-sdk/x/gov/client
+github.com/cosmos/cosmos-sdk/x/gov/client/cli
+github.com/cosmos/cosmos-sdk/x/gov/client/rest
+github.com/cosmos/cosmos-sdk/x/gov/client/utils
+github.com/cosmos/cosmos-sdk/x/gov/keeper
+github.com/cosmos/cosmos-sdk/x/gov/legacy/v0_34
+github.com/cosmos/cosmos-sdk/x/gov/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/gov/simulation
+github.com/cosmos/cosmos-sdk/x/gov/types
+github.com/cosmos/cosmos-sdk/x/mint
+github.com/cosmos/cosmos-sdk/x/mint/client/cli
+github.com/cosmos/cosmos-sdk/x/mint/client/rest
+github.com/cosmos/cosmos-sdk/x/mint/internal/keeper
+github.com/cosmos/cosmos-sdk/x/mint/internal/types
+github.com/cosmos/cosmos-sdk/x/mint/simulation
+github.com/cosmos/cosmos-sdk/x/mock
+github.com/cosmos/cosmos-sdk/x/params
+github.com/cosmos/cosmos-sdk/x/params/client
+github.com/cosmos/cosmos-sdk/x/params/client/cli
+github.com/cosmos/cosmos-sdk/x/params/client/rest
+github.com/cosmos/cosmos-sdk/x/params/client/utils
+github.com/cosmos/cosmos-sdk/x/params/simulation
+github.com/cosmos/cosmos-sdk/x/params/subspace
+github.com/cosmos/cosmos-sdk/x/params/types
+github.com/cosmos/cosmos-sdk/x/simulation
+github.com/cosmos/cosmos-sdk/x/slashing
+github.com/cosmos/cosmos-sdk/x/slashing/client/cli
+github.com/cosmos/cosmos-sdk/x/slashing/client/rest
+github.com/cosmos/cosmos-sdk/x/slashing/internal/keeper
+github.com/cosmos/cosmos-sdk/x/slashing/internal/types
+github.com/cosmos/cosmos-sdk/x/slashing/simulation
+github.com/cosmos/cosmos-sdk/x/staking
+github.com/cosmos/cosmos-sdk/x/staking/client/cli
+github.com/cosmos/cosmos-sdk/x/staking/client/rest
+github.com/cosmos/cosmos-sdk/x/staking/exported
+github.com/cosmos/cosmos-sdk/x/staking/keeper
+github.com/cosmos/cosmos-sdk/x/staking/legacy/v0_34
+github.com/cosmos/cosmos-sdk/x/staking/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/staking/legacy/v0_38
+github.com/cosmos/cosmos-sdk/x/staking/simulation
+github.com/cosmos/cosmos-sdk/x/staking/types
+github.com/cosmos/cosmos-sdk/x/supply
+github.com/cosmos/cosmos-sdk/x/supply/client/cli
+github.com/cosmos/cosmos-sdk/x/supply/client/rest
+github.com/cosmos/cosmos-sdk/x/supply/exported
+github.com/cosmos/cosmos-sdk/x/supply/internal/keeper
+github.com/cosmos/cosmos-sdk/x/supply/internal/types
+github.com/cosmos/cosmos-sdk/x/supply/legacy/v0_36
+github.com/cosmos/cosmos-sdk/x/supply/simulation
+github.com/cosmos/cosmos-sdk/x/upgrade
+github.com/cosmos/cosmos-sdk/x/upgrade/client
+github.com/cosmos/cosmos-sdk/x/upgrade/client/cli
+github.com/cosmos/cosmos-sdk/x/upgrade/client/rest
+github.com/cosmos/cosmos-sdk/x/upgrade/internal/keeper
+github.com/cosmos/cosmos-sdk/x/upgrade/internal/types
+# github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d
+github.com/cosmos/go-bip39
+# github.com/cosmos/ledger-cosmos-go v0.11.1
+github.com/cosmos/ledger-cosmos-go
+# github.com/cosmos/ledger-go v0.9.2
+github.com/cosmos/ledger-go
+# github.com/danieljoos/wincred v1.0.2
+github.com/danieljoos/wincred
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/dvsekhvalnov/jose2go v0.0.0-20180829124132-7f401d37b68a
+github.com/dvsekhvalnov/jose2go
+github.com/dvsekhvalnov/jose2go/aes
+github.com/dvsekhvalnov/jose2go/arrays
+github.com/dvsekhvalnov/jose2go/base64url
+github.com/dvsekhvalnov/jose2go/compact
+github.com/dvsekhvalnov/jose2go/kdf
+github.com/dvsekhvalnov/jose2go/keys/ecc
+github.com/dvsekhvalnov/jose2go/padding
+# github.com/etcd-io/bbolt v1.3.3
+github.com/etcd-io/bbolt
+# github.com/fsnotify/fsnotify v1.4.7
+github.com/fsnotify/fsnotify
+# github.com/go-kit/kit v0.10.0
+github.com/go-kit/kit/log
+github.com/go-kit/kit/log/level
+github.com/go-kit/kit/log/term
+github.com/go-kit/kit/metrics
+github.com/go-kit/kit/metrics/discard
+github.com/go-kit/kit/metrics/internal/lv
+github.com/go-kit/kit/metrics/prometheus
+# github.com/go-logfmt/logfmt v0.5.0
+github.com/go-logfmt/logfmt
+# github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2
+github.com/godbus/dbus
+# github.com/gogo/protobuf v1.3.1
+github.com/gogo/protobuf/gogoproto
+github.com/gogo/protobuf/jsonpb
+github.com/gogo/protobuf/proto
+github.com/gogo/protobuf/protoc-gen-gogo/descriptor
+github.com/gogo/protobuf/sortkeys
+github.com/gogo/protobuf/types
+# github.com/golang/protobuf v1.3.4
+github.com/golang/protobuf/proto
+github.com/golang/protobuf/ptypes
+github.com/golang/protobuf/ptypes/any
+github.com/golang/protobuf/ptypes/duration
+github.com/golang/protobuf/ptypes/timestamp
+# github.com/golang/snappy v0.0.1
+github.com/golang/snappy
+# github.com/google/btree v1.0.0
+github.com/google/btree
+# github.com/gorilla/mux v1.7.3
+github.com/gorilla/mux
+# github.com/gorilla/websocket v1.4.1
+github.com/gorilla/websocket
+# github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c
+github.com/gsterjov/go-libsecret
+# github.com/gtank/merlin v0.1.1-0.20191105220539-8318aed1a79f
+github.com/gtank/merlin
+# github.com/gtank/ristretto255 v0.1.2
+github.com/gtank/ristretto255
+github.com/gtank/ristretto255/internal/edwards25519
+github.com/gtank/ristretto255/internal/radix51
+github.com/gtank/ristretto255/internal/scalar
+# github.com/hashicorp/golang-lru v0.5.4
+github.com/hashicorp/golang-lru
+github.com/hashicorp/golang-lru/simplelru
+# github.com/hashicorp/hcl v1.0.0
+github.com/hashicorp/hcl
+github.com/hashicorp/hcl/hcl/ast
+github.com/hashicorp/hcl/hcl/parser
+github.com/hashicorp/hcl/hcl/printer
+github.com/hashicorp/hcl/hcl/scanner
+github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/json/scanner
+github.com/hashicorp/hcl/json/token
+# github.com/inconshreveable/mousetrap v1.0.0
+github.com/inconshreveable/mousetrap
+# github.com/jmhodges/levigo v1.0.0
+github.com/jmhodges/levigo
+# github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d
+github.com/keybase/go-keychain
+# github.com/libp2p/go-buffer-pool v0.0.2
+github.com/libp2p/go-buffer-pool
+# github.com/magiconair/properties v1.8.1
+github.com/magiconair/properties
+# github.com/mattn/go-isatty v0.0.12
+github.com/mattn/go-isatty
+# github.com/matttproud/golang_protobuf_extensions v1.0.1
+github.com/matttproud/golang_protobuf_extensions/pbutil
+# github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643
+github.com/mimoo/StrobeGo/strobe
+# github.com/mitchellh/go-homedir v1.1.0
+github.com/mitchellh/go-homedir
+# github.com/mitchellh/mapstructure v1.1.2
+github.com/mitchellh/mapstructure
+# github.com/pelletier/go-toml v1.6.0
+github.com/pelletier/go-toml
+# github.com/pkg/errors v0.9.1
+github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/prometheus/client_golang v1.5.0
+github.com/prometheus/client_golang/prometheus
+github.com/prometheus/client_golang/prometheus/internal
+github.com/prometheus/client_golang/prometheus/promhttp
+# github.com/prometheus/client_model v0.2.0
+github.com/prometheus/client_model/go
+# github.com/prometheus/common v0.9.1
+github.com/prometheus/common/expfmt
+github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
+github.com/prometheus/common/model
+# github.com/prometheus/procfs v0.0.8
+github.com/prometheus/procfs
+github.com/prometheus/procfs/internal/fs
+github.com/prometheus/procfs/internal/util
+# github.com/rakyll/statik v0.1.6
+github.com/rakyll/statik/fs
+# github.com/rcrowley/go-metrics v0.0.0-20190706150252-9beb055b7962
+github.com/rcrowley/go-metrics
+# github.com/rs/cors v1.7.0
+github.com/rs/cors
+# github.com/spf13/afero v1.2.2
+github.com/spf13/afero
+github.com/spf13/afero/mem
+# github.com/spf13/cast v1.3.0
+github.com/spf13/cast
+# github.com/spf13/cobra v0.0.6
+github.com/spf13/cobra
+# github.com/spf13/jwalterweatherman v1.1.0
+github.com/spf13/jwalterweatherman
+# github.com/spf13/pflag v1.0.5
+github.com/spf13/pflag
+# github.com/spf13/viper v1.6.2
+github.com/spf13/viper
+# github.com/stretchr/testify v1.5.1
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# github.com/subosito/gotenv v1.2.0
+github.com/subosito/gotenv
+# github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
+github.com/syndtr/goleveldb/leveldb
+github.com/syndtr/goleveldb/leveldb/cache
+github.com/syndtr/goleveldb/leveldb/comparer
+github.com/syndtr/goleveldb/leveldb/errors
+github.com/syndtr/goleveldb/leveldb/filter
+github.com/syndtr/goleveldb/leveldb/iterator
+github.com/syndtr/goleveldb/leveldb/journal
+github.com/syndtr/goleveldb/leveldb/memdb
+github.com/syndtr/goleveldb/leveldb/opt
+github.com/syndtr/goleveldb/leveldb/storage
+github.com/syndtr/goleveldb/leveldb/table
+github.com/syndtr/goleveldb/leveldb/util
+# github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
+github.com/tecbot/gorocksdb
+# github.com/tendermint/btcd v0.1.1
+github.com/tendermint/btcd/btcec
+# github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15
+github.com/tendermint/crypto/bcrypt
+# github.com/tendermint/go-amino v0.15.1
+github.com/tendermint/go-amino
+# github.com/tendermint/iavl v0.13.2
+github.com/tendermint/iavl
+github.com/tendermint/iavl/common
+# github.com/tendermint/tendermint v0.33.2
+github.com/tendermint/tendermint/abci/client
+github.com/tendermint/tendermint/abci/example/code
+github.com/tendermint/tendermint/abci/example/counter
+github.com/tendermint/tendermint/abci/example/kvstore
+github.com/tendermint/tendermint/abci/server
+github.com/tendermint/tendermint/abci/types
+github.com/tendermint/tendermint/behaviour
+github.com/tendermint/tendermint/blockchain/v0
+github.com/tendermint/tendermint/blockchain/v1
+github.com/tendermint/tendermint/cmd/tendermint/commands
+github.com/tendermint/tendermint/config
+github.com/tendermint/tendermint/consensus
+github.com/tendermint/tendermint/consensus/types
+github.com/tendermint/tendermint/crypto
+github.com/tendermint/tendermint/crypto/armor
+github.com/tendermint/tendermint/crypto/ed25519
+github.com/tendermint/tendermint/crypto/encoding/amino
+github.com/tendermint/tendermint/crypto/merkle
+github.com/tendermint/tendermint/crypto/multisig
+github.com/tendermint/tendermint/crypto/multisig/bitarray
+github.com/tendermint/tendermint/crypto/secp256k1
+github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1
+github.com/tendermint/tendermint/crypto/sr25519
+github.com/tendermint/tendermint/crypto/tmhash
+github.com/tendermint/tendermint/crypto/xsalsa20symmetric
+github.com/tendermint/tendermint/evidence
+github.com/tendermint/tendermint/libs/async
+github.com/tendermint/tendermint/libs/autofile
+github.com/tendermint/tendermint/libs/bech32
+github.com/tendermint/tendermint/libs/bits
+github.com/tendermint/tendermint/libs/bytes
+github.com/tendermint/tendermint/libs/cli
+github.com/tendermint/tendermint/libs/cli/flags
+github.com/tendermint/tendermint/libs/clist
+github.com/tendermint/tendermint/libs/cmap
+github.com/tendermint/tendermint/libs/events
+github.com/tendermint/tendermint/libs/fail
+github.com/tendermint/tendermint/libs/flowrate
+github.com/tendermint/tendermint/libs/kv
+github.com/tendermint/tendermint/libs/log
+github.com/tendermint/tendermint/libs/math
+github.com/tendermint/tendermint/libs/net
+github.com/tendermint/tendermint/libs/os
+github.com/tendermint/tendermint/libs/pubsub
+github.com/tendermint/tendermint/libs/pubsub/query
+github.com/tendermint/tendermint/libs/rand
+github.com/tendermint/tendermint/libs/service
+github.com/tendermint/tendermint/libs/strings
+github.com/tendermint/tendermint/libs/tempfile
+github.com/tendermint/tendermint/libs/timer
+github.com/tendermint/tendermint/lite
+github.com/tendermint/tendermint/lite/client
+github.com/tendermint/tendermint/lite/errors
+github.com/tendermint/tendermint/lite/proxy
+github.com/tendermint/tendermint/lite2
+github.com/tendermint/tendermint/lite2/provider
+github.com/tendermint/tendermint/lite2/provider/http
+github.com/tendermint/tendermint/lite2/proxy
+github.com/tendermint/tendermint/lite2/rpc
+github.com/tendermint/tendermint/lite2/store
+github.com/tendermint/tendermint/lite2/store/db
+github.com/tendermint/tendermint/mempool
+github.com/tendermint/tendermint/mock
+github.com/tendermint/tendermint/node
+github.com/tendermint/tendermint/p2p
+github.com/tendermint/tendermint/p2p/conn
+github.com/tendermint/tendermint/p2p/pex
+github.com/tendermint/tendermint/p2p/upnp
+github.com/tendermint/tendermint/privval
+github.com/tendermint/tendermint/proxy
+github.com/tendermint/tendermint/rpc/client
+github.com/tendermint/tendermint/rpc/core
+github.com/tendermint/tendermint/rpc/core/types
+github.com/tendermint/tendermint/rpc/grpc
+github.com/tendermint/tendermint/rpc/lib/client
+github.com/tendermint/tendermint/rpc/lib/server
+github.com/tendermint/tendermint/rpc/lib/types
+github.com/tendermint/tendermint/state
+github.com/tendermint/tendermint/state/txindex
+github.com/tendermint/tendermint/state/txindex/kv
+github.com/tendermint/tendermint/state/txindex/null
+github.com/tendermint/tendermint/store
+github.com/tendermint/tendermint/types
+github.com/tendermint/tendermint/types/time
+github.com/tendermint/tendermint/version
+# github.com/tendermint/tm-db v0.5.0
+github.com/tendermint/tm-db
+# github.com/zondax/hid v0.9.0
+github.com/zondax/hid
+# golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+golang.org/x/crypto/blowfish
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/internal/subtle
+golang.org/x/crypto/nacl/box
+golang.org/x/crypto/nacl/secretbox
+golang.org/x/crypto/openpgp/armor
+golang.org/x/crypto/openpgp/errors
+golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/poly1305
+golang.org/x/crypto/ripemd160
+golang.org/x/crypto/salsa20/salsa
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
+golang.org/x/net/context
+golang.org/x/net/http/httpguts
+golang.org/x/net/http2
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/net/internal/timeseries
+golang.org/x/net/netutil
+golang.org/x/net/trace
+# golang.org/x/sys v0.0.0-20200122134326-e047566fdf82
+golang.org/x/sys/cpu
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/text v0.3.2
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+# google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+google.golang.org/genproto/googleapis/rpc/status
+# google.golang.org/grpc v1.28.0
+google.golang.org/grpc
+google.golang.org/grpc/attributes
+google.golang.org/grpc/backoff
+google.golang.org/grpc/balancer
+google.golang.org/grpc/balancer/base
+google.golang.org/grpc/balancer/roundrobin
+google.golang.org/grpc/binarylog/grpc_binarylog_v1
+google.golang.org/grpc/codes
+google.golang.org/grpc/connectivity
+google.golang.org/grpc/credentials
+google.golang.org/grpc/credentials/internal
+google.golang.org/grpc/encoding
+google.golang.org/grpc/encoding/proto
+google.golang.org/grpc/grpclog
+google.golang.org/grpc/internal
+google.golang.org/grpc/internal/backoff
+google.golang.org/grpc/internal/balancerload
+google.golang.org/grpc/internal/binarylog
+google.golang.org/grpc/internal/buffer
+google.golang.org/grpc/internal/channelz
+google.golang.org/grpc/internal/envconfig
+google.golang.org/grpc/internal/grpclog
+google.golang.org/grpc/internal/grpcrand
+google.golang.org/grpc/internal/grpcsync
+google.golang.org/grpc/internal/grpcutil
+google.golang.org/grpc/internal/resolver/dns
+google.golang.org/grpc/internal/resolver/passthrough
+google.golang.org/grpc/internal/syscall
+google.golang.org/grpc/internal/transport
+google.golang.org/grpc/keepalive
+google.golang.org/grpc/metadata
+google.golang.org/grpc/naming
+google.golang.org/grpc/peer
+google.golang.org/grpc/resolver
+google.golang.org/grpc/serviceconfig
+google.golang.org/grpc/stats
+google.golang.org/grpc/status
+google.golang.org/grpc/tap
+# gopkg.in/ini.v1 v1.51.0
+gopkg.in/ini.v1
+# gopkg.in/yaml.v2 v2.2.8
+gopkg.in/yaml.v2
