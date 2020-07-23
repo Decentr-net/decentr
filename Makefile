@@ -29,7 +29,7 @@ go.sum:
 		GO111MODULE=on go mod verify
 
 test:
-	@go test -mod=readonly $(PACKAGES)
+		go test -mod=readonly $(PACKAGES)
 
 # look into .golangci.yml for enabling / disabling linters
 lint:
