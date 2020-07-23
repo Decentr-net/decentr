@@ -1,7 +1,3 @@
 * text=auto
 
-<<<<<<< HEAD
 vendor/* -text -diff
-=======
-vendor/* -text -diff
->>>>>>> ci
