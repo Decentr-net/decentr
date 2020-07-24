@@ -8,12 +8,12 @@ import (
 )
 
 type PDV struct {
-	Value string         `json:"value"`
+	Hash  string         `json:"value"`
 	Owner sdk.AccAddress `json:"owner"`
 }
 
 // implement fmt.Stringer
 func (w PDV) String() string {
 	return strings.TrimSpace(fmt.Sprintf(`Owner: %s
-Value: %s`, w.Owner, w.Value))
+Hash: %s`, w.Owner, w.Hash))
 }

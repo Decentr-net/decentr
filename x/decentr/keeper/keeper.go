@@ -23,29 +23,34 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, coinKeeper types.BankKee
 }
 
 // Sets the entire PDV metadata struct for a name
-func (k Keeper) SetPDV(ctx sdk.Context, name string, pdv types.PDV) {
+func (k Keeper) SetPDV(ctx sdk.Context, hash string, pdv types.PDV) {
 	if pdv.Owner.Empty() {
 		return
 	}
 
 	store := ctx.KVStore(k.storeKey)
 
-	store.Set([]byte(name), k.cdc.MustMarshalBinaryBare(pdv))
+	store.Set([]byte(hash), k.cdc.MustMarshalBinaryBare(pdv))
 }
 
 // Gets the entire PDV metadata struct for a name
-func (k Keeper) GetPDV(ctx sdk.Context, name string) types.PDV {
+func (k Keeper) GetPDV(ctx sdk.Context, hash string) types.PDV {
 	store := ctx.KVStore(k.storeKey)
 
-	if !k.IsNamePresent(ctx, name) {
+	if !k.IsNamePresent(ctx, hash) {
 		return types.PDV{}
 	}
 
-	bz := store.Get([]byte(name))
+	bz := store.Get([]byte(hash))
 
 	var pdv types.PDV
 	k.cdc.MustUnmarshalBinaryBare(bz, &pdv)
 	return pdv
+}
+
+// GetOwner - get the current owner of a name
+func (k Keeper) GetOwner(ctx sdk.Context, name string) sdk.AccAddress {
+	return k.GetPDV(ctx, name).Owner
 }
 
 // Check if the name is present in the store or not

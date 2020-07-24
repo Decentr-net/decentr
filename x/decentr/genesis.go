@@ -17,10 +17,10 @@ func NewGenesisState(records []PDV) GenesisState {
 func ValidateGenesis(data GenesisState) error {
 	for _, record := range data.PDVRecords {
 		if record.Owner == nil {
-			return fmt.Errorf("invalid PDVRecord: Value: %s. Error: Missing Owner", record.Value)
+			return fmt.Errorf("invalid PDVRecord: Hash: %s. Error: Missing Owner", record.Hash)
 		}
-		if record.Value == "" {
-			return fmt.Errorf("invalid PDVRecord: Owner: %s. Error: Missing Value", record.Owner)
+		if record.Hash == "" {
+			return fmt.Errorf("invalid PDVRecord: Owner: %s. Error: Missing Hash", record.Owner)
 		}
 	}
 	return nil
@@ -34,7 +34,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.PDVRecords {
-		keeper.SetPDV(ctx, record.Value, record)
+		keeper.SetPDV(ctx, record.Hash, record)
 	}
 }
 
