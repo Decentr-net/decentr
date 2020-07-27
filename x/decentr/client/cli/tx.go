@@ -1,7 +1,13 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	"github.com/Decentr-net/decentr/x/decentr/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -21,33 +27,30 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	decentrTxCmd.AddCommand(flags.PostCommands(
-	// TODO: Add tx based commands
-	// GetCmd<Action>(cdc)
+		GetCmdCreatePDV(cdc),
 	)...)
 
 	return decentrTxCmd
 }
 
-// Example:
-//
-// GetCmd<Action> is the CLI command for doing <Action>
-// func GetCmd<Action>(cdc *codec.Codec) *cobra.Command {
-// 	return &cobra.Command{
-// 		Use:   "/* Describe your action cmd */",
-// 		Short: "/* Provide a short description on the cmd */",
-// 		Args:  cobra.ExactArgs(2), // Does your request require arguments
-// 		RunE: func(cmd *cobra.Command, args []string) error {
-// 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-// 			inBuf := bufio.NewReader(cmd.InOrStdin())
-// 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+// GetCmdCreatePDV is the CLI command for sending a CreatePDV transaction
+func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "create-pdv [pdv]",
+		Short: "create PDV associated with a name that you own",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-// 			msg := types.NewMsg<Action>(/* Action params */)
-// 			err = msg.ValidateBasic()
-// 			if err != nil {
-// 				return err
-// 			}
+			msg := types.NewMsgCreatePDV(args[0], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
 
-// 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-// 		},
-// 	}
-// }
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
