@@ -6,6 +6,7 @@ import (
 	"os"
 
 	decentr "github.com/Decentr-net/decentr/x/decentr"
+	profile "github.com/Decentr-net/decentr/x/profile"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -82,6 +83,7 @@ var (
 		supply.AppModuleBasic{},
 
 		decentr.AppModule{},
+		profile.AppModule{},
 	)
 
 	// module account permissions
@@ -129,6 +131,7 @@ type decentrApp struct {
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
 	decentrKeeper  decentr.Keeper
+	settingsKeeper profile.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -153,7 +156,7 @@ func NewDecentrApp(
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, decentr.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, decentr.StoreKey, profile.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -239,6 +242,11 @@ func NewDecentrApp(
 		app.bankKeeper,
 	)
 
+	app.settingsKeeper = profile.NewKeeper(
+		app.cdc,
+		keys[profile.StoreKey],
+	)
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
@@ -249,6 +257,7 @@ func NewDecentrApp(
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		decentr.NewAppModule(app.decentrKeeper, app.bankKeeper),
+		profile.NewAppModule(app.settingsKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
@@ -269,6 +278,7 @@ func NewDecentrApp(
 		bank.ModuleName,
 		slashing.ModuleName,
 		decentr.ModuleName,
+		profile.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)
