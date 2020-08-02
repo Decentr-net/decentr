@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	decentr "github.com/Decentr-net/decentr/x/decentr"
-	profile "github.com/Decentr-net/decentr/x/profile"
+	"github.com/Decentr-net/decentr/x/decentr"
+	"github.com/Decentr-net/decentr/x/profile"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"

@@ -74,7 +74,32 @@ curl -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a)
 # Query public profile.
 curl -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a)
 # > {"height": "0", "result": { "gender": "female", "birthday": "2019-12-12"}}
+
+# Set private profile
+curl -XPOST -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a) \ 
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"private": "YldWbllXaGxjbm9L"}' > unsignedTx.json
+# > {"type":"cosmos-sdk/StdTx","value":{"msg":[{"type":"profile/SetPrivate","value":{"owner":"decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw","private":"YldWbllXaGxjbm9L"}}],"fee":{"amount":[],"gas":"200000"},"signatures":null,"memo":""}}
+
+# Then sign this transaction
+decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
+
+# And finally broadcast the signed transaction
+decentrcli tx broadcast signedTx.json
+
+
+# Set public profile
+curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": {"gender":"female", "birthday": "2001-02-01"} }' > unsignedTx.json
+
+# > {"type":"cosmos-sdk/StdTx","value":{"msg":[{"type":"profile/SetPublic","value":{"owner":"decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw","public":{"gender":"female","birthday":"2001-02-01"}}}],"fee":{"amount":[],"gas":"200000"},"signatures":null,"memo":""}}
+
+# Then sign this transaction
+decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
+
+# And finally broadcast the signed transaction
+decentrcli tx broadcast signedTx.json
 ```
+
 
 ### Build
 ```bash

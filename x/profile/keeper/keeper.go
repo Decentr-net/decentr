@@ -21,9 +21,9 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 }
 
 // Sets the entire Profile metadata struct for a name
-func (k Keeper) SetProfile(ctx sdk.Context, owner sdk.AccAddress, settings types.Profile) {
+func (k Keeper) SetProfile(ctx sdk.Context, owner sdk.AccAddress, profile types.Profile) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(owner, k.cdc.MustMarshalBinaryBare(settings))
+	store.Set(owner, k.cdc.MustMarshalBinaryBare(profile))
 }
 
 // Gets the entire Profile metadata struct for an owner
@@ -36,9 +36,9 @@ func (k Keeper) GetProfile(ctx sdk.Context, owner sdk.AccAddress) types.Profile 
 
 	bz := store.Get(owner)
 
-	var settings types.Profile
-	k.cdc.MustUnmarshalBinaryBare(bz, &settings)
-	return settings
+	var profile types.Profile
+	k.cdc.MustUnmarshalBinaryBare(bz, &profile)
+	return profile
 }
 
 // Check if the name is present in the store or not
