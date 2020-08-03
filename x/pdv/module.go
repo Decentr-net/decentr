@@ -1,10 +1,10 @@
-package decentr
+package pdv
 
 import (
 	"encoding/json"
 
-	"github.com/Decentr-net/decentr/x/decentr/client/cli"
-	"github.com/Decentr-net/decentr/x/decentr/client/rest"
+	"github.com/Decentr-net/decentr/x/pdv/client/cli"
+	"github.com/Decentr-net/decentr/x/pdv/client/rest"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"

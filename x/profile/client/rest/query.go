@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 )
 
-func queryPublic(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+func queryPublicHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
@@ -38,7 +38,7 @@ func queryPublic(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	}
 }
 
-func queryPrivate(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+func queryPrivateHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {

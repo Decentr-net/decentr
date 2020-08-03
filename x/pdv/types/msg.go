@@ -7,15 +7,15 @@ import (
 
 // MsgCreatePDV defines a CreatePDV message
 type MsgCreatePDV struct {
-	Value string         `json:"value"`
-	Owner sdk.AccAddress `json:"owner"`
+	Address string         `json:"address"`
+	Owner   sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetName is a constructor function for MsgCreatePDV
 func NewMsgCreatePDV(value string, owner sdk.AccAddress) MsgCreatePDV {
 	return MsgCreatePDV{
-		Value: value,
-		Owner: owner,
+		Address: value,
+		Owner:   owner,
 	}
 }
 
@@ -23,15 +23,15 @@ func NewMsgCreatePDV(value string, owner sdk.AccAddress) MsgCreatePDV {
 func (msg MsgCreatePDV) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgCreatePDV) Type() string { return "created_pdv" }
+func (msg MsgCreatePDV) Type() string { return "create_pdv" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgCreatePDV) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
-	if len(msg.Value) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Value cannot be empty")
+	if len(msg.Address) == 0 {
+		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Address cannot be empty")
 	}
 	return nil
 }

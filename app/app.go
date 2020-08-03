@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/Decentr-net/decentr/x/decentr"
+	"github.com/Decentr-net/decentr/x/pdv"
 	"github.com/Decentr-net/decentr/x/profile"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -82,7 +82,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 
-		decentr.AppModule{},
+		pdv.AppModule{},
 		profile.AppModule{},
 	)
 
@@ -130,7 +130,7 @@ type decentrApp struct {
 	distrKeeper    distr.Keeper
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
-	decentrKeeper  decentr.Keeper
+	decentrKeeper  pdv.Keeper
 	settingsKeeper profile.Keeper
 
 	// Module Manager
@@ -156,7 +156,7 @@ func NewDecentrApp(
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, decentr.StoreKey, profile.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, pdv.StoreKey, profile.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -236,9 +236,9 @@ func NewDecentrApp(
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.decentrKeeper = decentr.NewKeeper(
+	app.decentrKeeper = pdv.NewKeeper(
 		app.cdc,
-		keys[decentr.StoreKey],
+		keys[pdv.StoreKey],
 		app.bankKeeper,
 	)
 
@@ -256,7 +256,7 @@ func NewDecentrApp(
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		decentr.NewAppModule(app.decentrKeeper, app.bankKeeper),
+		pdv.NewAppModule(app.decentrKeeper, app.bankKeeper),
 		profile.NewAppModule(app.settingsKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
@@ -277,7 +277,7 @@ func NewDecentrApp(
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
-		decentr.ModuleName,
+		pdv.ModuleName,
 		profile.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

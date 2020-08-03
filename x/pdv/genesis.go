@@ -1,4 +1,4 @@
-package decentr
+package pdv
 
 import (
 	"fmt"
@@ -17,10 +17,10 @@ func NewGenesisState(records []PDV) GenesisState {
 func ValidateGenesis(data GenesisState) error {
 	for _, record := range data.PDVRecords {
 		if record.Owner == nil {
-			return fmt.Errorf("invalid PDVRecord: Hash: %s. Error: Missing Owner", record.Hash)
+			return fmt.Errorf("invalid PDVRecord: Address: %s. Error: Missing Owner", record.Hash)
 		}
 		if record.Hash == "" {
-			return fmt.Errorf("invalid PDVRecord: Owner: %s. Error: Missing Hash", record.Owner)
+			return fmt.Errorf("invalid PDVRecord: Owner: %s. Error: Missing Address", record.Owner)
 		}
 	}
 	return nil
@@ -40,7 +40,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var records []PDV
-	iterator := k.GetNamesIterator(ctx)
+	iterator := k.GetPDVsIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		name := string(iterator.Key())
 		whois := k.GetPDV(ctx, name)

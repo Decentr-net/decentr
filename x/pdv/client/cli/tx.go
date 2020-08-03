@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
-	"github.com/Decentr-net/decentr/x/decentr/types"
+	"github.com/Decentr-net/decentr/x/pdv/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,7 +18,7 @@ import (
 
 // GetTxCmd returns the transaction commands for this module
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
-	decentrTxCmd := &cobra.Command{
+	pdvTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -26,25 +26,28 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	decentrTxCmd.AddCommand(flags.PostCommands(
+	pdvTxCmd.AddCommand(flags.PostCommands(
 		GetCmdCreatePDV(cdc),
 	)...)
 
-	return decentrTxCmd
+	return pdvTxCmd
 }
 
 // GetCmdCreatePDV is the CLI command for sending a CreatePDV transaction
 func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create-pdv [pdv]",
-		Short: "create PDV associated with a name that you own",
+		Use:   "create [pdv]",
+		Short: "create PDV",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgCreatePDV(args[0], cliCtx.GetFromAddress())
+			// TODO: call Cerberus, make sure hash exists cerberus (args[0])
+			address := ""
+
+			msg := types.NewMsgCreatePDV(address, cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err

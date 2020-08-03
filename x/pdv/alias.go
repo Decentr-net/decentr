@@ -1,8 +1,8 @@
-package decentr
+package pdv
 
 import (
-	"github.com/Decentr-net/decentr/x/decentr/keeper"
-	"github.com/Decentr-net/decentr/x/decentr/types"
+	"github.com/Decentr-net/decentr/x/pdv/keeper"
+	"github.com/Decentr-net/decentr/x/pdv/types"
 )
 
 const (
