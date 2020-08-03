@@ -36,3 +36,7 @@ lint:
 	@echo "--> Running linter"
 	@golangci-lint run
 	@go mod verify
+
+start:
+	bash init.sh
+
