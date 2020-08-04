@@ -1,4 +1,4 @@
-package decentr
+package pdv
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// NewHandler creates an sdk.Handler for all the decentr type messages
+// NewHandler creates an sdk.Handler for all the pdv type messages
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
@@ -22,13 +22,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 func handleMsgCreatePDV(ctx sdk.Context, keeper Keeper, msg MsgCreatePDV) (*sdk.Result, error) {
-	// TODO: call Cerberus
-	hash := ""
+	// TODO: call Cerberus, make sure hash exists
 
-	if !msg.Owner.Equals(keeper.GetOwner(ctx, hash)) { // Checks if the the msg sender is the same as the current owner
+	if !msg.Owner.Equals(keeper.GetOwner(ctx, msg.Address)) { // Checks if the the msg sender is the same as the current owner
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Incorrect Owner") // If not, throw an error
 	}
 
-	keeper.SetPDV(ctx, hash, PDV{Owner: msg.Owner, Hash: hash})
+	keeper.SetPDV(ctx, msg.Address, PDV{Owner: msg.Owner, Hash: msg.Address})
 	return &sdk.Result{}, nil
 }

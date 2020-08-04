@@ -2,22 +2,23 @@
 Decentr blockchain
 
 
-### Node
+## Testnet Full Node Quick Start
+This assumes that you're running Linux or MacOS and have installed [Go 1.14+](https://golang.org/dl/).  This guide helps you:
+
+* build and install Decentr
+* allow you to name your node
+
+Build, Install, and Name your Node:
+
 ```bash
-rm -rf ~/.decentrd
-rm -rf ~/.decentrcli
-
-decentrd help
-decentrd init test --chain-id testnet
-
-decentrd add-genesis-account $(decentrcli keys show jack -a) 100000000stake
-decentrd gentx --name jack --keyring-backend test
-
-decentrd collect-gentxs
-decentrd validate-genesis
-
-## start the node
-decentrd start
+# Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
+git clone -b <latest_release> https://github.com/Decentr-net/decentr
+# Enter the folder Decentr was cloned into
+cd decentrd
+# Compile and install Decentr
+make install
+# Initialize decentrd in ~/.decentrd and name your node
+decentrd init yournodenamehere
 ```
 
 ### CLI
@@ -41,7 +42,40 @@ decentrcli rest-server
 # > I[2020-07-31|13:50:22.088] Starting RPC HTTP server on 127.0.0.1:1317   module=rest-server 
 ```
 
+### PDV (Personal Data Value)
+
+#### CLI
+```bash
+# Query pdv owner by its address
+decentrcli query pdv onwer [address]
+
+# Query pdv full
+decentrcli query pdv show [address]
+
+# Create pdv
+decentrcli tx pdv create [pdv] --from [account]
+```
+
+#### REST
+To execute REST command decentrcli has to be run as a REST server `decentrcli rest-server`
+
+```bash
+# Query pdv owner by its address
+curl -s http://localhost:1317/pvd/owner/{address}
+
+curl -XPOST -s http://localhost:1317/pdv/$(decentrcli keys show jack -a) \ 
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"pdv": {}}' > unsignedTx.json
+
+# Then sign this transaction
+decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
+
+# And finally broadcast the signed transaction
+decentrcli tx broadcast signedTx.json
+```
+
 ### Profile
+User profile consists of two parts: private and public. Private data is encrypted with user's private key.
+Public one includes gender and birthday.
 
 #### CLI
 ```bash
@@ -85,7 +119,6 @@ decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --se
 
 # And finally broadcast the signed transaction
 decentrcli tx broadcast signedTx.json
-
 
 # Set public profile
 curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
