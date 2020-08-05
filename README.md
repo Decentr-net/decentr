@@ -139,3 +139,12 @@ decentrcli tx broadcast signedTx.json
 make install
 ```
 creates two binaries: decentrd (node) and decentrcli (cli)
+
+#### Build local image image
+```
+docker build -t decentr-local -f scripts/Dockerfile .
+```
+#### Start local testnet
+```
+cd scripts/test && docker-compose up
+```
