@@ -43,8 +43,8 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	iterator := k.GetPDVsIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		name := string(iterator.Key())
-		whois := k.GetPDV(ctx, name)
-		records = append(records, whois)
+		pdv := k.GetPDV(ctx, name)
+		records = append(records, pdv)
 
 	}
 	return GenesisState{PDVRecords: records}

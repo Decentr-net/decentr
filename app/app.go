@@ -7,6 +7,7 @@ import (
 
 	"github.com/Decentr-net/decentr/x/pdv"
 	"github.com/Decentr-net/decentr/x/profile"
+	"github.com/Decentr-net/decentr/x/token"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -84,6 +85,7 @@ var (
 
 		pdv.AppModule{},
 		profile.AppModule{},
+		token.AppModule{},
 	)
 
 	// module account permissions
@@ -130,8 +132,9 @@ type decentrApp struct {
 	distrKeeper    distr.Keeper
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
-	decentrKeeper  pdv.Keeper
-	settingsKeeper profile.Keeper
+	pdvKeeper      pdv.Keeper
+	profilesKeeper profile.Keeper
+	tokensKeeper   token.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -156,7 +159,8 @@ func NewDecentrApp(
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey, pdv.StoreKey, profile.StoreKey)
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
+		pdv.StoreKey, profile.StoreKey, token.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -236,13 +240,18 @@ func NewDecentrApp(
 			app.slashingKeeper.Hooks()),
 	)
 
-	app.decentrKeeper = pdv.NewKeeper(
+	app.tokensKeeper = token.NewKeeper(
 		app.cdc,
-		keys[pdv.StoreKey],
-		app.bankKeeper,
+		keys[token.StoreKey],
 	)
 
-	app.settingsKeeper = profile.NewKeeper(
+	app.pdvKeeper = pdv.NewKeeper(
+		app.cdc,
+		keys[pdv.StoreKey],
+		app.tokensKeeper,
+	)
+
+	app.profilesKeeper = profile.NewKeeper(
 		app.cdc,
 		keys[profile.StoreKey],
 	)
@@ -256,8 +265,9 @@ func NewDecentrApp(
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		pdv.NewAppModule(app.decentrKeeper, app.bankKeeper),
-		profile.NewAppModule(app.settingsKeeper),
+		pdv.NewAppModule(app.pdvKeeper),
+		token.NewAppModule(app.tokensKeeper),
+		profile.NewAppModule(app.profilesKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
@@ -278,6 +288,7 @@ func NewDecentrApp(
 		bank.ModuleName,
 		slashing.ModuleName,
 		pdv.ModuleName,
+		token.ModuleName,
 		profile.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,

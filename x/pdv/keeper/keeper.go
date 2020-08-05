@@ -6,19 +6,23 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+type TokenKeeper interface {
+	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
+}
+
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	CoinKeeper types.BankKeeper
-	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc        *codec.Codec // The wire codec for binary encoding/decoding.
+	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
+	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
+	tokens   TokenKeeper
 }
 
 // NewKeeper creates new instances of the PDV Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, coinKeeper types.BankKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper) Keeper {
 	return Keeper{
-		cdc:        cdc,
-		storeKey:   storeKey,
-		CoinKeeper: coinKeeper,
+		cdc:      cdc,
+		storeKey: storeKey,
+		tokens:   tokens,
 	}
 }
 
@@ -28,9 +32,11 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		return
 	}
 
-	store := ctx.KVStore(k.storeKey)
+	//TODO: if pdv == cookie
 
+	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(address), k.cdc.MustMarshalBinaryBare(pdv))
+	k.tokens.AddTokens(ctx, pdv.Owner, sdk.NewInt(1))
 }
 
 // Gets the entire PDV metadata struct for an address
