@@ -42,7 +42,7 @@ decentrcli rest-server
 # > I[2020-07-31|13:50:22.088] Starting RPC HTTP server on 127.0.0.1:1317   module=rest-server 
 ```
 
-### PDV (Personal Data Value)
+### PDV (Personal Data Value) Data
 
 #### CLI
 ```bash
@@ -63,7 +63,7 @@ To execute REST command decentrcli has to be run as a REST server `decentrcli re
 # Query pdv owner by its address
 curl -s http://localhost:1317/pvd/owner/{address}
 
-curl -XPOST -s http://localhost:1317/pdv/$(decentrcli keys show jack -a) \ 
+curl -XPOST -s http://localhost:1317/pdv \ 
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"pdv": {}}' > unsignedTx.json
 
 # Then sign this transaction
@@ -71,6 +71,21 @@ decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --se
 
 # And finally broadcast the signed transaction
 decentrcli tx broadcast signedTx.json
+```
+
+### PDV Token
+PDV tokens are assigned to the user as soon as they reveal their personal data. 
+There are no transactions, only query to get PDV token balance of the specific user.
+
+#### CLI
+```bash
+# Query pdv token balance
+decentrcli query token balance [address]
+```
+
+#### REST
+```bash
+curl -s http://localhost:1317/token/balance/{address}
 ```
 
 ### Profile

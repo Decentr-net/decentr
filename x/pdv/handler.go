@@ -28,6 +28,6 @@ func handleMsgCreatePDV(ctx sdk.Context, keeper Keeper, msg MsgCreatePDV) (*sdk.
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Incorrect Owner") // If not, throw an error
 	}
 
-	keeper.SetPDV(ctx, msg.Address, PDV{Owner: msg.Owner, Address: msg.Address})
+	keeper.SetPDV(ctx, msg.Address, PDV{Owner: msg.Owner, Address: msg.Address, Type: msg.DataType})
 	return &sdk.Result{}, nil
 }

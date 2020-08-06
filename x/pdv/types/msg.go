@@ -7,15 +7,17 @@ import (
 
 // MsgCreatePDV defines a CreatePDV message
 type MsgCreatePDV struct {
-	Address string         `json:"address"`
-	Owner   sdk.AccAddress `json:"owner"`
+	Address  string         `json:"address"`
+	Owner    sdk.AccAddress `json:"owner"`
+	DataType PDVType        `json:"type"`
 }
 
 // NewMsgSetName is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(value string, owner sdk.AccAddress) MsgCreatePDV {
+func NewMsgCreatePDV(value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
 	return MsgCreatePDV{
-		Address: value,
-		Owner:   owner,
+		Address:  value,
+		Owner:    owner,
+		DataType: dataType,
 	}
 }
 

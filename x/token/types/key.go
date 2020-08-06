@@ -1,5 +1,7 @@
 package types
 
+const Denominator int64 = 1 * 10e6
+
 const (
 	// ModuleName is the name of the module
 	ModuleName = "token"

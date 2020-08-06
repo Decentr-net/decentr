@@ -31,12 +31,12 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 	if pdv.Owner.Empty() {
 		return
 	}
-
-	//TODO: if pdv == cookie
-
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(address), k.cdc.MustMarshalBinaryBare(pdv))
-	k.tokens.AddTokens(ctx, pdv.Owner, sdk.NewInt(1))
+
+	if pdv.Type == types.PDVTypeCookie {
+		k.tokens.AddTokens(ctx, pdv.Owner, sdk.NewInt(1))
+	}
 }
 
 // Gets the entire PDV metadata struct for an address

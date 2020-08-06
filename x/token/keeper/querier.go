@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -32,9 +33,10 @@ func queryBalance(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
 	}
 
-	tokens := keeper.GetBalance(ctx, owner)
+	balance := keeper.GetBalance(ctx, owner).Int64()
+	out := float64(balance) / float64(types.Denominator)
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, tokens)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, out)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
