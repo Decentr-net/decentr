@@ -47,12 +47,6 @@ func queryOwnerHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		owner, err := sdk.AccAddressFromBech32(mux.Vars(r)["address"])
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
 		var req createPDVReq
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
@@ -64,10 +58,16 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		owner, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		//TODO: call cerberus
 		hash := ""
 
-		msg := types.NewMsgCreatePDV(hash, owner)
+		msg := types.NewMsgCreatePDV(hash, types.PDVTypeCookie, owner)
 		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
 	}
 }

@@ -47,7 +47,7 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 			// TODO: call Cerberus, make sure hash exists cerberus (args[0])
 			address := ""
 
-			msg := types.NewMsgCreatePDV(address, cliCtx.GetFromAddress())
+			msg := types.NewMsgCreatePDV(address, types.PDVTypeCookie, cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err

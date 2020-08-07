@@ -1,18 +1,16 @@
-package pdv
+package token
 
 import (
 	"encoding/json"
 
-	"github.com/Decentr-net/decentr/x/pdv/client/cli"
-	"github.com/Decentr-net/decentr/x/pdv/client/rest"
-
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
-
+	"github.com/Decentr-net/decentr/x/token/client/cli"
+	"github.com/Decentr-net/decentr/x/token/client/rest"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/gorilla/mux"
+	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -60,7 +58,7 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 // Get the root tx command of this module
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(StoreKey, cdc)
+	return nil
 }
 
 type AppModule struct {
@@ -87,7 +85,10 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	// Token module does not have transactions
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		return &sdk.Result{}, nil
+	}
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
