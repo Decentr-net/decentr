@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -22,6 +23,14 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 // AddTokens adds token to the given owner
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
+
+	total := k.GetTotalBalance(ctx)
+	maxSupply := sdk.NewIntFromUint64(uint64(types.MaxSupply))
+	if maxSupply.LT(total.Add(amount)) {
+		// Max supply is reached, stop the emission
+		amount = maxSupply.Sub(total)
+	}
+
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
 }
@@ -37,6 +46,19 @@ func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
 		return amount
 	}
 	return sdk.ZeroInt()
+}
+
+// Gets total balance
+func (k Keeper) GetTotalBalance(ctx sdk.Context) sdk.Int {
+	total := sdk.ZeroInt()
+
+	iterator := k.GetBalanceIterator(ctx)
+	for ; iterator.Valid(); iterator.Next() {
+		owner := iterator.Key()
+		total = total.Add(k.GetBalance(ctx, owner))
+	}
+
+	return total
 }
 
 // Get an iterator over all balances in which the keys are the accounts and the values are their balance

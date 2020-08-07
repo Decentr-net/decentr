@@ -1,6 +1,9 @@
 package types
 
-const Denominator int64 = 1 * 10e6
+const (
+	Denominator int64 = 1 * 10e6
+	MaxSupply   int64 = 1 * 10e9 * Denominator
+)
 
 const (
 	// ModuleName is the name of the module
