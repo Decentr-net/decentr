@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/url"
 
-	"github.com/Decentr-net/decentr/app"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -17,13 +18,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
+
+	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
+
+	"github.com/Decentr-net/decentr/app"
 )
 
 const flagInvCheckPeriod = "inv-check-period"
+const flagCerberusAddr = "cerberus-addr"
 
 var invCheckPeriod uint
 
@@ -59,6 +66,13 @@ func main() {
 	rootCmd.AddCommand(debug.Cmd(cdc))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Name() == "start" {
+			cmd.PersistentFlags().String(flagCerberusAddr, "http://localhost:7070", "cerberus host address")
+			viper.BindPFlag(flagCerberusAddr, cmd.PersistentFlags().Lookup(flagCerberusAddr))
+			break
+		}
+	}
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "AU", app.DefaultNodeHome)
@@ -77,8 +91,18 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		cache = store.NewCommitKVStoreCacheManager()
 	}
 
+	cerberusAddr := viper.GetString(flagCerberusAddr)
+	if cerberusAddr == "" {
+		panic(fmt.Errorf("%s isn't set", flagCerberusAddr))
+	}
+
+	if _, err := url.ParseRequestURI(cerberusAddr); err != nil {
+		panic(fmt.Errorf("failed to parse %s: %w", flagCerberusAddr, err))
+	}
+
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
+		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
 		baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -92,7 +116,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1))
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -100,7 +124,7 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1))
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil)
 
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

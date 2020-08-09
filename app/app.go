@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/decentr/x/pdv"
 	"github.com/Decentr-net/decentr/x/profile"
 	"github.com/Decentr-net/decentr/x/token"
@@ -115,6 +116,8 @@ type decentrApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
+	cerberus api.Cerberus
+
 	invCheckPeriod uint
 
 	// keys to access the substores
@@ -148,7 +151,7 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, cerberus api.Cerberus, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -167,6 +170,7 @@ func NewDecentrApp(
 	// Here you initialize your application with the store keys it requires
 	var app = &decentrApp{
 		BaseApp:        bApp,
+		cerberus:       cerberus,
 		cdc:            cdc,
 		invCheckPeriod: invCheckPeriod,
 		keys:           keys,
@@ -265,7 +269,7 @@ func NewDecentrApp(
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		pdv.NewAppModule(app.pdvKeeper),
+		pdv.NewAppModule(cerberus, app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),

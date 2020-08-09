@@ -66,7 +66,7 @@ func (k Keeper) IsHashPresent(ctx sdk.Context, address string) bool {
 }
 
 // Get an iterator over all PDVs in which the keys are the address and the values are the PDV
-func (k Keeper) GetPDVsIterator(ctx sdk.Context) sdk.Iterator {
+func (k Keeper) GetPDVsIterator(ctx sdk.Context, prefix string) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, nil)
+	return sdk.KVStorePrefixIterator(store, []byte(prefix))
 }

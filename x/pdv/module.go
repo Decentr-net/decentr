@@ -3,6 +3,7 @@ package pdv
 import (
 	"encoding/json"
 
+	"github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/Decentr-net/decentr/x/pdv/client/cli"
 	"github.com/Decentr-net/decentr/x/pdv/client/rest"
 
@@ -65,13 +66,15 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper Keeper
+	cerberus api.Cerberus
+	keeper   Keeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper) AppModule {
+func NewAppModule(c api.Cerberus, k Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
+		cerberus:       c,
 		keeper:         k,
 	}
 }
@@ -87,7 +90,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.cerberus, am.keeper)
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
