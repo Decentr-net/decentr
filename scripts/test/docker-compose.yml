@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  decentrdnode0:
+    container_name: decentrdnode0
+    image: "decentr-local"
+    healthcheck:
+      test: "curl -f https://localhost:26656 || exit 1"
+    ports:
+      - "26656-26657:26656-26657"
+    command: ["sh", "-c", "/decentr/init.sh decentrdnode0 && decentrd start --moniker=decentrdnode0" ]
+    volumes:
+      - ./config:/decentr/config:ro
+      - ./init.sh:/decentr/init.sh:ro
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.2
+
+  decentrdnode1:
+    container_name: decentrdnode1
+    restart: always
+    image: "decentr-local"
+    ports:
+      - "26659-26660:26656-26657"
+    command: ["sh", "-c", "/decentr/init.sh decentrdnode1 && decentrd start --moniker=decentrdnode1 --p2p.seed_mode=true --p2p.seeds=7b6efc0fafec08fde6091344a8928bac1de874d6@decentrdnode0:26656" ]
+    volumes:
+      - ./config/genesis.json:/decentr/genesis.json:ro
+      - ./init.sh:/decentr/init.sh:ro
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.3
+    depends_on:
+      - decentrdnode0
+
+  decentrdnode2:
+    container_name: decentrdnode2
+    restart: always
+    image: "decentr-local"
+    ports:
+      - "26662-26663:26656-26657"
+    command: ["sh", "-c", "/decentr/init.sh decentrdnode2 && decentrd start --moniker=decentrdnode2 --p2p.seed_mode=true --p2p.seeds=7b6efc0fafec08fde6091344a8928bac1de874d6@decentrdnode0:26656" ]
+    volumes:
+      - ./config/genesis.json:/decentr/genesis.json:ro
+      - ./init.sh:/decentr/init.sh:ro
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.4
+    depends_on:
+      - decentrdnode0
+
+  decentrcli:
+    container_name: decentrcli
+    restart: always
+    image: "decentr-local"
+    ports:
+      - "1317:1317"
+    command: ["sh", "-c", "decentrcli rest-server --chain-id testnet --node tcp://decentrdnode2:26657 --laddr tcp://decentrcli:1317 --trust-node" ]
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.5
+    depends_on:
+      - decentrdnode2
+
+networks:
+  localnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        -
+          subnet: 192.168.10.0/16
