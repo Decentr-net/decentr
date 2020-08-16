@@ -1,4 +1,6 @@
 # decentr
+![img](https://img.shields.io/docker/cloud/build/decentr/decentr.svg)
+
 Decentr blockchain
 
 
