@@ -70,3 +70,9 @@ func (k Keeper) GetPDVsIterator(ctx sdk.Context, prefix string) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefix))
 }
+
+// Get an paginated iterator over all PDVs in which the keys are the address and the values are the PDV
+func (k Keeper) GetPDVsIteratorPaginated(ctx sdk.Context, prefix string, page, limit uint) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIteratorPaginated(store, []byte(prefix), page, limit)
+}

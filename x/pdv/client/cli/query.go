@@ -26,6 +26,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		flags.GetCommands(
 			GetCmdOwner(queryRoute, cdc),
 			GetCmdShow(queryRoute, cdc),
+			GetCmdList(queryRoute, cdc),
 		)...,
 	)
 
@@ -35,7 +36,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdPDV queries PDV owner
 func GetCmdOwner(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "owner",
+		Use:   "owner <address>",
 		Short: "Query PDV owner",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -55,8 +56,8 @@ func GetCmdOwner(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdShow queries PDV full data unencrypted data
 func GetCmdShow(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "show",
-		Short: "Query PDV unencrypted data",
+		Use:   "show <address>",
+		Short: "Query PDV meta data",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -65,6 +66,32 @@ func GetCmdShow(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/show/%s", queryRoute, key), nil)
 			if err != nil {
 				fmt.Printf("could not find PDV - %s \n", key)
+				return nil
+			}
+			return cliCtx.PrintOutput(string(res))
+		},
+	}
+}
+
+// GetCmdShow queries PDV full data unencrypted data
+func GetCmdList(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "list <owner> [page] [limit]",
+		Short: "Query list of PDVs meta data. Default page = 0 and limit = 20",
+		Args:  cobra.RangeArgs(1, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			owner, page, limit := args[0], "", ""
+			if len(args) > 1 {
+				page = args[1]
+				if len(args) > 2 {
+					limit = args[2]
+				}
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", queryRoute, owner, page, limit), nil)
+			if err != nil {
+				fmt.Printf("could not list PDV - %s \n", err.Error())
 				return nil
 			}
 			return cliCtx.PrintOutput(string(res))
