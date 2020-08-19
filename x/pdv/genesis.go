@@ -40,7 +40,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var records []PDV
-	iterator := k.GetPDVsIterator(ctx)
+	iterator := k.GetPDVsIterator(ctx, "")
 	for ; iterator.Valid(); iterator.Next() {
 		name := string(iterator.Key())
 		pdv := k.GetPDV(ctx, name)

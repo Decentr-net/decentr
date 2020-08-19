@@ -38,7 +38,7 @@ func queryOwner(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 func queryShow(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	pdv := keeper.GetPDV(ctx, path[0])
 
-	//TODO: call cerberus
+	//TODO: get list from keeper
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pdv)
 	if err != nil {
