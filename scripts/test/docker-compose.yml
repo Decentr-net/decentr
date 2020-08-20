@@ -8,7 +8,7 @@ services:
       test: "curl -f https://localhost:26656 || exit 1"
     ports:
       - "26656-26657:26656-26657"
-    command: ["sh", "-c", "/decentr/init.sh decentrdnode0 && decentrd start --moniker=decentrdnode0" ]
+    command: ["sh", "-c", "/decentr/init.sh decentrdnode0 && decentrd start --cerberus-addr cerberus --moniker=decentrdnode0" ]
     volumes:
       - ./config:/decentr/config:ro
       - ./init.sh:/decentr/init.sh:ro
@@ -22,7 +22,7 @@ services:
     image: "decentr-local"
     ports:
       - "26659-26660:26656-26657"
-    command: ["sh", "-c", "/decentr/init.sh decentrdnode1 && decentrd start --moniker=decentrdnode1 --p2p.seed_mode=true --p2p.seeds=7b6efc0fafec08fde6091344a8928bac1de874d6@decentrdnode0:26656" ]
+    command: ["sh", "-c", "/decentr/init.sh decentrdnode1 && decentrd start --cerberus-addr cerberus --moniker=decentrdnode1 --p2p.seed_mode=true --p2p.seeds=7b6efc0fafec08fde6091344a8928bac1de874d6@decentrdnode0:26656" ]
     volumes:
       - ./config/genesis.json:/decentr/genesis.json:ro
       - ./init.sh:/decentr/init.sh:ro
@@ -38,7 +38,7 @@ services:
     image: "decentr-local"
     ports:
       - "26662-26663:26656-26657"
-    command: ["sh", "-c", "/decentr/init.sh decentrdnode2 && decentrd start --moniker=decentrdnode2 --p2p.seed_mode=true --p2p.seeds=7b6efc0fafec08fde6091344a8928bac1de874d6@decentrdnode0:26656" ]
+    command: ["sh", "-c", "/decentr/init.sh decentrdnode2 && decentrd start --cerberus-addr cerberus --moniker=decentrdnode2 --p2p.seed_mode=true --p2p.seeds=7b6efc0fafec08fde6091344a8928bac1de874d6@decentrdnode0:26656" ]
     volumes:
       - ./config/genesis.json:/decentr/genesis.json:ro
       - ./init.sh:/decentr/init.sh:ro
@@ -60,6 +60,40 @@ services:
         ipv4_address: 192.168.10.5
     depends_on:
       - decentrdnode2
+
+  cerberus:
+    image: cerberus-local:latest
+    container_name: decentr-cerberus
+    restart: always
+    environment:
+      - "HTTP_HOST=0.0.0.0"
+      - "HTTP_PORT=7070"
+      - "S3_ENDPOINT=s3:9000"
+      - "S3_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"
+      - "S3_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+      - "S3_USE_SSL=false"
+      - "S3_BUCKET=cerberus"
+      - "ENCRYPT_KEY=0102030405060708090a0b0c0d0e0f10201f1e1d1c1b1a191817161514131211"
+      - "LOG_LEVEL=debug"
+    networks:
+      - localnet
+    ports:
+      - "7070:7070"
+    depends_on:
+      - s3
+
+  s3:
+    image: minio/minio:latest
+    container_name: decentr-s3
+    restart: always
+    environment:
+      - "MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE"
+      - "MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    entrypoint: ["minio","server","/data"]
+    networks:
+      - localnet
+    ports:
+      - "9000:9000"
 
 networks:
   localnet:

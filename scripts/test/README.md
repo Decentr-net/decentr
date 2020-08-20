@@ -5,4 +5,4 @@
 - docker-compose.yml - main compose file
 ### Run
 Just use `docker-compose up` to start test environment  
-There are 3 nodes and 1 rest-server
+There are 3 nodes, 1 rest-server, cerberus and minio s3 server

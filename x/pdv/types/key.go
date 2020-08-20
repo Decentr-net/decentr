@@ -12,4 +12,6 @@ const (
 
 	// QuerierRoute to be used for querierer msgs
 	QuerierRoute = ModuleName
+
+	FlagCerberusAddr = "cerberus-addr"
 )
