@@ -27,10 +27,10 @@ import (
 	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 
 	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/decentr/x/pdv"
 )
 
 const flagInvCheckPeriod = "inv-check-period"
-const flagCerberusAddr = "cerberus-addr"
 
 var invCheckPeriod uint
 
@@ -68,8 +68,9 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Name() == "start" {
-			cmd.PersistentFlags().String(flagCerberusAddr, "http://localhost:7070", "cerberus host address")
-			viper.BindPFlag(flagCerberusAddr, cmd.PersistentFlags().Lookup(flagCerberusAddr))
+			// TODO: set default value to cerberus public address when it will be deployed
+			cmd.PersistentFlags().String(pdv.FlagCerberusAddr, "http://localhost:7070", "cerberus host address")
+			viper.BindPFlag(pdv.FlagCerberusAddr, cmd.PersistentFlags().Lookup(pdv.FlagCerberusAddr))
 			break
 		}
 	}
@@ -91,13 +92,13 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		cache = store.NewCommitKVStoreCacheManager()
 	}
 
-	cerberusAddr := viper.GetString(flagCerberusAddr)
+	cerberusAddr := viper.GetString(pdv.FlagCerberusAddr)
 	if cerberusAddr == "" {
-		panic(fmt.Errorf("%s isn't set", flagCerberusAddr))
+		panic(fmt.Errorf("%s isn't set", pdv.FlagCerberusAddr))
 	}
 
 	if _, err := url.ParseRequestURI(cerberusAddr); err != nil {
-		panic(fmt.Errorf("failed to parse %s: %w", flagCerberusAddr, err))
+		panic(fmt.Errorf("failed to parse %s: %w", pdv.FlagCerberusAddr, err))
 	}
 
 	return app.NewDecentrApp(

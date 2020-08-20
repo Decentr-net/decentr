@@ -21,6 +21,8 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/show", storeName), queryShowHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{owner}/list", storeName), queryListHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s", storeName), createPDVHandler(cliCtx)).Methods(http.MethodPost)
+
+	r.HandleFunc(fmt.Sprintf("/%s/cerberus-addr", storeName), cerberusAddrHandler(cliCtx)).Methods(http.MethodGet)
 }
 
 type createPDVReq struct {
@@ -110,5 +112,17 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		msg := types.NewMsgCreatePDV(req.Address, types.PDVTypeCookie, owner)
 		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+	}
+}
+
+func cerberusAddrHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/cerberus-addr", types.QuerierRoute), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

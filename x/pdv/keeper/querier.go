@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,9 +15,10 @@ import (
 
 // query endpoints supported by the pdv Querier
 const (
-	QueryOwner = "owner"
-	QueryShow  = "show"
-	QueryList  = "list"
+	QueryOwner        = "owner"
+	QueryShow         = "show"
+	QueryList         = "list"
+	QueryCerberusAddr = "cerberus-addr"
 )
 
 // NewQuerier creates a new querier for pdv clients.
@@ -29,6 +31,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryShow(ctx, path[1:], req, keeper)
 		case QueryList:
 			return queryList(ctx, path[1:], req, keeper)
+		case QueryCerberusAddr:
+			return queryCerberusAddr(keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown pdv query endpoint")
 		}
@@ -91,6 +95,22 @@ func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, m)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
+}
+
+// nolint: unparam
+func queryCerberusAddr(keeper Keeper) ([]byte, error) {
+	addr := struct {
+		Address string `json:"address"`
+	}{
+		Address: viper.GetString(types.FlagCerberusAddr),
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, addr)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

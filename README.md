@@ -49,10 +49,16 @@ decentrcli rest-server
 #### CLI
 ```bash
 # Query pdv owner by its address
-decentrcli query pdv onwer [address]
+decentrcli query pdv onwer <address>
 
 # Query pdv full
-decentrcli query pdv show [address]
+decentrcli query pdv show <address>
+
+# List account's pdv
+decentrcli query pdv list <owner> [page] [limit]
+
+# Get cerberus address
+decentrcli query pdv cerberus
 
 # Create pdv
 decentrcli tx pdv create [pdv] --from [account]
@@ -63,7 +69,17 @@ To execute REST command decentrcli has to be run as a REST server `decentrcli re
 
 ```bash
 # Query pdv owner by its address
-curl -s http://localhost:1317/pvd/owner/{address}
+curl -s http://localhost:1317/pvd/{address}/owner
+
+# Query pdv full
+curl -s http://localhost:1317/pvd/{address}/show
+
+# List account's pdv
+curl -s http://localhost:1317/pvd/{owner}/list
+
+# Get cerberus address
+curl -s http://localhost:1317/pvd/cerberus-addr
+
 
 curl -XPOST -s http://localhost:1317/pdv \ 
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"pdv": {}}' > unsignedTx.json

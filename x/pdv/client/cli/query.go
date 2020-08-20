@@ -27,6 +27,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			GetCmdOwner(queryRoute, cdc),
 			GetCmdShow(queryRoute, cdc),
 			GetCmdList(queryRoute, cdc),
+			GetCmdCerberusAddr(queryRoute, cdc),
 		)...,
 	)
 
@@ -92,6 +93,25 @@ func GetCmdList(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", queryRoute, owner, page, limit), nil)
 			if err != nil {
 				fmt.Printf("could not list PDV - %s \n", err.Error())
+				return nil
+			}
+			return cliCtx.PrintOutput(string(res))
+		},
+	}
+}
+
+// GetCmdShow queries PDV full data unencrypted data
+func GetCmdCerberusAddr(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "cerberus-addr",
+		Short: "Returns current cerberus address",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/cerberus-addr", queryRoute), nil)
+			if err != nil {
+				fmt.Printf("failed to get cerberus addr - %s \n", err.Error())
 				return nil
 			}
 			return cliCtx.PrintOutput(string(res))
