@@ -40,7 +40,5 @@ func handleMsgCreatePDV(ctx sdk.Context, cerberus cerberusapi.Cerberus, keeper K
 
 	keeper.SetPDV(ctx, msg.Address, PDV{Owner: msg.Owner, Address: msg.Address, Type: msg.DataType})
 
-	// ToDo: set tokens count
-
 	return &sdk.Result{}, nil
 }
