@@ -44,10 +44,7 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			// TODO: call Cerberus, make sure hash exists cerberus (args[0])
-			address := ""
-
-			msg := types.NewMsgCreatePDV(address, types.PDVTypeCookie, cliCtx.GetFromAddress())
+			msg := types.NewMsgCreatePDV(args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
