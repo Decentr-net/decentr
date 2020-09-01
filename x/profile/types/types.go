@@ -9,9 +9,8 @@ import (
 type Gender string
 
 const (
-	GenderMale   = "male"
-	GenderFemale = "female"
-	GenderCustom = "custom"
+	GenderMale   Gender = "male"
+	GenderFemale Gender = "female"
 )
 
 const DateFormat = "2006-01-02"
@@ -22,7 +21,7 @@ func IsValidDate(s string) bool {
 }
 
 func IsValidGender(str string) bool {
-	return str == GenderMale || str == GenderFemale || str == GenderCustom
+	return str == string(GenderMale) || str == string(GenderFemale)
 }
 
 // Public profile data

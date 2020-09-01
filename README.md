@@ -122,7 +122,7 @@ decentrcli query profile public [address]
 decentrcli tx profile set-private [data] --from [account]
 
 # Set public profile data that you own. Public profile are attributes: gender, birth date.
-# Birthday date format is yyyy-mm-dd. Gender: male, female, custom
+# Birthday date format is yyyy-mm-dd. Gender: male, female
 decentrcli tx profile set-public '{"gender": "female", "birthday": "2019-12-12"}' --from [account]
 ```
 
