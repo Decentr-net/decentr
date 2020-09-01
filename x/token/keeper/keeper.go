@@ -6,6 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+var totalSupplyKey = []byte("totalSupply")
+
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
@@ -24,7 +26,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
 
-	total := k.GetTotalBalance(ctx)
+	total := k.GetTotalSupply(ctx)
 	maxSupply := sdk.NewIntFromUint64(uint64(types.MaxSupply))
 	if maxSupply.LT(total.Add(amount)) {
 		// Max supply is reached, stop the emission
@@ -33,32 +35,38 @@ func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
 
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
+	k.IncreaseTotalSupply(ctx, amount)
 }
 
-// Gets balance
+// IncreaseTotalSupply increase total supply with the given amount of tokens
+func (k Keeper) IncreaseTotalSupply(ctx sdk.Context, amount sdk.Int) {
+	balance := k.GetTotalSupply(ctx)
+	balance = balance.Add(amount)
+	ctx.KVStore(k.storeKey).Set(totalSupplyKey, k.cdc.MustMarshalBinaryBare(balance))
+}
+
+// GetBalance returns token balance for the given owner
 func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
 	store := ctx.KVStore(k.storeKey)
 	if store.Has(owner) {
-		bz := store.Get(owner)
-
+		balance := store.Get(owner)
 		var amount sdk.Int
-		k.cdc.MustUnmarshalBinaryBare(bz, &amount)
+		k.cdc.MustUnmarshalBinaryBare(balance, &amount)
 		return amount
 	}
 	return sdk.ZeroInt()
 }
 
-// Gets total balance
-func (k Keeper) GetTotalBalance(ctx sdk.Context) sdk.Int {
-	total := sdk.ZeroInt()
-
-	iterator := k.GetBalanceIterator(ctx)
-	for ; iterator.Valid(); iterator.Next() {
-		owner := iterator.Key()
-		total = total.Add(k.GetBalance(ctx, owner))
+// GetTotalSupply returns total token supply
+func (k Keeper) GetTotalSupply(ctx sdk.Context) sdk.Int {
+	store := ctx.KVStore(k.storeKey)
+	totalSupply := store.Get(totalSupplyKey)
+	if totalSupply == nil {
+		return sdk.ZeroInt()
 	}
-
-	return total
+	var amount sdk.Int
+	k.cdc.MustUnmarshalBinaryBare(totalSupply, &amount)
+	return amount
 }
 
 // Get an iterator over all balances in which the keys are the accounts and the values are their balance
