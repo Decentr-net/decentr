@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/boltdb/bolt"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -30,7 +31,10 @@ import (
 	"github.com/Decentr-net/decentr/x/pdv"
 )
 
-const flagInvCheckPeriod = "inv-check-period"
+const (
+	flagInvCheckPeriod = "inv-check-period"
+	statsDBFile        = "stats.db"
+)
 
 var invCheckPeriod uint
 
@@ -101,9 +105,20 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(fmt.Errorf("failed to parse %s: %w", pdv.FlagCerberusAddr, err))
 	}
 
+	statsDB, err := bolt.Open(fmt.Sprintf("%s/%s", viper.GetString(cli.HomeFlag), statsDBFile), 0600, nil)
+	if err != nil {
+		panic(fmt.Errorf("failed to open statsDB: %w", err))
+	}
+
+	stats, err := pdv.NewStats(statsDB)
+	if err != nil {
+		panic(fmt.Errorf("failed to create stats: %w", err))
+	}
+
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
 		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
+		stats,
 		baseapp.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -117,7 +132,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil)
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -125,7 +140,7 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil)
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil)
 
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

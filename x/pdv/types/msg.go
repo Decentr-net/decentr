@@ -1,23 +1,27 @@
 package types
 
 import (
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // MsgCreatePDV defines a CreatePDV message
 type MsgCreatePDV struct {
-	Address  string         `json:"address"`
-	Owner    sdk.AccAddress `json:"owner"`
-	DataType PDVType        `json:"type"`
+	Timestamp time.Time      `json:"timestamp"`
+	Address   string         `json:"address"`
+	Owner     sdk.AccAddress `json:"owner"`
+	DataType  PDVType        `json:"type"`
 }
 
 // NewMsgSetName is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
+func NewMsgCreatePDV(timestamp time.Time, value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
 	return MsgCreatePDV{
-		Address:  value,
-		Owner:    owner,
-		DataType: dataType,
+		Timestamp: timestamp,
+		Address:   value,
+		Owner:     owner,
+		DataType:  dataType,
 	}
 }
 
@@ -34,6 +38,9 @@ func (msg MsgCreatePDV) ValidateBasic() error {
 	}
 	if len(msg.Address) == 0 {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Address cannot be empty")
+	}
+	if time.Now().Before(msg.Timestamp) {
+		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Timestamp can't be in the future")
 	}
 	return nil
 }

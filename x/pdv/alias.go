@@ -15,6 +15,7 @@ const (
 
 var (
 	NewKeeper     = keeper.NewKeeper
+	NewStats      = keeper.NewStats
 	NewQuerier    = keeper.NewQuerier
 	ModuleCdc     = types.ModuleCdc
 	RegisterCodec = types.RegisterCodec
@@ -22,6 +23,7 @@ var (
 
 type (
 	Keeper       = keeper.Keeper
+	Stats        = keeper.Stats
 	PDV          = types.PDV
 	MsgCreatePDV = types.MsgCreatePDV
 )

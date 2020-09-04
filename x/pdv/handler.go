@@ -38,7 +38,7 @@ func handleMsgCreatePDV(ctx sdk.Context, cerberus cerberusapi.Cerberus, keeper K
 		return nil, errors.New("pdv does not exist")
 	}
 
-	keeper.SetPDV(ctx, msg.Address, PDV{Owner: msg.Owner, Address: msg.Address, Type: msg.DataType})
+	keeper.SetPDV(ctx, msg.Address, PDV{Timestamp: msg.Timestamp, Owner: msg.Owner, Address: msg.Address, Type: msg.DataType})
 
 	return &sdk.Result{}, nil
 }
