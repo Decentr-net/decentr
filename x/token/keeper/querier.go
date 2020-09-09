@@ -36,7 +36,11 @@ func queryBalance(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	balance := keeper.GetBalance(ctx, owner).Int64()
 	out := float64(balance) / float64(types.Denominator)
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, out)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, struct {
+		Balance float64 `json:"balance" amino:"unsafe"`
+	}{
+		Balance: out,
+	})
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

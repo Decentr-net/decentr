@@ -77,12 +77,15 @@ curl -s http://localhost:1317/pvd/{address}/show
 # List account's pdv
 curl -s http://localhost:1317/pvd/{owner}/list
 
+# List account's daily stats
+curl -s http://localhost:1317/pvd/{owner}/stats
+
 # Get cerberus address
 curl -s http://localhost:1317/pvd/cerberus-addr
 
 
 curl -XPOST -s http://localhost:1317/pdv \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"pdv": {}}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"pdv": "address from cerberus"}' > unsignedTx.json
 
 # Then sign this transaction
 decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json

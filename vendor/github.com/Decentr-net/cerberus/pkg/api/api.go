@@ -14,7 +14,7 @@ import (
 //go:generate mockgen -destination=./api_mock.go -package=api -source=api.go
 
 // nolint: gochecknoglobals
-var addressRegExp = regexp.MustCompile(`[0-9a-fA-F]{76}-[0-9a-fA-F]{128}`) // public_key_hex/data_sha256_digest_hex
+var addressRegExp = regexp.MustCompile(`[0-9a-fA-F]{40}-[0-9a-fA-F]{64}`) // public_key_hex/data_sha256_digest_hex
 
 // ErrInvalidRequest is returned when request is invalid.
 var ErrInvalidRequest = errors.New("invalid request")

@@ -3,12 +3,13 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Decentr-net/decentr/x/pdv/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
+
+	"github.com/Decentr-net/decentr/x/pdv/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -27,6 +28,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			GetCmdOwner(queryRoute, cdc),
 			GetCmdShow(queryRoute, cdc),
 			GetCmdList(queryRoute, cdc),
+			GetCmdStats(queryRoute, cdc),
 			GetCmdCerberusAddr(queryRoute, cdc),
 		)...,
 	)
@@ -69,7 +71,9 @@ func GetCmdShow(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not find PDV - %s \n", key)
 				return nil
 			}
-			return cliCtx.PrintOutput(string(res))
+
+			fmt.Println(string(res))
+			return nil
 		},
 	}
 }
@@ -77,25 +81,48 @@ func GetCmdShow(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdShow queries PDV full data unencrypted data
 func GetCmdList(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "list <owner> [page] [limit]",
-		Short: "Query list of PDVs meta data. Default page = 0 and limit = 20",
+		Use:   "list <owner> [from] [limit]",
+		Short: "Query list of PDVs meta data. Default from is 0001-01-01T00:00:00Z and limit is 20",
 		Args:  cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			owner, page, limit := args[0], "", ""
+			owner, limit, from := args[0], "", ""
 			if len(args) > 1 {
-				page = args[1]
+				from = args[1]
 				if len(args) > 2 {
 					limit = args[2]
 				}
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", queryRoute, owner, page, limit), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", queryRoute, owner, from, limit), nil)
 			if err != nil {
 				fmt.Printf("could not list PDV - %s \n", err.Error())
 				return nil
 			}
-			return cliCtx.PrintOutput(string(res))
+
+			fmt.Println(string(res))
+			return nil
+		},
+	}
+}
+
+// GetCmdStats queries owner's stats
+func GetCmdStats(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "stats <owner>",
+		Short: "Query stats of PDVs owner.",
+		Args:  cobra.RangeArgs(1, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", queryRoute, args[0]), nil)
+			if err != nil {
+				fmt.Printf("could not get stats - %s \n", err.Error())
+				return nil
+			}
+
+			fmt.Println(string(res))
+			return nil
 		},
 	}
 }
