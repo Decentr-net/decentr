@@ -3,12 +3,13 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Decentr-net/decentr/x/pdv/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
+
+	"github.com/Decentr-net/decentr/x/pdv/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -70,7 +71,9 @@ func GetCmdShow(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not find PDV - %s \n", key)
 				return nil
 			}
-			return cliCtx.PrintOutput(string(res))
+
+			fmt.Println(string(res))
+			return nil
 		},
 	}
 }
@@ -96,7 +99,9 @@ func GetCmdList(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not list PDV - %s \n", err.Error())
 				return nil
 			}
-			return cliCtx.PrintOutput(string(res))
+
+			fmt.Println(string(res))
+			return nil
 		},
 	}
 }
@@ -115,7 +120,9 @@ func GetCmdStats(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not get stats - %s \n", err.Error())
 				return nil
 			}
-			return cliCtx.PrintOutput(string(res))
+
+			fmt.Println(string(res))
+			return nil
 		},
 	}
 }

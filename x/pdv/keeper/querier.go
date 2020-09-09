@@ -23,6 +23,8 @@ const (
 	QueryCerberusAddr = "cerberus-addr"
 )
 
+const isoDateFormat = "2006-01-02"
+
 // NewQuerier creates a new querier for pdv clients.
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
@@ -50,7 +52,7 @@ func queryOwner(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 		return nil, types.ErrNotFound
 	}
 
-	return pdv.Owner, nil
+	return []byte(pdv.Owner.String()), nil
 }
 
 // nolint: unparam
@@ -107,6 +109,7 @@ func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 }
 
 // nolint: unparam
+// queryStats returns map[time.Time]sdk.Int. The statistics is daily, every key is truncated by 24 hours.
 func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	owner, err := sdk.AccAddressFromBech32(path[0])
 	if err != nil {
@@ -118,7 +121,12 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, s)
+	hs := make(map[string]sdk.Int, len(s))
+	for k, v := range s {
+		hs[k.Format(isoDateFormat)] = v
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, hs)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -128,16 +136,5 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 
 // nolint: unparam
 func queryCerberusAddr(keeper Keeper) ([]byte, error) {
-	addr := struct {
-		Address string `json:"address"`
-	}{
-		Address: viper.GetString(types.FlagCerberusAddr),
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, addr)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return res, nil
+	return []byte(viper.GetString(types.FlagCerberusAddr)), nil
 }

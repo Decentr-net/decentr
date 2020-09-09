@@ -34,7 +34,7 @@ type statsItem struct {
 func NewStats(db *bolt.DB) (Stats, error) {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists([]byte(ownersBucket)); err != nil {
-			return fmt.Errorf("failed to create users bucket: %w", err)
+			return fmt.Errorf("failed to create owners bucket: %w", err)
 		}
 		return nil
 	}); err != nil {

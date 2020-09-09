@@ -105,7 +105,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(fmt.Errorf("failed to parse %s: %w", pdv.FlagCerberusAddr, err))
 	}
 
-	statsDB, err := bolt.Open(fmt.Sprintf("%s/%s", viper.GetString(cli.HomeFlag), statsDBFile), 0600, nil)
+	statsDB, err := bolt.Open(fmt.Sprintf("%s/data/%s", viper.GetString(cli.HomeFlag), statsDBFile), 0600, nil)
 	if err != nil {
 		panic(fmt.Errorf("failed to open statsDB: %w", err))
 	}

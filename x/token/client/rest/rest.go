@@ -13,16 +13,11 @@ import (
 
 // RegisterRoutes registers token-related REST handlers to a router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
-	r.HandleFunc(fmt.Sprintf("/%s/private/{address}", storeName), queryBalanceHandler(cliCtx, storeName)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/balance/{address}", storeName), queryBalanceHandler(cliCtx, storeName)).Methods(http.MethodGet)
 }
 
 func queryBalanceHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
-		if !ok {
-			return
-		}
-
 		bech32Addr := mux.Vars(r)["address"]
 
 		owner, err := sdk.AccAddressFromBech32(bech32Addr)
@@ -31,12 +26,12 @@ func queryBalanceHandler(cliCtx context.CLIContext, storeName string) http.Handl
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", storeName, owner), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", storeName, owner), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx, res)
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }
