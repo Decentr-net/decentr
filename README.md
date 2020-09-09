@@ -9,6 +9,10 @@ This assumes that you're running Linux or MacOS and have installed [Go 1.14+](ht
 
 * build and install Decentr
 * allow you to name your node
+* add seeds to your config file
+* download genesis state
+* start your node
+* use decentrdcli to check the status of your node.
 
 Build, Install, and Name your Node:
 
@@ -22,6 +26,36 @@ make install
 # Initialize decentrd in ~/.decentrd and name your node
 decentrd init yournodenamehere
 ```
+
+Add Seeds:
+
+```bash
+# Edit config.toml
+nano ~/.decentrd/config/config.toml
+```
+
+Scroll down to seeds in `config.toml`, and add some of these seeds as a comma-separated list:
+
+```
+67730ae63e46db6797243a267d7a82b9886240fa@ares.testnet.decentr.xyz:26656
+67730ae63e46db6797243a267d7a82b9886240fa@hera.testnet.decentr.xyz:26656
+67730ae63e46db6797243a267d7a82b9886240fa@hermes.testnet.decentr.xyz:26656
+67730ae63e46db6797243a267d7a82b9886240fa@poseidon.testnet.decentr.xyz:26656
+67730ae63e46db6797243a267d7a82b9886240fa@zeus.testnet.decentr.xyz:26656
+```
+
+Download Genesis, Start your Node, Check your Node Status:
+
+```bash
+# Download genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0/genesis.json
+# Start Decentrd
+decentrd start --cerberus-addr https://cerberus.testnet.decentr.xyz
+# Check your node's status with gaiacli
+decentrcli status
+```
+
+Welcome to the Decentr!
 
 ### CLI
 ```bash
@@ -49,7 +83,7 @@ decentrcli rest-server
 #### CLI
 ```bash
 # Query pdv owner by its address
-decentrcli query pdv onwer <address>
+decentrcli query pdv owner <address>
 
 # Query pdv full
 decentrcli query pdv show <address>
