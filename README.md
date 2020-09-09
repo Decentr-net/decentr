@@ -20,7 +20,7 @@ Build, Install, and Name your Node:
 # Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
 git clone -b <latest_release> https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
-cd decentrd
+cd decentr
 # Compile and install Decentr
 make install
 # Initialize decentrd in ~/.decentrd and name your node
@@ -34,14 +34,14 @@ Add Seeds:
 nano ~/.decentrd/config/config.toml
 ```
 
-Scroll down to seeds in `config.toml`, and add some of these seeds as a comma-separated list:
+Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
 
-```
-67730ae63e46db6797243a267d7a82b9886240fa@ares.testnet.decentr.xyz:26656
-67730ae63e46db6797243a267d7a82b9886240fa@hera.testnet.decentr.xyz:26656
-67730ae63e46db6797243a267d7a82b9886240fa@hermes.testnet.decentr.xyz:26656
-67730ae63e46db6797243a267d7a82b9886240fa@poseidon.testnet.decentr.xyz:26656
-67730ae63e46db6797243a267d7a82b9886240fa@zeus.testnet.decentr.xyz:26656
+```c
+f299ed065ac92a86b60ce41dae8eec8440b72695@ares.testnet.decentr.xyz:26656
+2bced2d2e95ec5ed4f46de985c64fe14b0964497@hera.testnet.decentr.xyz:26656
+866fa1961870e4babff44a571428d5d0ba6e23d5@hermes.testnet.decentr.xyz:26656
+c1f8e30795d0230fae71a36039f6cb8f5f530b03@poseidon.testnet.decentr.xyz:26656
+44c8516e144bb0df26fb95d303f351c431a6ddf0@zeus.testnet.decentr.xyz:26656
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
@@ -51,7 +51,7 @@ Download Genesis, Start your Node, Check your Node Status:
 wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0/genesis.json
 # Start Decentrd
 decentrd start --cerberus-addr https://cerberus.testnet.decentr.xyz
-# Check your node's status with gaiacli
+# Check your node's status with decentrcli
 decentrcli status
 ```
 
@@ -218,3 +218,9 @@ docker build -t decentr-local -f scripts/Dockerfile .
 ```
 cd scripts/test && docker-compose up
 ```
+
+## Follow us!
+Your data is value. Decentr makes your data payable and tradeable online.
+* [Medium](https://medium.com/@DecentrNet)
+* [Twitter](https://twitter.com/DecentrNet)
+* [Telegram](https://t.me/DecentrNet)
