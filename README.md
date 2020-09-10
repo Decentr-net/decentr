@@ -78,7 +78,7 @@ decentrcli rest-server
 # > I[2020-07-31|13:50:22.088] Starting RPC HTTP server on 127.0.0.1:1317   module=rest-server 
 ```
 
-### PDV (Personal Data Value) Data
+## PDV (Personal Data Value) Data
 
 #### CLI
 ```bash
@@ -103,19 +103,19 @@ To execute REST command decentrcli has to be run as a REST server `decentrcli re
 
 ```bash
 # Query pdv owner by its address
-curl -s http://localhost:1317/pvd/{address}/owner
+curl -s http://localhost:1317/pdv/{address}/owner
 
 # Query pdv full
-curl -s http://localhost:1317/pvd/{address}/show
+curl -s http://localhost:1317/pdv/{address}/show
 
 # List account's pdv
-curl -s http://localhost:1317/pvd/{owner}/list
+curl -s http://localhost:1317/pdv/{owner}/list
 
 # List account's daily stats
-curl -s http://localhost:1317/pvd/{owner}/stats
+curl -s http://localhost:1317/pdv/{owner}/stats
 
 # Get cerberus address
-curl -s http://localhost:1317/pvd/cerberus-addr
+curl -s http://localhost:1317/pdv/cerberus-addr
 
 
 curl -XPOST -s http://localhost:1317/pdv \ 
@@ -128,7 +128,7 @@ decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --se
 decentrcli tx broadcast signedTx.json
 ```
 
-### PDV Token
+## PDV Token
 PDV tokens are assigned to the user as soon as they reveal their personal data. 
 There are no transactions, only query to get PDV token balance of the specific user.
 
@@ -204,7 +204,7 @@ decentrcli tx broadcast signedTx.json
 ```
 
 
-### Build
+## Build
 ```bash
 make install
 ```
