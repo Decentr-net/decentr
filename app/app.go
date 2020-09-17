@@ -33,6 +33,9 @@ import (
 const appName = "decentr"
 
 const (
+	// DefaultBondDenom is the default bond denomination
+	DefaultBondDenom = "dec"
+
 	// PrefixAccount is the prefix for account keys
 	PrefixAccount = "acc"
 	// PrefixValidator is the prefix for validator keys
@@ -43,9 +46,6 @@ const (
 	PrefixPublic = "pub"
 	// PrefixOperator is the prefix for operator keys
 	PrefixOperator = "oper"
-
-	// PrefixAddress is the prefix for addresses
-	PrefixAddress = "addr"
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
 	Bech32MainPrefix = "decentr"
@@ -78,7 +78,7 @@ var (
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
-		staking.AppModuleBasic{},
+		stakingAppModuleDecorator{},
 		distr.AppModuleBasic{},
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
@@ -389,4 +389,19 @@ func GetMaccPerms() map[string][]string {
 		modAccPerms[k] = v
 	}
 	return modAccPerms
+}
+
+// stakingAppModuleDecorator is staking app module decorator to replace the default bond denom
+// "stake" with "dec".
+type stakingAppModuleDecorator struct {
+	staking.AppModule
+}
+
+func (a stakingAppModuleDecorator) DefaultGenesis() json.RawMessage {
+	params := staking.DefaultParams()
+	params.BondDenom = DefaultBondDenom
+
+	return staking.ModuleCdc.MustMarshalJSON(staking.GenesisState{
+		Params: params,
+	})
 }
