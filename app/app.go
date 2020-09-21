@@ -273,7 +273,7 @@ func NewDecentrApp(
 		pdv.NewAppModule(cerberus, app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -395,6 +395,10 @@ func GetMaccPerms() map[string][]string {
 // "stake" with "dec".
 type stakingAppModuleDecorator struct {
 	staking.AppModule
+}
+
+func NewStakingAppModuleDecorator(keeper staking.Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper) *stakingAppModuleDecorator {
+	return &stakingAppModuleDecorator{staking.NewAppModule(keeper, accountKeeper, supplyKeeper)}
 }
 
 func (a stakingAppModuleDecorator) DefaultGenesis() json.RawMessage {
