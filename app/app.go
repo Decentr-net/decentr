@@ -6,9 +6,6 @@ import (
 	"os"
 
 	"github.com/Decentr-net/cerberus/pkg/api"
-	"github.com/Decentr-net/decentr/x/pdv"
-	"github.com/Decentr-net/decentr/x/profile"
-	"github.com/Decentr-net/decentr/x/token"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -28,6 +25,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
+
+	"github.com/Decentr-net/decentr/x/pdv"
+	"github.com/Decentr-net/decentr/x/profile"
+	"github.com/Decentr-net/decentr/x/token"
 )
 
 const appName = "decentr"
@@ -308,13 +309,7 @@ func NewDecentrApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(
-		auth.NewAnteHandler(
-			app.accountKeeper,
-			app.supplyKeeper,
-			auth.DefaultSigVerificationGasConsumer,
-		),
-	)
+	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.supplyKeeper))
 
 	// initialize stores
 	app.MountKVStores(keys)
