@@ -35,7 +35,7 @@ const appName = "decentr"
 
 const (
 	// DefaultBondDenom is the default bond denomination
-	DefaultBondDenom = "dec"
+	DefaultBondDenom = "udec"
 
 	// PrefixAccount is the prefix for account keys
 	PrefixAccount = "acc"

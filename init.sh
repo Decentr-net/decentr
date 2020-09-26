@@ -12,10 +12,10 @@ decentrcli config keyring-backend test
 decentrcli keys add jack
 decentrcli keys add alice
 
-decentrd add-genesis-account $(decentrcli keys show jack -a) 1000000dec
-decentrd add-genesis-account $(decentrcli keys show alice -a) 1000000dec
+decentrd add-genesis-account $(decentrcli keys show jack -a) 1000000udec
+decentrd add-genesis-account $(decentrcli keys show alice -a) 1000000udec
 
-decentrd gentx --name jack --keyring-backend test --amount 1000000dec
+decentrd gentx --name jack --keyring-backend test --amount 1000000udec
 
 echo "Collecting genesis txs..."
 decentrd collect-gentxs
