@@ -9,8 +9,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmmath "github.com/tendermint/tendermint/libs/math"
+	tmproto "github.com/tendermint/tendermint/proto/types"
 )
 
 const (
@@ -625,6 +627,12 @@ func (vals *ValidatorSet) UpdateWithChangeSet(changes []*Validator) error {
 }
 
 // VerifyCommit verifies +2/3 of the set had signed the given commit.
+//
+// It checks all the signatures! While it's safe to exit as soon as we have
+// 2/3+ signatures, doing so would impact incentivization logic in the ABCI
+// application that depends on the LastCommitInfo sent in BeginBlock, which
+// includes which validators signed. For instance, Gaia incentivizes proposers
+// with a bonus for including more than +2/3 of the signatures.
 func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 	height int64, commit *Commit) error {
 
@@ -659,6 +667,58 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 		// It's OK that the BlockID doesn't match.  We include stray
 		// signatures (~votes for nil) to measure validator availability.
 		// }
+	}
+
+	if got, needed := talliedVotingPower, votingPowerNeeded; got <= needed {
+		return ErrNotEnoughVotingPowerSigned{Got: got, Needed: needed}
+	}
+
+	return nil
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// LIGHT CLIENT VERIFICATION METHODS
+///////////////////////////////////////////////////////////////////////////////
+
+// VerifyCommitLight verifies +2/3 of the set had signed the given commit.
+//
+// This method is primarily used by the light client and does not check all the
+// signatures.
+func (vals *ValidatorSet) VerifyCommitLight(chainID string, blockID BlockID,
+	height int64, commit *Commit) error {
+
+	if vals.Size() != len(commit.Signatures) {
+		return NewErrInvalidCommitSignatures(vals.Size(), len(commit.Signatures))
+	}
+
+	// Validate Height and BlockID.
+	if height != commit.Height {
+		return NewErrInvalidCommitHeight(height, commit.Height)
+	}
+	if !blockID.Equals(commit.BlockID) {
+		return fmt.Errorf("invalid commit -- wrong block ID: want %v, got %v",
+			blockID, commit.BlockID)
+	}
+
+	talliedVotingPower := int64(0)
+	votingPowerNeeded := vals.TotalVotingPower() * 2 / 3
+	for idx, commitSig := range commit.Signatures {
+		// No need to verify absent or nil votes.
+		if !commitSig.ForBlock() {
+			continue
+		}
+
+		// The vals and commit have a 1-to-1 correspondance.
+		// This means we don't need the validator address or to do any lookup.
+		val := vals.Validators[idx]
+
+		// Validate signature.
+		voteSignBytes := commit.VoteSignBytes(chainID, idx)
+		if !val.PubKey.VerifyBytes(voteSignBytes, commitSig.Signature) {
+			return fmt.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
+		}
+
+		talliedVotingPower += val.VotingPower
 
 		// return as soon as +2/3 of the signatures are verified
 		if talliedVotingPower > votingPowerNeeded {
@@ -666,7 +726,6 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 		}
 	}
 
-	// talliedVotingPower <= needed, thus return error
 	return ErrNotEnoughVotingPowerSigned{Got: talliedVotingPower, Needed: votingPowerNeeded}
 }
 
@@ -746,13 +805,20 @@ func (vals *ValidatorSet) VerifyFutureCommit(newSet *ValidatorSet, chainID strin
 	return nil
 }
 
-// VerifyCommitTrusting verifies that trustLevel ([1/3, 1]) of the validator
-// set signed this commit.
+// VerifyCommitLightTrusting verifies that trustLevel of the validator set signed
+// this commit.
+//
+// This method is primarily used by the light client and does not check all the
+// signatures.
+//
 // NOTE the given validators do not necessarily correspond to the validator set
 // for this commit, but there may be some intersection.
-func (vals *ValidatorSet) VerifyCommitTrusting(chainID string, blockID BlockID,
+//
+// Panics if trustLevel is invalid.
+func (vals *ValidatorSet) VerifyCommitLightTrusting(chainID string, blockID BlockID,
 	height int64, commit *Commit, trustLevel tmmath.Fraction) error {
 
+	// sanity check
 	if trustLevel.Numerator*3 < trustLevel.Denominator || // < 1/3
 		trustLevel.Numerator > trustLevel.Denominator { // > 1
 		panic(fmt.Sprintf("trustLevel must be within [1/3, 1], given %v", trustLevel))
@@ -765,24 +831,31 @@ func (vals *ValidatorSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 	var (
 		talliedVotingPower int64
 		seenVals           = make(map[int]int, len(commit.Signatures)) // validator index -> commit index
-		votingPowerNeeded  = (vals.TotalVotingPower() * trustLevel.Numerator) / trustLevel.Denominator
 	)
 
+	// Safely calculate voting power needed.
+	totalVotingPowerMulByNumerator, overflow := safeMul(vals.TotalVotingPower(), trustLevel.Numerator)
+	if overflow {
+		return errors.New("int64 overflow while calculating voting power needed. please provide smaller trustLevel numerator")
+	}
+	votingPowerNeeded := totalVotingPowerMulByNumerator / trustLevel.Denominator
+
 	for idx, commitSig := range commit.Signatures {
-		if commitSig.Absent() {
-			continue // OK, some signatures can be absent.
+		// No need to verify absent or nil votes.
+		if !commitSig.ForBlock() {
+			continue
 		}
 
 		// We don't know the validators that committed this block, so we have to
 		// check for each vote if its validator is already known.
 		valIdx, val := vals.GetByAddress(commitSig.ValidatorAddress)
 
-		if firstIndex, ok := seenVals[valIdx]; ok { // double vote
-			secondIndex := idx
-			return errors.Errorf("double vote from %v (%d and %d)", val, firstIndex, secondIndex)
-		}
-
 		if val != nil {
+			// check for double vote of validator on the same commit
+			if firstIndex, ok := seenVals[valIdx]; ok {
+				secondIndex := idx
+				return errors.Errorf("double vote from %v (%d and %d)", val, firstIndex, secondIndex)
+			}
 			seenVals[valIdx] = idx
 
 			// Validate signature.
@@ -791,14 +864,7 @@ func (vals *ValidatorSet) VerifyCommitTrusting(chainID string, blockID BlockID,
 				return errors.Errorf("wrong signature (#%d): %X", idx, commitSig.Signature)
 			}
 
-			// Good!
-			if blockID.Equals(commitSig.BlockID(commit.BlockID)) {
-				talliedVotingPower += val.VotingPower
-			}
-			// else {
-			// It's OK that the BlockID doesn't match.  We include stray
-			// signatures (~votes for nil) to measure validator availability.
-			// }
+			talliedVotingPower += val.VotingPower
 
 			if talliedVotingPower > votingPowerNeeded {
 				return nil
@@ -891,6 +957,64 @@ func (valz ValidatorsByAddress) Swap(i, j int) {
 	valz[j] = it
 }
 
+// ToProto converts ValidatorSet to protobuf
+func (vals *ValidatorSet) ToProto() (*tmproto.ValidatorSet, error) {
+	if vals == nil {
+		return nil, errors.New("nil validator set") // validator set should never be nil
+	}
+	vp := new(tmproto.ValidatorSet)
+	valsProto := make([]*tmproto.Validator, len(vals.Validators))
+	for i := 0; i < len(vals.Validators); i++ {
+		valp, err := vals.Validators[i].ToProto()
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = valp
+	}
+	vp.Validators = valsProto
+
+	valProposer, err := vals.Proposer.ToProto()
+	if err != nil {
+		return nil, fmt.Errorf("toProto: validatorSet proposer error: %w", err)
+	}
+	vp.Proposer = valProposer
+
+	vp.TotalVotingPower = vals.totalVotingPower
+
+	return vp, nil
+}
+
+// ValidatorSetFromProto sets a protobuf ValidatorSet to the given pointer.
+// It returns an error if any of the validators from the set or the proposer
+// is invalid
+func ValidatorSetFromProto(vp *tmproto.ValidatorSet) (*ValidatorSet, error) {
+	if vp == nil {
+		return nil, errors.New("nil validator set") // validator set should never be nil, bigger issues are at play if empty
+	}
+	vals := new(ValidatorSet)
+
+	valsProto := make([]*Validator, len(vp.Validators))
+	for i := 0; i < len(vp.Validators); i++ {
+		v, err := ValidatorFromProto(vp.Validators[i])
+		if err != nil {
+			return nil, err
+		}
+		valsProto[i] = v
+	}
+	vals.Validators = valsProto
+
+	p, err := ValidatorFromProto(vp.GetProposer())
+	if err != nil {
+		return nil, fmt.Errorf("fromProto: validatorSet proposer error: %w", err)
+	}
+
+	vals.Proposer = p
+
+	vals.totalVotingPower = vp.GetTotalVotingPower()
+
+	return vals, nil
+}
+
 //----------------------------------------
 // for testing
 
@@ -911,7 +1035,7 @@ func RandValidatorSet(numValidators int, votingPower int64) (*ValidatorSet, []Pr
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// safe addition/subtraction
+// safe addition/subtraction/multiplication
 
 func safeAdd(a, b int64) (int64, bool) {
 	if b > 0 && a > math.MaxInt64-b {
@@ -951,4 +1075,34 @@ func safeSubClip(a, b int64) int64 {
 		return math.MaxInt64
 	}
 	return c
+}
+
+func safeMul(a, b int64) (int64, bool) {
+	if a == 0 || b == 0 {
+		return 0, false
+	}
+
+	absOfB := b
+	if b < 0 {
+		absOfB = -b
+	}
+
+	var (
+		c        = a
+		overflow bool
+	)
+
+	for absOfB > 1 {
+		c, overflow = safeAdd(c, a)
+		if overflow {
+			return c, true
+		}
+		absOfB--
+	}
+
+	if (b < 0 && a > 0) || (b < 0 && a < 0) {
+		return -c, false
+	}
+
+	return c, false
 }

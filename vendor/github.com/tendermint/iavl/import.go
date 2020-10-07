@@ -47,7 +47,7 @@ func newImporter(tree *MutableTree, version int64) (*Importer, error) {
 	return &Importer{
 		tree:    tree,
 		version: version,
-		batch:   tree.ndb.snapshotDB.NewBatch(),
+		batch:   tree.ndb.db.NewBatch(),
 		stack:   make([]*Node, 0, 8),
 	}, nil
 }
@@ -133,7 +133,7 @@ func (i *Importer) Add(exportNode *ExportNode) error {
 			return err
 		}
 		i.batch.Close()
-		i.batch = i.tree.ndb.snapshotDB.NewBatch()
+		i.batch = i.tree.ndb.db.NewBatch()
 		i.batchSize = 0
 	}
 
@@ -157,10 +157,12 @@ func (i *Importer) Commit() error {
 		return ErrNoImport
 	}
 
-	switch {
-	case len(i.stack) == 1:
+	switch len(i.stack) {
+	case 0:
+		i.batch.Set(i.tree.ndb.rootKey(i.version), []byte{})
+	case 1:
 		i.batch.Set(i.tree.ndb.rootKey(i.version), i.stack[0].hash)
-	case len(i.stack) > 2:
+	default:
 		return errors.Errorf("invalid node structure, found stack size %v when committing",
 			len(i.stack))
 	}

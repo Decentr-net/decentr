@@ -26,8 +26,7 @@ type Node struct {
 	leftNode  *Node
 	rightNode *Node
 	height    int8
-	saved     bool // saved to memory or disk
-	persisted bool // persisted to disk
+	persisted bool
 }
 
 // NewNode returns a new node from a key, value and version.
@@ -439,11 +438,6 @@ func (node *Node) traversePost(t *ImmutableTree, ascending bool, cb func(*Node) 
 	return node.traverseInRange(t, nil, nil, ascending, false, 0, true, func(node *Node, depth uint8) bool {
 		return cb(node)
 	})
-}
-
-// nolint:unused,deadcode
-func (node *Node) traverseWithDepth(t *ImmutableTree, ascending bool, cb func(*Node, uint8) bool) bool {
-	return node.traverseInRange(t, nil, nil, ascending, false, 0, false, cb)
 }
 
 func (node *Node) traverseInRange(t *ImmutableTree, start, end []byte, ascending bool, inclusive bool, depth uint8, post bool, cb func(*Node, uint8) bool) bool {
