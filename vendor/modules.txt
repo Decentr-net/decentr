@@ -1,10 +1,12 @@
 # github.com/99designs/keyring v1.1.3
 github.com/99designs/keyring
-# github.com/ChainSafe/go-schnorrkel v0.0.0-20200102211924-4bcbc698314f
+# github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 github.com/ChainSafe/go-schnorrkel
 # github.com/Decentr-net/cerberus v0.0.1
 github.com/Decentr-net/cerberus/pkg/api
 github.com/Decentr-net/cerberus/pkg/schema
+# github.com/Workiva/go-datastructures v1.0.52
+github.com/Workiva/go-datastructures/queue
 # github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 github.com/asaskevich/govalidator
 # github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d
@@ -15,13 +17,13 @@ github.com/beorn7/perks/quantile
 github.com/bgentry/speakeasy
 # github.com/boltdb/bolt v1.3.1
 github.com/boltdb/bolt
-# github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
+# github.com/btcsuite/btcd v0.20.1-beta
 github.com/btcsuite/btcd/btcec
-# github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
+# github.com/btcsuite/btcutil v1.0.2
 github.com/btcsuite/btcutil/bech32
 # github.com/cespare/xxhash/v2 v2.1.1
 github.com/cespare/xxhash/v2
-# github.com/cosmos/cosmos-sdk v0.38.2
+# github.com/cosmos/cosmos-sdk v0.39.1
 github.com/cosmos/cosmos-sdk/baseapp
 github.com/cosmos/cosmos-sdk/client
 github.com/cosmos/cosmos-sdk/client/context
@@ -71,6 +73,7 @@ github.com/cosmos/cosmos-sdk/x/auth/keeper
 github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_34
 github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_36
 github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_38
+github.com/cosmos/cosmos-sdk/x/auth/legacy/v0_39
 github.com/cosmos/cosmos-sdk/x/auth/simulation
 github.com/cosmos/cosmos-sdk/x/auth/types
 github.com/cosmos/cosmos-sdk/x/auth/vesting
@@ -111,6 +114,7 @@ github.com/cosmos/cosmos-sdk/x/genutil/client/cli
 github.com/cosmos/cosmos-sdk/x/genutil/client/rest
 github.com/cosmos/cosmos-sdk/x/genutil/legacy/v0_36
 github.com/cosmos/cosmos-sdk/x/genutil/legacy/v0_38
+github.com/cosmos/cosmos-sdk/x/genutil/legacy/v0_39
 github.com/cosmos/cosmos-sdk/x/genutil/types
 github.com/cosmos/cosmos-sdk/x/gov
 github.com/cosmos/cosmos-sdk/x/gov/client
@@ -187,8 +191,6 @@ github.com/dvsekhvalnov/jose2go/compact
 github.com/dvsekhvalnov/jose2go/kdf
 github.com/dvsekhvalnov/jose2go/keys/ecc
 github.com/dvsekhvalnov/jose2go/padding
-# github.com/etcd-io/bbolt v1.3.3
-github.com/etcd-io/bbolt
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/go-kit/kit v0.10.0
@@ -212,7 +214,7 @@ github.com/gogo/protobuf/sortkeys
 github.com/gogo/protobuf/types
 # github.com/golang/mock v1.4.3
 github.com/golang/mock/gomock
-# github.com/golang/protobuf v1.3.4
+# github.com/golang/protobuf v1.4.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
@@ -222,13 +224,15 @@ github.com/golang/protobuf/ptypes/timestamp
 github.com/golang/snappy
 # github.com/google/btree v1.0.0
 github.com/google/btree
-# github.com/gorilla/mux v1.7.3
+# github.com/gorilla/handlers v1.4.2
+github.com/gorilla/handlers
+# github.com/gorilla/mux v1.7.4
 github.com/gorilla/mux
-# github.com/gorilla/websocket v1.4.1
+# github.com/gorilla/websocket v1.4.2
 github.com/gorilla/websocket
 # github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c
 github.com/gsterjov/go-libsecret
-# github.com/gtank/merlin v0.1.1-0.20191105220539-8318aed1a79f
+# github.com/gtank/merlin v0.1.1
 github.com/gtank/merlin
 # github.com/gtank/ristretto255 v0.1.2
 github.com/gtank/ristretto255
@@ -265,6 +269,8 @@ github.com/mattn/go-isatty
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mimoo/StrobeGo v0.0.0-20181016162300-f8f6d4d2b643
 github.com/mimoo/StrobeGo/strobe
+# github.com/minio/highwayhash v1.0.0
+github.com/minio/highwayhash
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.1.2
@@ -275,7 +281,7 @@ github.com/pelletier/go-toml
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/prometheus/client_golang v1.5.0
+# github.com/prometheus/client_golang v1.5.1
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promhttp
@@ -291,7 +297,7 @@ github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
 # github.com/rakyll/statik v0.1.6
 github.com/rakyll/statik/fs
-# github.com/rcrowley/go-metrics v0.0.0-20190706150252-9beb055b7962
+# github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 github.com/rcrowley/go-metrics
 # github.com/rs/cors v1.7.0
 github.com/rs/cors
@@ -300,13 +306,13 @@ github.com/spf13/afero
 github.com/spf13/afero/mem
 # github.com/spf13/cast v1.3.0
 github.com/spf13/cast
-# github.com/spf13/cobra v0.0.6
+# github.com/spf13/cobra v1.0.0
 github.com/spf13/cobra
 # github.com/spf13/jwalterweatherman v1.1.0
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v1.6.2
+# github.com/spf13/viper v1.6.3
 github.com/spf13/viper
 # github.com/stretchr/testify v1.6.1
 github.com/stretchr/testify/assert
@@ -334,10 +340,10 @@ github.com/tendermint/btcd/btcec
 github.com/tendermint/crypto/bcrypt
 # github.com/tendermint/go-amino v0.15.1
 github.com/tendermint/go-amino
-# github.com/tendermint/iavl v0.13.2
+# github.com/tendermint/iavl v0.14.0
 github.com/tendermint/iavl
 github.com/tendermint/iavl/common
-# github.com/tendermint/tendermint v0.33.2
+# github.com/tendermint/tendermint v0.33.7
 github.com/tendermint/tendermint/abci/client
 github.com/tendermint/tendermint/abci/example/code
 github.com/tendermint/tendermint/abci/example/counter
@@ -347,6 +353,7 @@ github.com/tendermint/tendermint/abci/types
 github.com/tendermint/tendermint/behaviour
 github.com/tendermint/tendermint/blockchain/v0
 github.com/tendermint/tendermint/blockchain/v1
+github.com/tendermint/tendermint/blockchain/v2
 github.com/tendermint/tendermint/cmd/tendermint/commands
 github.com/tendermint/tendermint/config
 github.com/tendermint/tendermint/consensus
@@ -354,6 +361,7 @@ github.com/tendermint/tendermint/consensus/types
 github.com/tendermint/tendermint/crypto
 github.com/tendermint/tendermint/crypto/armor
 github.com/tendermint/tendermint/crypto/ed25519
+github.com/tendermint/tendermint/crypto/encoding
 github.com/tendermint/tendermint/crypto/encoding/amino
 github.com/tendermint/tendermint/crypto/merkle
 github.com/tendermint/tendermint/crypto/multisig
@@ -407,14 +415,20 @@ github.com/tendermint/tendermint/p2p/conn
 github.com/tendermint/tendermint/p2p/pex
 github.com/tendermint/tendermint/p2p/upnp
 github.com/tendermint/tendermint/privval
+github.com/tendermint/tendermint/proto/crypto/keys
+github.com/tendermint/tendermint/proto/crypto/merkle
+github.com/tendermint/tendermint/proto/libs/bits
+github.com/tendermint/tendermint/proto/types
+github.com/tendermint/tendermint/proto/version
 github.com/tendermint/tendermint/proxy
 github.com/tendermint/tendermint/rpc/client
+github.com/tendermint/tendermint/rpc/client/http
 github.com/tendermint/tendermint/rpc/core
 github.com/tendermint/tendermint/rpc/core/types
 github.com/tendermint/tendermint/rpc/grpc
-github.com/tendermint/tendermint/rpc/lib/client
-github.com/tendermint/tendermint/rpc/lib/server
-github.com/tendermint/tendermint/rpc/lib/types
+github.com/tendermint/tendermint/rpc/jsonrpc/client
+github.com/tendermint/tendermint/rpc/jsonrpc/server
+github.com/tendermint/tendermint/rpc/jsonrpc/types
 github.com/tendermint/tendermint/state
 github.com/tendermint/tendermint/state/txindex
 github.com/tendermint/tendermint/state/txindex/kv
@@ -423,10 +437,12 @@ github.com/tendermint/tendermint/store
 github.com/tendermint/tendermint/types
 github.com/tendermint/tendermint/types/time
 github.com/tendermint/tendermint/version
-# github.com/tendermint/tm-db v0.5.0
+# github.com/tendermint/tm-db v0.5.1
 github.com/tendermint/tm-db
 # github.com/zondax/hid v0.9.0
 github.com/zondax/hid
+# go.etcd.io/bbolt v1.3.3
+go.etcd.io/bbolt
 # golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
@@ -507,6 +523,37 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
+# google.golang.org/protobuf v1.21.0
+google.golang.org/protobuf/encoding/prototext
+google.golang.org/protobuf/encoding/protowire
+google.golang.org/protobuf/internal/descfmt
+google.golang.org/protobuf/internal/descopts
+google.golang.org/protobuf/internal/detrand
+google.golang.org/protobuf/internal/encoding/defval
+google.golang.org/protobuf/internal/encoding/messageset
+google.golang.org/protobuf/internal/encoding/tag
+google.golang.org/protobuf/internal/encoding/text
+google.golang.org/protobuf/internal/errors
+google.golang.org/protobuf/internal/fieldnum
+google.golang.org/protobuf/internal/fieldsort
+google.golang.org/protobuf/internal/filedesc
+google.golang.org/protobuf/internal/filetype
+google.golang.org/protobuf/internal/flags
+google.golang.org/protobuf/internal/genname
+google.golang.org/protobuf/internal/impl
+google.golang.org/protobuf/internal/mapsort
+google.golang.org/protobuf/internal/pragma
+google.golang.org/protobuf/internal/set
+google.golang.org/protobuf/internal/strs
+google.golang.org/protobuf/internal/version
+google.golang.org/protobuf/proto
+google.golang.org/protobuf/reflect/protoreflect
+google.golang.org/protobuf/reflect/protoregistry
+google.golang.org/protobuf/runtime/protoiface
+google.golang.org/protobuf/runtime/protoimpl
+google.golang.org/protobuf/types/known/anypb
+google.golang.org/protobuf/types/known/durationpb
+google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/ini.v1 v1.57.0
 gopkg.in/ini.v1
 # gopkg.in/yaml.v2 v2.3.0

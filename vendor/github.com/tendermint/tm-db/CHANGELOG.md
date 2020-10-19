@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.5.1
+
+**2020-03-30**
+
+### Bug Fixes
+
+- [boltdb] [\#81](https://github.com/tendermint/tm-db/pull/81) Use correct import path go.etcd.io/bbolt
+
 ## 0.5.0
 
 **2020-03-11**
