@@ -74,7 +74,7 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 				PublicKey string `json:"pubic_key"`
 				Signature string `json:"signature"`
 			}{
-				PublicKey: hex.EncodeToString(pk.Bytes()),
+				PublicKey: hex.EncodeToString(pk.Bytes()[5:]), // cut amino codec prefix
 				Signature: hex.EncodeToString(signature),
 			})
 		},
