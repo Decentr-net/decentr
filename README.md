@@ -119,7 +119,7 @@ curl -s http://localhost:1317/pdv/cerberus-addr
 
 
 curl -XPOST -s http://localhost:1317/pdv \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"pdv": "address from cerberus"}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"address": "address from cerberus"}' > unsignedTx.json
 
 # Then sign this transaction
 decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
