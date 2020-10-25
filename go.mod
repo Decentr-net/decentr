@@ -3,7 +3,7 @@ module github.com/Decentr-net/decentr
 go 1.13
 
 require (
-	github.com/Decentr-net/cerberus v0.0.1
+	github.com/Decentr-net/cerberus v0.2.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/cosmos/cosmos-sdk v0.39.1
 	github.com/gorilla/mux v1.7.4
