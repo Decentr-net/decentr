@@ -48,7 +48,7 @@ func GetCmdOwner(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/owner/%s", queryRoute, key), nil)
 			if err != nil {
-				fmt.Printf("could not find PDV - %s \n", key)
+				fmt.Printf("could not find PDV - %s owner \n", key)
 				return nil
 			}
 			return cliCtx.PrintOutput(string(res))

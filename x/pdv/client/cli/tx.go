@@ -64,7 +64,7 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 			}
 			msg := append(pdv, []byte("/v1/pdv")...)
 
-			signature, pk, err := kb.Sign(cliCtx.GetFromName(), keys.DefaultKeyPass, msg[:])
+			signature, pk, err := kb.Sign(cliCtx.GetFromName(), keys.DefaultKeyPass, msg)
 			if err != nil {
 				return fmt.Errorf("failed to sign: %w", err)
 			}

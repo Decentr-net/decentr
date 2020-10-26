@@ -2,7 +2,6 @@ package types
 
 const (
 	Denominator int64 = 1 * 10e6
-	MaxSupply   int64 = 1 * 10e9 * Denominator
 )
 
 const (

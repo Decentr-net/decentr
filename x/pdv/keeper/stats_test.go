@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
+
 	"github.com/boltdb/bolt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -28,12 +30,12 @@ func getStats() Stats {
 		log.Fatal(err)
 	}
 
-	s, err := NewStats(db)
+	stats, err := NewStats(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return s
+	return stats
 }
 
 func TestStats_AddPDV(t *testing.T) {
@@ -93,12 +95,12 @@ func TestStats_GetStats(t *testing.T) {
 	res, err := s.GetStats(owner)
 	require.NoError(t, err)
 	require.Len(t, res, 32)
-	assert.EqualValues(t, 0, res[time.Time{}].Int64())
+	assert.EqualValues(t, 0, res[time.Time{}])
 	for i := 1; i <= 31; i++ {
 		tm := time.Date(2020, 1, i, 0, 0, 0, 0, time.UTC)
 
 		sum += i
 
-		assert.EqualValues(t, sum, res[tm].Int64())
+		assert.EqualValues(t, tokenkeeper.TokenToFloat64(sdk.NewInt(int64(sum))), res[tm])
 	}
 }

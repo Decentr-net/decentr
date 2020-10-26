@@ -38,16 +38,10 @@ type createPDVReq struct {
 
 func queryOwnerHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["address"]
+		paramAddress := mux.Vars(r)["address"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/owner/%s", types.QuerierRoute, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/owner/%s", types.QuerierRoute, paramAddress), nil)
 		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(types.ErrNotFound) {
-					rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
-					return
-				}
-			}
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -58,16 +52,10 @@ func queryOwnerHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 func queryShowHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["address"]
+		paramAddress := mux.Vars(r)["address"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/show/%s", types.QuerierRoute, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/show/%s", types.QuerierRoute, paramAddress), nil)
 		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(types.ErrNotFound) {
-					rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
-					return
-				}
-			}
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -78,10 +66,10 @@ func queryShowHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 func queryListHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["owner"]
+		paramOwner := mux.Vars(r)["owner"]
 		q := r.URL.Query()
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", types.QuerierRoute, paramType, q.Get("from"), q.Get("limit")), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", types.QuerierRoute, paramOwner, q.Get("from"), q.Get("limit")), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -99,9 +87,9 @@ func queryListHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 func queryStatsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["owner"]
+		paramOwner := mux.Vars(r)["owner"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, paramOwner), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {

@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Decentr-net/decentr/x/pdv/types"
+	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 type Stats interface {
 	AddPDV(pdv types.PDV, token sdk.Int)
 	ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]types.PDV, error)
-	GetStats(owner sdk.AccAddress) (map[time.Time]sdk.Int, error)
+	GetStats(owner sdk.AccAddress) (map[time.Time]float64, error)
 }
 
 type stats struct {
@@ -120,8 +121,8 @@ func (s *stats) ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]ty
 	return res, nil
 }
 
-func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]sdk.Int, error) {
-	res := make(map[time.Time]sdk.Int, 365)
+func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]float64, error) {
+	res := make(map[time.Time]float64, 365)
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket)).Bucket(owner)
 		if b == nil {
@@ -139,7 +140,7 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]sdk.Int, error) {
 			}
 
 			if timestamp.Truncate(time.Hour*24) != d {
-				res[d] = t
+				res[d] = tokenkeeper.TokenToFloat64(t)
 				d = timestamp.Truncate(time.Hour * 24)
 			}
 
@@ -151,7 +152,7 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]sdk.Int, error) {
 			t = t.Add(si.Token)
 		}
 
-		res[d] = t
+		res[d] = tokenkeeper.TokenToFloat64(t)
 
 		return nil
 	}); err != nil {

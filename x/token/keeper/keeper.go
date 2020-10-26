@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -25,14 +24,6 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 // AddTokens adds token to the given owner
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
-
-	total := k.GetTotalSupply(ctx)
-	maxSupply := sdk.NewIntFromUint64(uint64(types.MaxSupply))
-	if maxSupply.LT(total.Add(amount)) {
-		// Max supply is reached, stop the emission
-		amount = maxSupply.Sub(total)
-	}
-
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
 	k.IncreaseTotalSupply(ctx, amount)

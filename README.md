@@ -37,11 +37,11 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
 
 ```c
-b3ffc589bf0b0d88f78d35387d6dd61ef3489a94@ares.testnet.decentr.xyz:26656
-2d201630bf1d23c8cf751cf5022b1eecd6134f4a@hera.testnet.decentr.xyz:26656
-c70d12dfca56386d3b9664a54208a98d3c4d953c@hermes.testnet.decentr.xyz:26656
-cc2c05f1b71e77fed3d45b336abc0e5a3a622d9e@poseidon.testnet.decentr.xyz:26656
-b98937dbe104a2d9f578be5f14ac06a695ccc25d@zeus.testnet.decentr.xyz:26656
+3642cd0fdce9309ced7ec9e18647144182fe2b53@ares.testnet.decentr.xyz:26656
+81f5aa0dfb636d46ce1e895f65f7829829083389@hera.testnet.decentr.xyz:26656
+61d75cc1911c2cdc22c017f56cefe49a81fa792a@hermes.testnet.decentr.xyz:26656
+c0db454cd2c1918c54ca00df2923f61a463bee98@poseidon.testnet.decentr.xyz:26656
+c95f200d267120637e5cb340551c683b99eb9b1c@zeus.testnet.decentr.xyz:26656
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
@@ -56,6 +56,14 @@ decentrcli status
 ```
 
 Welcome to the Decentr!
+
+To start LCD (light-client daemon), a local REST server
+```bash
+decentrcli rest-server
+# > I[2020-07-31|13:50:22.088] Starting application REST service (chain-id: "testnet")... module=rest-server 
+# > I[2020-07-31|13:50:22.088] Starting RPC HTTP server on 127.0.0.1:1317   module=rest-server 
+``` 
+The server is available at `127.0.0.1:1317`
 
 ### CLI
 ```bash
@@ -72,10 +80,6 @@ decentrcli keys add megaherz
 #   "pubkey": "decentrpub1addwnpepq2yrdqzcnleu2gr69c5zkw7laa4el7mtj8ala97s648wzlvegk7vcpsh6kg",
 #   "mnemonic": "crouch goddess pass cigar conduct odor beach coil hole enroll fringe crane witness squeeze mention pioneer inmate wink concert laugh segment abuse tomorrow amused"
 #  }
-
-decentrcli rest-server
-# > I[2020-07-31|13:50:22.088] Starting application REST service (chain-id: "testnet")... module=rest-server 
-# > I[2020-07-31|13:50:22.088] Starting RPC HTTP server on 127.0.0.1:1317   module=rest-server 
 ```
 
 ## PDV (Personal Data Value) Data
@@ -99,8 +103,6 @@ decentrcli tx pdv create [pdv] --from [account]
 ```
 
 #### REST
-To execute REST command decentrcli has to be run as a REST server `decentrcli rest-server`
-
 ```bash
 # Query pdv owner by its address
 curl -s http://localhost:1317/pdv/{address}/owner
