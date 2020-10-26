@@ -48,11 +48,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 // nolint: unparam
 func queryOwner(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	pdv := keeper.GetPDV(ctx, path[0])
-	if pdv.Owner.Empty() {
-		return nil, types.ErrNotFound
-	}
-
-	return []byte(pdv.Owner.String()), nil
+	return pdv.Owner, nil
 }
 
 // nolint: unparam
@@ -121,7 +117,7 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
 	}
 
-	hs := make(map[string]sdk.Int, len(s))
+	hs := make(map[string]float64, len(s))
 	for k, v := range s {
 		hs[k.Format(isoDateFormat)] = v
 	}

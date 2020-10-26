@@ -33,8 +33,8 @@ func queryBalance(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
 	}
 
-	balance := keeper.GetBalance(ctx, owner).Int64()
-	out := float64(balance) / float64(types.Denominator)
+	balance := keeper.GetBalance(ctx, owner)
+	out := TokenToFloat64(balance)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, struct {
 		Balance float64 `json:"balance" amino:"unsafe"`
@@ -46,4 +46,9 @@ func queryBalance(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	}
 
 	return res, nil
+}
+
+// TokenToFloat64 converts token to its float64 representation
+func TokenToFloat64(token sdk.Int) float64 {
+	return float64(token.Int64()) / float64(types.Denominator)
 }

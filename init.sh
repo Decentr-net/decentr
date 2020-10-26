@@ -23,4 +23,4 @@ decentrd collect-gentxs
 echo "Validating genesis file..."
 decentrd validate-genesis
 
-decentrd start --log_level=info
+decentrd start
