@@ -46,7 +46,7 @@ func queryOwnerHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), string(res))
 	}
 }
 
