@@ -25,6 +25,12 @@ const (
 
 const isoDateFormat = "2006-01-02"
 
+// DateValue is date-value stat item
+type DateValue struct {
+	Date  string  `json:"date"`
+	Value float64 `json:"value" amino:"unsafe"`
+}
+
 // NewQuerier creates a new querier for pdv clients.
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
@@ -48,7 +54,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 // nolint: unparam
 func queryOwner(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	pdv := keeper.GetPDV(ctx, path[0])
-	return pdv.Owner, nil
+	return []byte(pdv.Owner.String()), nil
 }
 
 // nolint: unparam
@@ -117,12 +123,14 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
 	}
 
-	hs := make(map[string]float64, len(s))
+	i := 0
+	stats := make([]DateValue, len(s))
 	for k, v := range s {
-		hs[k.Format(isoDateFormat)] = v
+		stats[i] = DateValue{Date: k.Format(isoDateFormat), Value: v}
+		i++
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, hs)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, stats)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
