@@ -5,6 +5,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
+const (
+	maxPrivateProfileLength = 4 * 1024
+)
+
 // MsgSetPrivate defines a SetPrivate message
 type MsgSetPrivate struct {
 	Owner   sdk.AccAddress `json:"owner"`
@@ -33,8 +37,8 @@ func (msg MsgSetPrivate) ValidateBasic() error {
 	if len(msg.Private) == 0 {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Private cannot be empty")
 	}
-	if len(msg.Private) > 4*1024 {
-		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Private cannot be greater than 4Kb")
+	if len(msg.Private) > maxPrivateProfileLength {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Private cannot be greater than %d", maxPrivateProfileLength)
 	}
 	return nil
 }
@@ -48,6 +52,11 @@ func (msg MsgSetPrivate) GetSignBytes() []byte {
 func (msg MsgSetPrivate) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
+
+const (
+	maxFirstNameLength = 64
+	maxLastNameLength  = 64
+)
 
 // MsgSetPrivate defines a SetPrivate message
 type MsgSetPublic struct {
@@ -74,19 +83,24 @@ func (msg MsgSetPublic) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
-
 	if msg.Public.Gender == "" {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Gender cannot be empty")
 	}
-
+	if len(msg.Public.FirstName) > maxFirstNameLength {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "FirstName can not be greater than %d", maxFirstNameLength)
+	}
+	if len(msg.Public.LastName) > maxLastNameLength {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "LastName can not be greater than %d", maxFirstNameLength)
+	}
+	if !IsValidAvatar(msg.Public.Avatar) {
+		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Avatar is not valid")
+	}
 	if !IsValidGender(string(msg.Public.Gender)) {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Gender is not valid")
 	}
-
 	if !IsValidDate(msg.Public.Birthday) {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Birthday is not valid")
 	}
-
 	return nil
 }
 
