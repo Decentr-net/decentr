@@ -1,6 +1,7 @@
 package types
 
 import (
+	"net/url"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,10 +25,25 @@ func IsValidGender(str string) bool {
 	return str == string(GenderMale) || str == string(GenderFemale)
 }
 
+func IsValidAvatar(str string) bool {
+	if len(str) > 4*1024 {
+		return false
+	}
+
+	url, err := url.Parse(str)
+	if err != nil {
+		return false
+	}
+	return url.Scheme == "http" || url.Scheme == "https"
+}
+
 // Public profile data
 type Public struct {
-	Gender   Gender `json:"gender"`
-	Birthday string `json:"birthday"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Avatar    string `json:"avatar"`
+	Gender    Gender `json:"gender"`
+	Birthday  string `json:"birthday"`
 }
 
 // Profile represent an account settings storage
