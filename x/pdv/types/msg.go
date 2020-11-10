@@ -16,7 +16,7 @@ type MsgCreatePDV struct {
 	DataType  PDVType        `json:"type"`
 }
 
-// NewMsgSetName is a constructor function for MsgCreatePDV
+// NewMsgCreatePDV is a constructor function for MsgCreatePDV
 func NewMsgCreatePDV(timestamp time.Time, value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
 	return MsgCreatePDV{
 		Timestamp: timestamp,

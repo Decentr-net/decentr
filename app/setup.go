@@ -8,12 +8,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
+	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
 )
 
 func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
-		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{}),
+		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{}, community.MsgCreatePost{}),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewValidateMemoDecorator(ak),

@@ -1,0 +1,94 @@
+package rest
+
+import (
+	"net/http"
+
+	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/gofrs/uuid"
+	"github.com/gorilla/mux"
+
+	"github.com/Decentr-net/decentr/x/community/types"
+)
+
+type createPostReq struct {
+	BaseReq      rest.BaseReq `json:"base_req"`
+	Title        string       `json:"title"`
+	PreviewImage string       `json:"preview_image"`
+	Text         string       `json:"text"`
+	Tags         []string     `json:"tags"`
+}
+
+type deletePostReq struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	UUID    string       `json:"uuid"`
+}
+
+func createPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req createPostReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		owner, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewMsgCreatePost(req.Title, req.PreviewImage, req.Text, req.Tags, owner)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+	}
+}
+
+func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		bech32Addr := vars["address"]
+
+		owner, err := sdk.AccAddressFromBech32(bech32Addr)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		id, err := uuid.FromString(vars["uuid"])
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		var req rest.BaseReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		msg := types.NewMsgDeletePost(id, owner)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, req, []sdk.Msg{msg})
+	}
+}

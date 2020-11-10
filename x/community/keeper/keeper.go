@@ -3,6 +3,9 @@ package keeper
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gofrs/uuid"
+
+	"github.com/Decentr-net/decentr/x/community/types"
 )
 
 type TokenKeeper interface {
@@ -23,4 +26,26 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper) Keep
 		storeKey: storeKey,
 		tokens:   tokens,
 	}
+}
+
+// Sets the entire Profile metadata struct for a name
+func (k Keeper) CreatePost(ctx sdk.Context, owner sdk.AccAddress, p types.Post) {
+	store := ctx.KVStore(k.storeKey)
+
+	key := append(owner.Bytes(), p.UUID[:]...)
+
+	store.Set(key, k.cdc.MustMarshalBinaryBare(p))
+
+	// store to index
+}
+
+// Gets the entire Profile metadata struct for an owner
+func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) {
+	store := ctx.KVStore(k.storeKey)
+
+	key := append(owner.Bytes(), id.Bytes()...)
+
+	store.Delete(key)
+
+	// remove from index
 }
