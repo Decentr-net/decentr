@@ -59,7 +59,7 @@ func (msg MsgCreatePost) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title should be shorter then %d and not empty", maxTitleLength)
 	}
 
-	if msg.Category == InvalidCategory || msg.Category > FitnessAndExerciseCategory {
+	if msg.Category == UndefinedCategory || msg.Category > FitnessAndExerciseCategory {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 	}
 

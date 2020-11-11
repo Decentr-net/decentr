@@ -14,6 +14,7 @@ const (
 
 var (
 	NewKeeper     = keeper.NewKeeper
+	NewIndex      = keeper.NewIndex
 	NewQuerier    = keeper.NewQuerier
 	ModuleCdc     = types.ModuleCdc
 	RegisterCodec = types.RegisterCodec
@@ -21,6 +22,7 @@ var (
 
 type (
 	Keeper        = keeper.Keeper
+	Index         = keeper.Index
 	Post          = types.Post
 	MsgCreatePost = types.MsgCreatePost
 	MsgDeletePost = types.MsgDeletePost

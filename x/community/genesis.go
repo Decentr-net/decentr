@@ -28,7 +28,7 @@ func ValidateGenesis(data GenesisState) error {
 		if record.Title == "" {
 			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Empty Title", record.UUID, record.Owner)
 		}
-		if record.Category == types.InvalidCategory {
+		if record.Category == types.UndefinedCategory {
 			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Invalid Category", record.UUID, record.Owner)
 		}
 
@@ -48,7 +48,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.PostRecords {
-		keeper.CreatePost(ctx, record.Owner, record)
+		keeper.CreatePost(ctx, record)
 	}
 }
 
