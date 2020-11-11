@@ -26,6 +26,7 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
 	"github.com/Decentr-net/decentr/x/profile"
 	"github.com/Decentr-net/decentr/x/token"
@@ -88,6 +89,7 @@ var (
 		pdv.AppModule{},
 		profile.AppModule{},
 		token.AppModule{},
+		community.AppModule{},
 	)
 
 	// module account permissions

@@ -20,5 +20,8 @@ var (
 )
 
 type (
-	Keeper = keeper.Keeper
+	Keeper        = keeper.Keeper
+	Post          = types.Post
+	MsgCreatePost = types.MsgCreatePost
+	MsgDeletePost = types.MsgDeletePost
 )

@@ -6,6 +6,7 @@ require (
 	github.com/Decentr-net/cerberus v0.2.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/cosmos/cosmos-sdk v0.39.1
+	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.0.0

@@ -6,6 +6,8 @@ import (
 
 // RegisterCodec registers concrete types on codec
 func RegisterCodec(cdc *codec.Codec) {
+	cdc.RegisterConcrete(MsgCreatePost{}, "community/CreatePost", nil)
+	cdc.RegisterConcrete(MsgDeletePost{}, "community/DeletePost", nil)
 }
 
 // ModuleCdc is the codec for the module

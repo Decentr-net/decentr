@@ -82,6 +82,31 @@ decentrcli keys add megaherz
 #  }
 ```
 
+### REST transactions
+If you want to use REST to create tx, you should get it from rest service, then sign and broadcast it.
+
+#### Example
+Get tx body
+```bash
+curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": { "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
+```
+  
+unsignedTx.json will contain
+```json
+{"type":"cosmos-sdk/StdTx","value":{"msg":[{"type":"profile/SetPublic","value":{"owner":"decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw","public":{ "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }}],"fee":{"amount":[],"gas":"200000"},"signatures":null,"memo":""}}
+```
+  
+Then sign this transaction
+```bash
+decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
+```
+  
+And finally broadcast the signed transaction
+```bash
+decentrcli tx broadcast signedTx.json
+```
+
 ## PDV (Personal Data Value) Data
 
 #### CLI
@@ -119,15 +144,9 @@ curl -s http://localhost:1317/pdv/{owner}/stats
 # Get cerberus address
 curl -s http://localhost:1317/pdv/cerberus-addr
 
-
+# Create PDV
 curl -XPOST -s http://localhost:1317/pdv \ 
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"address": "address from cerberus"}' > unsignedTx.json
-
-# Then sign this transaction
-decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
-
-# And finally broadcast the signed transaction
-decentrcli tx broadcast signedTx.json
 ```
 
 ## PDV Token
@@ -184,27 +203,43 @@ curl -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a)
 # Set private profile
 curl -XPOST -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a) \ 
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"private": "YldWbllXaGxjbm9L"}' > unsignedTx.json
-# > {"type":"cosmos-sdk/StdTx","value":{"msg":[{"type":"profile/SetPrivate","value":{"owner":"decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw","private":"YldWbllXaGxjbm9L"}}],"fee":{"amount":[],"gas":"200000"},"signatures":null,"memo":""}}
-
-# Then sign this transaction
-decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
-
-# And finally broadcast the signed transaction
-decentrcli tx broadcast signedTx.json
 
 # Set public profile
 curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": { "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
-
-# > {"type":"cosmos-sdk/StdTx","value":{"msg":[{"type":"profile/SetPublic","value":{"owner":"decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw","public":{ "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }}],"fee":{"amount":[],"gas":"200000"},"signatures":null,"memo":""}}
-
-# Then sign this transaction
-decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
-
-# And finally broadcast the signed transaction
-decentrcli tx broadcast signedTx.json
 ```
 
+## Community module
+
+### Categories
+| Value | Description |
+| --- | --- |
+| 1 | World News |
+| 2 | Travel & Tourism |
+| 3 | Science & Technology |
+| 4 | Strange World |
+| 5 | Health & Culture |
+| 6 | Fitness & Exercise |
+
+#### CLI
+```bash
+# Create post
+decentrcli tx community create-post [text] --title [title] --image-preview [url to preview] --category 2 --from [account]
+
+# Delete post
+decentrcli tx community delete-post [uuid] --from [account]
+```
+
+#### REST
+```bash
+# Create post
+curl -XPOST -s http://localhost:1317/post \ 
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"text": "my new post's text", "title":"my first post title", "imagePreview": "https://localhost/mypicture.jpg", "category": 2}' > unsignedTx.json
+
+# Delete post
+curl -XPOST -s http://localhost:1317/post/{address}/{uuid}/delete \ 
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+```
 
 ## Build
 ```bash

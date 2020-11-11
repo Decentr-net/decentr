@@ -205,6 +205,8 @@ github.com/go-kit/kit/metrics/prometheus
 github.com/go-logfmt/logfmt
 # github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2
 github.com/godbus/dbus
+# github.com/gofrs/uuid v3.3.0+incompatible
+github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/jsonpb
