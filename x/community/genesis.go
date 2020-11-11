@@ -11,7 +11,7 @@ import (
 )
 
 type GenesisState struct {
-	PostRecords []Post
+	PostRecords []Post `json:"posts"`
 }
 
 func ValidateGenesis(data GenesisState) error {

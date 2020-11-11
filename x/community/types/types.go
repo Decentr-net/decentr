@@ -1,8 +1,6 @@
 package types
 
 import (
-	"time"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gofrs/uuid"
 )
@@ -10,7 +8,13 @@ import (
 type Category uint8
 
 const (
-	InvalidCategory = iota
+	InvalidCategory Category = iota
+	WorldNewsCategory
+	TravelAndTourismCategory
+	ScienceAndTechnologyCategory
+	StrangeWorldCategory
+	HealthAndCultureCategory
+	FitnessAndExerciseCategory
 )
 
 type Post struct {
@@ -22,14 +26,5 @@ type Post struct {
 	Text          string         `json:"text"`
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
-	CreatedAt     time.Time      `json:"createdAt"`
-}
-
-func ParseCategory(c string) Category {
-	switch c {
-	//case "example":
-	//	return ExampleCategory
-	}
-
-	return InvalidCategory
+	CreatedAt     int64          `json:"createdAt"`
 }

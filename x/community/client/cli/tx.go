@@ -52,7 +52,7 @@ func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 
 				title        string
 				previewImage string
-				category     string
+				category     int
 			)
 
 			if title, err = f.GetString("title"); err != nil {
@@ -63,11 +63,11 @@ func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			if category, err = f.GetString("category"); err != nil {
+			if category, err = f.GetInt("category"); err != nil {
 				return err
 			}
 
-			msg := types.NewMsgCreatePost(title, types.ParseCategory(category), previewImage, args[0], cliCtx.GetFromAddress())
+			msg := types.NewMsgCreatePost(title, types.Category(category), previewImage, args[0], cliCtx.GetFromAddress())
 			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -79,7 +79,6 @@ func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 	cmd.Flags().String("title", "", "post's title")
 	cmd.Flags().String("category", "general", "post's category")
 	cmd.Flags().String("preview-image", "", "post's preview image")
-	cmd.Flags().StringArray("tag", nil, "post's tag")
 
 	_ = cmd.MarkFlagRequired("title")
 

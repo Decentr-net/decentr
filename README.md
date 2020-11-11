@@ -211,10 +211,20 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
 
 ## Community module
 
+### Categories
+| Value | Description |
+| --- | --- |
+| 1 | World News |
+| 2 | Travel & Tourism |
+| 3 | Science & Technology |
+| 4 | Strange World |
+| 5 | Health & Culture |
+| 6 | Fitness & Exercise |
+
 #### CLI
 ```bash
 # Create post
-decentrcli tx community create-post [text] --title [title] --image-preview [url to preview] --from [account]
+decentrcli tx community create-post [text] --title [title] --image-preview [url to preview] --category 2 --from [account]
 
 # Delete post
 decentrcli tx community delete-post [uuid] --from [account]
@@ -224,7 +234,7 @@ decentrcli tx community delete-post [uuid] --from [account]
 ```bash
 # Create post
 curl -XPOST -s http://localhost:1317/post \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"text": "my new post's text", "title":"my first post title", "imagePreview": "https://localhost/mypicture.jpg"}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"text": "my new post's text", "title":"my first post title", "imagePreview": "https://localhost/mypicture.jpg", "category": 2}' > unsignedTx.json
 
 # Delete post
 curl -XPOST -s http://localhost:1317/post/{address}/{uuid}/delete \ 

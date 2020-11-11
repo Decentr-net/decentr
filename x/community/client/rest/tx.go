@@ -16,7 +16,7 @@ import (
 type createPostReq struct {
 	BaseReq      rest.BaseReq `json:"base_req"`
 	Title        string       `json:"title"`
-	Category     string       `json:"category"`
+	Category     int          `json:"category"`
 	PreviewImage string       `json:"previewImage"`
 	Text         string       `json:"text"`
 }
@@ -44,7 +44,7 @@ func createPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreatePost(req.Title, types.ParseCategory(req.Category), req.PreviewImage, req.Text, owner)
+		msg := types.NewMsgCreatePost(req.Title, types.Category(req.Category), req.PreviewImage, req.Text, owner)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
