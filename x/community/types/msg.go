@@ -20,6 +20,7 @@ type MsgCreatePost struct {
 	UUID         string         `json:"uuid"`
 	Owner        sdk.AccAddress `json:"owner"`
 	Title        string         `json:"title"`
+	Category     Category       `json:"category"`
 	PreviewImage string         `json:"previewImage"`
 	Text         string         `json:"text"`
 }
@@ -31,11 +32,12 @@ type MsgDeletePost struct {
 }
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost
-func NewMsgCreatePost(title string, previewImage string, text string, owner sdk.AccAddress) MsgCreatePost {
+func NewMsgCreatePost(title string, category Category, previewImage string, text string, owner sdk.AccAddress) MsgCreatePost {
 	return MsgCreatePost{
 		UUID:         uuid.Must(uuid.NewV1()).String(),
 		Owner:        owner,
 		Title:        title,
+		Category:     category,
 		PreviewImage: previewImage,
 		Text:         text,
 	}
@@ -55,6 +57,10 @@ func (msg MsgCreatePost) ValidateBasic() error {
 
 	if len(msg.Title) > maxTitleLength || len(msg.Title) == 0 {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title should be shorter then %d and not empty", maxTitleLength)
+	}
+
+	if msg.Category == InvalidCategory {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 	}
 
 	if !IsPreviewImageValid(msg.PreviewImage) {

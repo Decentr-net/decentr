@@ -6,6 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gofrs/uuid"
+
+	"github.com/Decentr-net/decentr/x/community/types"
 )
 
 type GenesisState struct {
@@ -26,6 +28,10 @@ func ValidateGenesis(data GenesisState) error {
 		if record.Title == "" {
 			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Empty Title", record.UUID, record.Owner)
 		}
+		if record.Category == types.InvalidCategory {
+			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Invalid Category", record.UUID, record.Owner)
+		}
+
 		if record.Text == "" {
 			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Empty Text", record.UUID, record.Owner)
 		}

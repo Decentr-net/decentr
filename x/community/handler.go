@@ -32,6 +32,7 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 		UUID:          id,
 		Owner:         msg.Owner,
 		Title:         msg.Title,
+		Category:      msg.Category,
 		PreviewImage:  msg.PreviewImage,
 		Text:          msg.Text,
 		LikesCount:    0,
