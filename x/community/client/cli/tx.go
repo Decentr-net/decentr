@@ -39,7 +39,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-post [text] [--title title] [--preview-image url] [--tag tag]",
-		Short: "create blog's post",
+		Short: "create blog post",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -89,7 +89,7 @@ func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 func GetCmdDeletePost(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete-post [uuid]",
-		Short: "delete post",
+		Short: "delete blog post",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)

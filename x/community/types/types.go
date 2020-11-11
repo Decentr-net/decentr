@@ -8,12 +8,12 @@ import (
 )
 
 type Post struct {
-	UUID         uuid.UUID      `json:"uuid"`
-	Owner        sdk.AccAddress `json:"owner"`
-	Title        string         `json:"title"`
-	PreviewImage string         `json:"preview_image"`
-	Text         string         `json:"text"`
-	Tags         []string       `json:"tags"`
-	Likes        int32          `json:"likes"`
-	CreatedAt    time.Time      `json:"created_at"`
+	UUID          uuid.UUID      `json:"uuid"`
+	Owner         sdk.AccAddress `json:"owner"`
+	Title         string         `json:"title"`
+	PreviewImage  string         `json:"previewImage"`
+	Text          string         `json:"text"`
+	LikesCount    uint32         `json:"likesCount"`
+	DislikesCount uint32         `json:"dislikesCount"`
+	CreatedAt     time.Time      `json:"createdAt"`
 }

@@ -12,8 +12,7 @@ const (
 	maxTitleLength = 150
 	maxPostLength  = 5000
 	minPostLength  = 15
-	maxTagsCount   = 5
-	maxUrlLength   = 4 * 1024
+	maxURLLength   = 4 * 1024
 )
 
 // MsgCreatePost defines a CreatePost message
@@ -21,9 +20,8 @@ type MsgCreatePost struct {
 	UUID         string         `json:"uuid"`
 	Owner        sdk.AccAddress `json:"owner"`
 	Title        string         `json:"title"`
-	PreviewImage string         `json:"preview_image"`
+	PreviewImage string         `json:"previewImage"`
 	Text         string         `json:"text"`
-	Tags         []string       `json:"tags"`
 }
 
 // MsgDeletePost defines a DeletePost message
@@ -33,14 +31,13 @@ type MsgDeletePost struct {
 }
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost
-func NewMsgCreatePost(title string, previewImage string, text string, tags []string, owner sdk.AccAddress) MsgCreatePost {
+func NewMsgCreatePost(title string, previewImage string, text string, owner sdk.AccAddress) MsgCreatePost {
 	return MsgCreatePost{
 		UUID:         uuid.Must(uuid.NewV1()).String(),
 		Owner:        owner,
 		Title:        title,
 		PreviewImage: previewImage,
 		Text:         text,
-		Tags:         tags,
 	}
 }
 
@@ -57,19 +54,15 @@ func (msg MsgCreatePost) ValidateBasic() error {
 	}
 
 	if len(msg.Title) > maxTitleLength || len(msg.Title) == 0 {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title's length should be less then %d and not zero", maxTitleLength)
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title should be shorter then %d and not empty", maxTitleLength)
 	}
 
 	if !IsPreviewImageValid(msg.PreviewImage) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "preview_image is invalid")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "previewImage is invalid")
 	}
 
 	if len(msg.Text) < minPostLength || len(msg.Text) > maxPostLength {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "post's length should be between %d and %d", minPostLength, maxPostLength)
-	}
-
-	if len(msg.Tags) > maxTagsCount {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "tags count should be less then %d", maxTagsCount)
 	}
 
 	return nil
@@ -123,7 +116,7 @@ func (msg MsgDeletePost) GetSigners() []sdk.AccAddress {
 }
 
 func IsPreviewImageValid(str string) bool {
-	if len(str) > maxUrlLength {
+	if len(str) > maxURLLength {
 		return false
 	}
 

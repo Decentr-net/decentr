@@ -28,7 +28,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper) Keep
 	}
 }
 
-// Sets the entire Profile metadata struct for a name
+// CreatePost creates new post. Keeper's key is joined owner and uuid.
 func (k Keeper) CreatePost(ctx sdk.Context, owner sdk.AccAddress, p types.Post) {
 	store := ctx.KVStore(k.storeKey)
 
@@ -39,7 +39,7 @@ func (k Keeper) CreatePost(ctx sdk.Context, owner sdk.AccAddress, p types.Post) 
 	// store to index
 }
 
-// Gets the entire Profile metadata struct for an owner
+// DeletePost deletes the post from keeper.
 func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) {
 	store := ctx.KVStore(k.storeKey)
 
@@ -48,4 +48,25 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 	store.Delete(key)
 
 	// remove from index
+}
+
+// GetPostByKey returns entire post by keeper's key.
+func (k Keeper) GetPostByKey(ctx sdk.Context, key []byte) types.Post {
+	store := ctx.KVStore(k.storeKey)
+
+	if !store.Has(key) {
+		return types.Post{}
+	}
+
+	bz := store.Get(key)
+
+	var post types.Post
+	k.cdc.MustUnmarshalBinaryBare(bz, &post)
+	return post
+}
+
+// GetPostsIterator returns an iterator over all posts
+func (k Keeper) GetPostsIterator(ctx sdk.Context, prefix string) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(prefix))
 }

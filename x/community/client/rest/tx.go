@@ -16,14 +16,12 @@ import (
 type createPostReq struct {
 	BaseReq      rest.BaseReq `json:"base_req"`
 	Title        string       `json:"title"`
-	PreviewImage string       `json:"preview_image"`
+	PreviewImage string       `json:"previewImage"`
 	Text         string       `json:"text"`
-	Tags         []string     `json:"tags"`
 }
 
 type deletePostReq struct {
 	BaseReq rest.BaseReq `json:"base_req"`
-	UUID    string       `json:"uuid"`
 }
 
 func createPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -45,7 +43,7 @@ func createPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreatePost(req.Title, req.PreviewImage, req.Text, req.Tags, owner)
+		msg := types.NewMsgCreatePost(req.Title, req.PreviewImage, req.Text, owner)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -72,13 +70,13 @@ func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		var req rest.BaseReq
+		var req deletePostReq
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
-		baseReq := req.Sanitize()
+		baseReq := req.BaseReq.Sanitize()
 		if !baseReq.ValidateBasic(w) {
 			return
 		}
@@ -89,6 +87,6 @@ func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		utils.WriteGenerateStdTxResponse(w, cliCtx, req, []sdk.Msg{msg})
+		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
 	}
 }

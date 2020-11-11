@@ -29,14 +29,14 @@ func NewHandler(cerberus cerberusapi.Cerberus, keeper Keeper) sdk.Handler {
 func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sdk.Result, error) {
 	id, _ := uuid.FromString(msg.UUID)
 	keeper.CreatePost(ctx, msg.Owner, Post{
-		UUID:         id,
-		Owner:        msg.Owner,
-		Title:        msg.Title,
-		PreviewImage: msg.PreviewImage,
-		Text:         msg.Text,
-		Tags:         msg.Tags,
-		Likes:        0,
-		CreatedAt:    time.Now(),
+		UUID:          id,
+		Owner:         msg.Owner,
+		Title:         msg.Title,
+		PreviewImage:  msg.PreviewImage,
+		Text:          msg.Text,
+		LikesCount:    0,
+		DislikesCount: 0,
+		CreatedAt:     time.Now(),
 	})
 
 	return &sdk.Result{}, nil
