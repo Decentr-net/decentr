@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gofrs/uuid"
 )
 
 // NewHandler creates an sdk.Handler for all the community type messages
-func NewHandler(cerberus cerberusapi.Cerberus, keeper Keeper) sdk.Handler {
+func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
@@ -28,7 +27,7 @@ func NewHandler(cerberus cerberusapi.Cerberus, keeper Keeper) sdk.Handler {
 
 func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sdk.Result, error) {
 	id, _ := uuid.FromString(msg.UUID)
-	keeper.CreatePost(ctx, msg.Owner, Post{
+	keeper.CreatePost(ctx, Post{
 		UUID:          id,
 		Owner:         msg.Owner,
 		Title:         msg.Title,

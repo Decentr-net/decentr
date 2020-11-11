@@ -28,12 +28,14 @@ import (
 	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 
 	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
 )
 
 const (
 	flagInvCheckPeriod = "inv-check-period"
 	statsDBFile        = "stats.db"
+	communityDBFile    = "community.db"
 )
 
 var invCheckPeriod uint
@@ -115,6 +117,16 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(fmt.Errorf("failed to create stats: %w", err))
 	}
 
+	communityDB, err := bolt.Open(fmt.Sprintf("%s/data/%s", viper.GetString(cli.HomeFlag), communityDBFile), 0600, nil)
+	if err != nil {
+		panic(fmt.Errorf("failed to open communityDB: %w", err))
+	}
+
+	communityIndex, err := community.NewIndex(communityDB)
+	if err != nil {
+		panic(fmt.Errorf("failed to create community index: %w", err))
+	}
+
 	pruningOpts, err := server.GetPruningOptionsFromFlags()
 	if err != nil {
 		panic(err)
@@ -124,6 +136,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		logger, db, traceStore, true, invCheckPeriod,
 		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
 		stats,
+		communityIndex,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -137,7 +150,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil)
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil, nil)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -145,7 +158,7 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil)
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil, nil)
 
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

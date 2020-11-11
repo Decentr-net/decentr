@@ -8,7 +8,7 @@ import (
 type Category uint8
 
 const (
-	InvalidCategory Category = iota
+	UndefinedCategory Category = iota
 	WorldNewsCategory
 	TravelAndTourismCategory
 	ScienceAndTechnologyCategory

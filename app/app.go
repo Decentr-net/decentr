@@ -131,16 +131,17 @@ type decentrApp struct {
 	subspaces map[string]params.Subspace
 
 	// keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	pdvKeeper      pdv.Keeper
-	profilesKeeper profile.Keeper
-	tokensKeeper   token.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	stakingKeeper   staking.Keeper
+	slashingKeeper  slashing.Keeper
+	distrKeeper     distr.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	pdvKeeper       pdv.Keeper
+	profilesKeeper  profile.Keeper
+	tokensKeeper    token.Keeper
+	communityKeeper community.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -154,7 +155,7 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, cerberus api.Cerberus, stats pdv.Stats, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, cerberus api.Cerberus, stats pdv.Stats, communityIdx community.Index, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -264,6 +265,13 @@ func NewDecentrApp(
 		keys[profile.StoreKey],
 	)
 
+	app.communityKeeper = community.NewKeeper(
+		app.cdc,
+		keys[community.StoreKey],
+		communityIdx,
+		app.tokensKeeper,
+	)
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
@@ -276,6 +284,7 @@ func NewDecentrApp(
 		pdv.NewAppModule(cerberus, app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
+		community.NewAppModule(app.communityKeeper),
 		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
