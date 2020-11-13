@@ -14,7 +14,8 @@ import (
 
 func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
-		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{}, community.MsgCreatePost{}, community.MsgDeletePost{}),
+		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{}, community.MsgCreatePost{},
+			community.MsgDeletePost{}, community.MsgSetLike{}),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewValidateMemoDecorator(ak),

@@ -18,6 +18,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgCreatePost(ctx, keeper, msg)
 		case MsgDeletePost:
 			return handleMsgDeletePost(ctx, keeper, msg)
+		case MsgSetLike:
+			return handleMsgSetLike(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -44,8 +46,17 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 
 func handleMsgDeletePost(ctx sdk.Context, keeper Keeper, msg MsgDeletePost) (*sdk.Result, error) {
 	id, _ := uuid.FromString(msg.UUID)
-
 	keeper.DeletePost(ctx, msg.Owner, id)
+	return &sdk.Result{}, nil
+}
 
+func handleMsgSetLike(ctx sdk.Context, keeper Keeper, msg MsgSetLike) (*sdk.Result, error) {
+	postUUID, _ := uuid.FromString(msg.PostUUID)
+	keeper.SetLike(ctx, Like{
+		PostOwner: msg.PostOwner,
+		PostUUID:  postUUID,
+		Owner:     msg.Owner,
+		Weight:    msg.Weight,
+	})
 	return &sdk.Result{}, nil
 }

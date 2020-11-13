@@ -12,11 +12,7 @@ type Token struct {
 }
 
 type GenesisState struct {
-	TokenRecords []Token `json:"token_records"`
-}
-
-func NewGenesisState(records []Token) GenesisState {
-	return GenesisState{TokenRecords: records}
+	TokenRecords []Token `json:"tokens"`
 }
 
 func ValidateGenesis(data GenesisState) error {

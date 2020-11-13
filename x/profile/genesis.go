@@ -7,11 +7,7 @@ import (
 )
 
 type GenesisState struct {
-	ProfileRecords []Profile `json:"profile_records"`
-}
-
-func NewGenesisState(records []Profile) GenesisState {
-	return GenesisState{ProfileRecords: records}
+	ProfileRecords []Profile `json:"profiles"`
 }
 
 func ValidateGenesis(data GenesisState) error {
