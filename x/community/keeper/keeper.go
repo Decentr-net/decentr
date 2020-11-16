@@ -1,11 +1,12 @@
 package keeper
 
 import (
-	"github.com/Decentr-net/decentr/x/community/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gofrs/uuid"
+
+	"github.com/Decentr-net/decentr/x/community/types"
 )
 
 type TokenKeeper interface {
@@ -35,7 +36,7 @@ func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
 
 	k.index.AddPost(p)
-	store.Set(getPostKeeperKey(p), k.cdc.MustMarshalBinaryBare(p))
+	store.Set(getPostKeeperKeyFromPost(p), k.cdc.MustMarshalBinaryBare(p))
 }
 
 // DeletePost deletes the post from keeper.
@@ -50,22 +51,36 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 // GetPostByKey returns entire post by keeper's key.
 func (k Keeper) GetPostByKey(ctx sdk.Context, key []byte) types.Post {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
-
-	if !store.Has(key) {
-		return types.Post{}
-	}
-
-	bz := store.Get(key)
-
-	var post types.Post
-	k.cdc.MustUnmarshalBinaryBare(bz, &post)
-	return post
+	return k.getPostResolver(ctx)(key)
 }
 
 // GetPostsIterator returns an iterator over all posts
 func (k Keeper) GetPostsIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), types.PostPrefix)
+}
+
+func (k Keeper) ListUserPosts(ctx sdk.Context, owner sdk.AccAddress, from uuid.UUID, limit uint32) []types.Post {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
+
+	if from == uuid.Nil {
+		// use max range
+		from = uuid.UUID{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	}
+
+	it := store.ReverseIterator(getPostKeeperKey(owner, uuid.Nil), getPostKeeperKey(owner, from))
+	defer it.Close()
+
+	out := make([]types.Post, 0)
+
+	for i := uint32(0); i < limit && it.Valid(); it.Next() {
+		var post types.Post
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), &post)
+		out = append(out, post)
+
+		i++
+	}
+
+	return out
 }
 
 func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
@@ -98,7 +113,7 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	newPost := oldPost
 	updatePostLikesCounters(&newPost, oldLike.Weight, newLike.Weight)
 
-	postsStore.Set(getPostKeeperKey(newPost), k.cdc.MustMarshalBinaryBare(newPost))
+	postsStore.Set(getPostKeeperKey(newPost.Owner, newPost.UUID), k.cdc.MustMarshalBinaryBare(newPost))
 	likesStore.Set(getLikeKeeperKey(newLike), k.cdc.MustMarshalBinaryBare(newLike))
 	k.index.UpdateLikes(oldPost, newPost)
 }
@@ -146,13 +161,33 @@ func (k Keeper) GetLikeByKey(ctx sdk.Context, key []byte) types.Like {
 	return like
 }
 
-// GetPostsIterator returns an iterator over all likes
+// GetLikesIterator returns an iterator over all likes
 func (k Keeper) GetLikesIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), types.LikePrefix)
 }
 
-func getPostKeeperKey(p types.Post) []byte {
-	return append(p.Owner.Bytes(), p.UUID[:]...)
+func getPostKeeperKeyFromPost(p types.Post) []byte {
+	return getPostKeeperKey(p.Owner, p.UUID)
+}
+
+func getPostKeeperKey(owner sdk.AccAddress, id uuid.UUID) []byte {
+	return append(owner.Bytes(), id.Bytes()[:]...)
+}
+
+func (k Keeper) getPostResolver(ctx sdk.Context) func([]byte) types.Post {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
+
+	return func(key []byte) types.Post {
+		if !store.Has(key) {
+			return types.Post{}
+		}
+
+		bz := store.Get(key)
+
+		var post types.Post
+		k.cdc.MustUnmarshalBinaryBare(bz, &post)
+		return post
+	}
 }
 
 func getLikeKeeperKey(l types.Like) []byte {

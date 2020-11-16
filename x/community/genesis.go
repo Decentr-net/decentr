@@ -75,6 +75,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var posts []Post
 	iterator := k.GetPostsIterator(ctx)
+	defer iterator.Close()
+
 	for ; iterator.Valid(); iterator.Next() {
 		post := k.GetPostByKey(ctx, iterator.Key())
 		posts = append(posts, post)
