@@ -17,6 +17,14 @@ const (
 	FitnessAndExerciseCategory
 )
 
+type LikeWeight int8
+
+const (
+	LikeWeightUp   LikeWeight = 1
+	LikeWeightZero LikeWeight = 0
+	LikeWeightDown LikeWeight = -1
+)
+
 type Post struct {
 	UUID          uuid.UUID      `json:"uuid"`
 	Owner         sdk.AccAddress `json:"owner"`
@@ -27,4 +35,11 @@ type Post struct {
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
 	CreatedAt     int64          `json:"createdAt"`
+}
+
+type Like struct {
+	Owner     sdk.AccAddress `json:"owner"`
+	PostOwner sdk.AccAddress `json:"postOwner"`
+	PostUUID  uuid.UUID      `json:"postUuid"`
+	Weight    LikeWeight     `json:"weight"`
 }

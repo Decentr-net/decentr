@@ -30,6 +30,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	communityTxCmd.AddCommand(flags.PostCommands(
 		GetCmdCreatePost(cdc),
 		GetCmdDeletePost(cdc),
+		GetCmdLikePost(cdc),
 	)...)
 
 	return communityTxCmd
@@ -109,4 +110,50 @@ func GetCmdDeletePost(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+}
+
+// GetCmdLikePost is the CLI command for sending a LikePost transaction
+func GetCmdLikePost(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "like-post [postOwner] [postUUID]",
+		Short: "like blog post",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			var (
+				f   = cmd.Flags()
+				err error
+
+				weightInt8 int8
+			)
+
+			postOwner, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse postOwner: %w", err)
+			}
+
+			postUUID, err := uuid.FromString(args[1])
+			if err != nil {
+				return fmt.Errorf("failed to parse postUUID: %w", err)
+			}
+
+			if weightInt8, err = f.GetInt8("weight"); err != nil {
+				return fmt.Errorf("failed to parse weight: %w", err)
+			}
+
+			msg := types.NewMsgSetLike(postOwner, postUUID, cliCtx.GetFromAddress(), types.LikeWeight(weightInt8))
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	cmd.Flags().Int8("weight", 1, "weight: like=1 dislike=-1 delete=0")
+
+	return cmd
 }

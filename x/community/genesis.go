@@ -11,7 +11,8 @@ import (
 )
 
 type GenesisState struct {
-	PostRecords []Post `json:"posts"`
+	PostRecords  []Post `json:"posts"`
+	LikesRecords []Like `json:"likes"`
 }
 
 func ValidateGenesis(data GenesisState) error {
@@ -31,9 +32,23 @@ func ValidateGenesis(data GenesisState) error {
 		if record.Category == types.UndefinedCategory {
 			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Invalid Category", record.UUID, record.Owner)
 		}
-
 		if record.Text == "" {
 			return fmt.Errorf("invalid PostRecord: UUID: %s, Owner: %s. Error: Empty Text", record.UUID, record.Owner)
+		}
+	}
+
+	for _, record := range data.LikesRecords {
+		if record.Owner == nil {
+			return fmt.Errorf("invalid LikeRecord: %+v. Error: Missing owner", record)
+		}
+		if record.PostOwner == nil {
+			return fmt.Errorf("invalid LikeRecord: %+v. Error: Missing postOwner", record)
+		}
+		if record.PostUUID.Version() != uuid.V1 {
+			return fmt.Errorf("invalid LikeRecord: %+v. Error: Wrong UUID version", record)
+		}
+		if record.Weight > types.LikeWeightUp || record.Weight < types.LikeWeightDown {
+			return fmt.Errorf("invalid LikeRecord: %+v. Error: Invalid weight", record)
 		}
 	}
 
@@ -42,7 +57,8 @@ func ValidateGenesis(data GenesisState) error {
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		PostRecords: []Post{},
+		PostRecords:  []Post{},
+		LikesRecords: []Like{},
 	}
 }
 
@@ -50,15 +66,26 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.PostRecords {
 		keeper.CreatePost(ctx, record)
 	}
+
+	for _, record := range data.LikesRecords {
+		keeper.SetLike(ctx, record)
+	}
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	var records []Post
-	iterator := k.GetPostsIterator(ctx, "")
+	var posts []Post
+	iterator := k.GetPostsIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		post := k.GetPostByKey(ctx, iterator.Key())
-		records = append(records, post)
+		posts = append(posts, post)
 	}
 
-	return GenesisState{PostRecords: records}
+	var likes []Like
+	iterator = k.GetLikesIterator(ctx)
+	for ; iterator.Valid(); iterator.Next() {
+		like := k.GetLikeByKey(ctx, iterator.Key())
+		likes = append(likes, like)
+	}
+
+	return GenesisState{PostRecords: posts, LikesRecords: likes}
 }

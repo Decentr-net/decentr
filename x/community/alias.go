@@ -24,6 +24,8 @@ type (
 	Keeper        = keeper.Keeper
 	Index         = keeper.Index
 	Post          = types.Post
+	Like          = types.Like
 	MsgCreatePost = types.MsgCreatePost
 	MsgDeletePost = types.MsgDeletePost
+	MsgSetLike    = types.MsgSetLike
 )

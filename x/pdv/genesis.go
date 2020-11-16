@@ -7,11 +7,7 @@ import (
 )
 
 type GenesisState struct {
-	PDVRecords []PDV `json:"pdv_records"`
-}
-
-func NewGenesisState(records []PDV) GenesisState {
-	return GenesisState{PDVRecords: records}
+	PDVRecords []PDV `json:"pdvs"`
 }
 
 func ValidateGenesis(data GenesisState) error {
@@ -40,12 +36,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var records []PDV
-	iterator := k.GetPDVsIterator(ctx, "")
+	iterator := k.GetPDVsIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		name := string(iterator.Key())
 		pdv := k.GetPDV(ctx, name)
 		records = append(records, pdv)
-
 	}
 	return GenesisState{PDVRecords: records}
 }

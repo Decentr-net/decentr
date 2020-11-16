@@ -209,7 +209,7 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": { "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
 ```
 
-## Community module
+## Community
 
 ### Categories
 | Value | Description |

@@ -31,6 +31,14 @@ type MsgDeletePost struct {
 	Owner sdk.AccAddress `json:"owner"`
 }
 
+// MsgSetLike defines a SetLike message
+type MsgSetLike struct {
+	PostOwner sdk.AccAddress `json:"postOwner"`
+	PostUUID  string         `json:"postUuid"`
+	Owner     sdk.AccAddress `json:"owner"`
+	Weight    LikeWeight     `json:"weight"`
+}
+
 // NewMsgCreatePost is a constructor function for MsgCreatePost
 func NewMsgCreatePost(title string, category Category, previewImage string, text string, owner sdk.AccAddress) MsgCreatePost {
 	return MsgCreatePost{
@@ -131,4 +139,47 @@ func IsPreviewImageValid(str string) bool {
 		return false
 	}
 	return url.Scheme == "http" || url.Scheme == "https"
+}
+
+// NewMsgSetLike is a constructor function for MsgSetLike
+func NewMsgSetLike(postOwner sdk.AccAddress, postUUID uuid.UUID, owner sdk.AccAddress, weight LikeWeight) MsgSetLike {
+	return MsgSetLike{
+		PostOwner: postOwner,
+		PostUUID:  postUUID.String(),
+		Owner:     owner,
+		Weight:    weight,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgSetLike) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgSetLike) Type() string { return "set_like" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgSetLike) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
+	}
+
+	if _, err := uuid.FromString(msg.PostUUID); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid post uuid")
+	}
+
+	if msg.Weight > LikeWeightUp || msg.Weight < LikeWeightDown {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid weight")
+	}
+
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgSetLike) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgSetLike) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
 }
