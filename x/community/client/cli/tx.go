@@ -116,7 +116,7 @@ func GetCmdDeletePost(cdc *codec.Codec) *cobra.Command {
 // GetCmdLikePost is the CLI command for sending a LikePost transaction
 func GetCmdLikePost(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "like-post [postOwner] [postUUID]",
+		Use:   "like-post [postOwner] [postUUID] [--weight weight] ",
 		Short: "like blog post",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -154,7 +154,9 @@ func GetCmdLikePost(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Int8("weight", 1, "weight: like=1 dislike=-1 delete=0")
+	cmd.Flags().Int8("weight", int8(types.LikeWeightUp),
+		fmt.Sprintf("weight: like=%d dislike=%d delete=%d",
+			types.LikeWeightUp, types.LikeWeightDown, types.LikeWeightZero))
 
 	return cmd
 }

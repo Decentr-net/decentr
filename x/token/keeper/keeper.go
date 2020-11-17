@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -26,11 +27,11 @@ func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
-	k.IncreaseTotalSupply(ctx, amount)
+	k.addTotalSupply(ctx, amount)
 }
 
-// IncreaseTotalSupply increase total supply with the given amount of tokens
-func (k Keeper) IncreaseTotalSupply(ctx sdk.Context, amount sdk.Int) {
+// addTotalSupply increase or decrease total supply with the given amount of tokens
+func (k Keeper) addTotalSupply(ctx sdk.Context, amount sdk.Int) {
 	balance := k.GetTotalSupply(ctx)
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(totalSupplyKey, k.cdc.MustMarshalBinaryBare(balance))
@@ -64,4 +65,9 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) sdk.Int {
 func (k Keeper) GetBalanceIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
+}
+
+// TokenToFloat64 converts token to its float64 representation
+func TokenToFloat64(token sdk.Int) float64 {
+	return float64(token.Int64()) / float64(types.Denominator)
 }

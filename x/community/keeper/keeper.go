@@ -9,10 +9,6 @@ import (
 	"github.com/Decentr-net/decentr/x/community/types"
 )
 
-type TokenKeeper interface {
-	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
-}
-
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
@@ -112,10 +108,20 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	// copy old post to new post
 	newPost := oldPost
 	updatePostLikesCounters(&newPost, oldLike.Weight, newLike.Weight)
+	k.updatePostPDV(ctx, &newPost)
 
 	postsStore.Set(getPostKeeperKey(newPost.Owner, newPost.UUID), k.cdc.MustMarshalBinaryBare(newPost))
 	likesStore.Set(getLikeKeeperKey(newLike), k.cdc.MustMarshalBinaryBare(newLike))
-	k.index.UpdateLikes(oldPost, newPost)
+	_ = k.index.UpdateLikes(oldPost, newPost)
+}
+
+func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post) {
+	oldPDV := post.PDV
+	newPDV := sdk.NewInt(int64(post.LikesCount - post.DislikesCount))
+	diff := newPDV.Sub(oldPDV)
+	k.tokens.AddTokens(ctx, post.Owner, diff)
+
+	post.PDV = newPDV
 }
 
 func updatePostLikesCounters(post *types.Post, oldWeight types.LikeWeight, newWeight types.LikeWeight) {

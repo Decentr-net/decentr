@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -46,9 +45,4 @@ func queryBalance(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	}
 
 	return res, nil
-}
-
-// TokenToFloat64 converts token to its float64 representation
-func TokenToFloat64(token sdk.Int) float64 {
-	return float64(token.Int64()) / float64(types.Denominator)
 }
