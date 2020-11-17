@@ -39,6 +39,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var records []Token
 	iterator := k.GetBalanceIterator(ctx)
+	defer iterator.Close()
+
 	for ; iterator.Valid(); iterator.Next() {
 		owner := iterator.Key()
 		balance := k.GetBalance(ctx, owner)

@@ -134,6 +134,10 @@ func IsPreviewImageValid(str string) bool {
 		return false
 	}
 
+	if str == "" {
+		return true
+	}
+
 	url, err := url.Parse(str)
 	if err != nil {
 		return false

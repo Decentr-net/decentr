@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"strconv"
 
 	"github.com/boltdb/bolt"
 
@@ -17,9 +16,11 @@ const (
 )
 
 type Index interface {
-	AddPost(p types.Post)
-	DeletePost(p types.Post)
-	UpdateLikes(old, new types.Post)
+	AddPost(p types.Post) error
+	DeletePost(p types.Post) error
+	UpdateLikes(old, new types.Post) error
+
+	GetPosts(index string, resolver func([]byte) types.Post, c types.Category, from []byte, limit uint32) ([]types.Post, error)
 }
 
 type index struct {
@@ -41,12 +42,12 @@ func NewIndex(db *bolt.DB) (Index, error) {
 		return nil, err
 	}
 
-	return &index{db}, nil
+	return index{db}, nil
 }
 
-func (i index) AddPost(p types.Post) {
+func (i index) AddPost(p types.Post) error {
 	if err := i.db.Update(func(tx *bolt.Tx) error {
-		key := getPostKeeperKey(p)
+		key := getPostKeeperKeyFromPost(p)
 
 		if err := addPostToIndex(tx.Bucket([]byte(createdAtIndexBucket)), p.Category, getCreateAtIndexKey(p), key); err != nil {
 			return err
@@ -58,11 +59,13 @@ func (i index) AddPost(p types.Post) {
 
 		return nil
 	}); err != nil {
-		panic(fmt.Errorf("failed to add post to index: %w", err))
+		return fmt.Errorf("failed to add post to index: %w", err)
 	}
+
+	return nil
 }
 
-func (i index) DeletePost(p types.Post) {
+func (i index) DeletePost(p types.Post) error {
 	if err := i.db.Update(func(tx *bolt.Tx) error {
 		if err := deletePostFromIndex(tx.Bucket([]byte(createdAtIndexBucket)), p.Category, getCreateAtIndexKey(p)); err != nil {
 			return err
@@ -74,24 +77,60 @@ func (i index) DeletePost(p types.Post) {
 
 		return nil
 	}); err != nil {
-		panic(fmt.Errorf("failed to delete post from index: %w", err))
+		return fmt.Errorf("failed to delete post from index: %w", err)
 	}
+
+	return nil
 }
 
-func (i index) UpdateLikes(old, new types.Post) {
+func (i index) UpdateLikes(old, new types.Post) error {
 	if err := i.db.Update(func(tx *bolt.Tx) error {
-		if err := deletePostFromIndex(tx.Bucket([]byte(popularityIndexBucket)), old.Category, getPopularityIndexKey(old)); err != nil {
+		bucket := tx.Bucket([]byte(popularityIndexBucket))
+		if err := deletePostFromIndex(bucket, old.Category, getPopularityIndexKey(old)); err != nil {
 			return err
 		}
 
-		if err := addPostToIndex(tx.Bucket([]byte(popularityIndexBucket)), new.Category, getPopularityIndexKey(new), getPostKeeperKey(new)); err != nil {
+		if err := addPostToIndex(bucket, new.Category, getPopularityIndexKey(new), getPostKeeperKeyFromPost(new)); err != nil {
 			return err
 		}
 
 		return nil
 	}); err != nil {
-		panic(fmt.Errorf("failed to update post likes to index: %w", err))
+		return fmt.Errorf("failed to update post likes to index: %w", err)
 	}
+
+	return nil
+}
+
+func (i index) GetPosts(index string, resolver func([]byte) types.Post, c types.Category, from []byte, limit uint32) ([]types.Post, error) {
+	out := make([]types.Post, 0)
+
+	if err := i.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(index)).Bucket(int64ToBytes(int64(c)))
+
+		c := b.Cursor()
+		ik, kk := c.Last()
+
+		if from != nil {
+			for ; ik != nil && bytes.Compare(from, ik) != 1; ik, kk = c.Prev() {
+			}
+		}
+
+		if ik == nil {
+			return nil
+		}
+
+		for i := uint32(0); i < limit && ik != nil; i++ {
+			out = append(out, resolver(kk))
+			ik, kk = c.Prev()
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 func createIndexBucket(name string, tx *bolt.Tx) error {
@@ -101,7 +140,7 @@ func createIndexBucket(name string, tx *bolt.Tx) error {
 	}
 
 	for i := types.UndefinedCategory; i <= types.FitnessAndExerciseCategory; i++ {
-		if _, err := b.CreateBucketIfNotExists([]byte(strconv.Itoa(int(i)))); err != nil {
+		if _, err := b.CreateBucketIfNotExists(int64ToBytes(int64(i))); err != nil {
 			return fmt.Errorf("failed to create category bucket: %w", err)
 		}
 	}
@@ -110,19 +149,19 @@ func createIndexBucket(name string, tx *bolt.Tx) error {
 }
 
 func addPostToIndex(b *bolt.Bucket, c types.Category, indexKey, keeperKey []byte) error {
-	if err := b.Bucket([]byte(strconv.Itoa(int(types.UndefinedCategory)))).Put(indexKey, keeperKey); err != nil {
+	if err := b.Bucket(int64ToBytes(int64(types.UndefinedCategory))).Put(indexKey, keeperKey); err != nil {
 		return err
 	}
 
-	return b.Bucket([]byte(strconv.Itoa(int(c)))).Put(indexKey, keeperKey)
+	return b.Bucket(int64ToBytes(int64(c))).Put(indexKey, keeperKey)
 }
 
 func deletePostFromIndex(b *bolt.Bucket, c types.Category, indexKey []byte) error {
-	if err := b.Bucket([]byte(strconv.Itoa(int(types.UndefinedCategory)))).Delete(indexKey); err != nil {
+	if err := b.Bucket(int64ToBytes(int64(types.UndefinedCategory))).Delete(indexKey); err != nil {
 		return err
 	}
 
-	return b.Bucket([]byte(strconv.Itoa(int(c)))).Delete(indexKey)
+	return b.Bucket(int64ToBytes(int64(c))).Delete(indexKey)
 }
 
 func getCreateAtIndexKey(p types.Post) []byte {
@@ -130,7 +169,7 @@ func getCreateAtIndexKey(p types.Post) []byte {
 }
 
 func getPopularityIndexKey(p types.Post) []byte {
-	diff := int64(p.LikesCount) - int64(p.DislikesCount)
+	diff := int64(p.LikesCount)
 	return append(int64ToBytes(diff), p.UUID.Bytes()...)
 }
 

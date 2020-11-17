@@ -167,7 +167,7 @@ func NewDecentrApp(
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		pdv.StoreKey, profile.StoreKey, token.StoreKey)
+		pdv.StoreKey, profile.StoreKey, token.StoreKey, community.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 

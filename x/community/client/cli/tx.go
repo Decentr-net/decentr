@@ -78,10 +78,11 @@ func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String("title", "", "post's title")
-	cmd.Flags().String("category", "general", "post's category")
+	cmd.Flags().Int("category", int(types.UndefinedCategory), "post's category")
 	cmd.Flags().String("preview-image", "", "post's preview image")
 
 	_ = cmd.MarkFlagRequired("title")
+	_ = cmd.MarkFlagRequired("category")
 
 	return cmd
 }

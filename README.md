@@ -228,6 +228,16 @@ decentrcli tx community create-post [text] --title [title] --image-preview [url 
 
 # Delete post
 decentrcli tx community delete-post [uuid] --from [account]
+
+# Get user's posts
+decentrcli query community user-posts <account> [--from uuid] [--limit int]
+
+# Get the latest posts
+decentrcli query community posts [--from-owner account --from-uuid uuid] [--category string] [--limit int]
+
+# Get the most popular posts
+decentrcli query community popular-posts [--from-owner account --from-uuid uuid] [--category string] [--limit int]
+
 ```
 
 #### REST
@@ -239,6 +249,16 @@ curl -XPOST -s http://localhost:1317/post \
 # Delete post
 curl -XPOST -s http://localhost:1317/post/{address}/{uuid}/delete \ 
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+
+# Get the latest posts
+curl -s "http://localhost:1317/community/posts?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
+
+# Get the most popular posts
+curl -s "http://localhost:1317/community/popular?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
+
+# Get user's posts
+curl -s "http://localhost:1317/community/{account}/posts?from={uuid}&limit={limit}"
+
 ```
 
 ## Build
