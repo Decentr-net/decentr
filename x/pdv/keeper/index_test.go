@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/boltdb/bolt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,7 +39,7 @@ func TestStats_AddPDV(t *testing.T) {
 
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 7}
 	pdv := types.PDV{
-		Timestamp: 1578009600,
+		Timestamp: time.Date(2020, 2, 3, 4, 5, 6, 0, time.UTC),
 		Address:   "address",
 		Owner:     owner,
 		Type:      types.PDVTypeCookie,
@@ -57,7 +58,7 @@ func TestStats_ListPDV(t *testing.T) {
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 1}
 	for j := 0; j < 20; j++ {
 		require.NoError(t, i.AddPDV(types.PDV{
-			Timestamp: 1578009600 + uint64(j),
+			Timestamp: time.Date(2020, 2, 3, 4, 5, j, 0, time.UTC),
 			Address:   "address",
 			Owner:     owner,
 			Type:      types.PDVTypeCookie,
@@ -71,10 +72,10 @@ func TestStats_ListPDV(t *testing.T) {
 	p, err = i.ListPDV(owner, nil, 10)
 	require.NoError(t, err)
 	assert.Len(t, p, 10)
-	assert.EqualValues(t, 1578009619, p[0].Timestamp)
+	assert.Equal(t, time.Date(2020, 2, 3, 4, 5, 19, 0, time.UTC), p[0].Timestamp)
 
 	p, err = i.ListPDV(owner, &p[9].Timestamp, 10)
 	require.NoError(t, err)
 	assert.Len(t, p, 10)
-	assert.EqualValues(t, 1578009609, p[0].Timestamp)
+	assert.Equal(t, time.Date(2020, 2, 3, 4, 5, 9, 0, time.UTC), p[0].Timestamp)
 }
