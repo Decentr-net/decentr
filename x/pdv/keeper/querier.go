@@ -19,17 +19,8 @@ const (
 	QueryOwner        = "owner"
 	QueryShow         = "show"
 	QueryList         = "list"
-	QueryStats        = "stats"
 	QueryCerberusAddr = "cerberus-addr"
 )
-
-const isoDateFormat = "2006-01-02"
-
-// DateValue is date-value stat item
-type DateValue struct {
-	Date  string  `json:"date"`
-	Value float64 `json:"value" amino:"unsafe"`
-}
 
 // NewQuerier creates a new querier for pdv clients.
 func NewQuerier(keeper Keeper) sdk.Querier {
@@ -41,8 +32,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryShow(ctx, path[1:], req, keeper)
 		case QueryList:
 			return queryList(ctx, path[1:], req, keeper)
-		case QueryStats:
-			return queryStats(ctx, path[1:], req, keeper)
 		case QueryCerberusAddr:
 			return queryCerberusAddr(keeper)
 		default:
@@ -97,40 +86,12 @@ func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		limit = uint(v)
 	}
 
-	p, err := keeper.stats.ListPDV(owner, from, limit)
+	p, err := keeper.index.ListPDV(owner, from, limit)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, p)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return res, nil
-}
-
-// nolint: unparam
-// queryStats returns map[time.Time]sdk.Int. The statistics is daily, every key is truncated by 24 hours.
-func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
-	owner, err := sdk.AccAddressFromBech32(path[0])
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
-	}
-
-	s, err := keeper.stats.GetStats(owner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
-	}
-
-	i := 0
-	stats := make([]DateValue, len(s))
-	for k, v := range s {
-		stats[i] = DateValue{Date: k.Format(isoDateFormat), Value: v}
-		i++
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, stats)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

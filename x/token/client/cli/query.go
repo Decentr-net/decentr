@@ -26,6 +26,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	profileQueryCmd.AddCommand(
 		flags.GetCommands(
 			GetCmdBalance(queryRoute, cdc),
+			GetCmdStats(queryRoute, cdc),
 		)...,
 	)
 
@@ -51,6 +52,27 @@ func GetCmdBalance(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 			return cliCtx.PrintOutput(string(res))
+		},
+	}
+}
+
+// GetCmdStats queries owner's stats
+func GetCmdStats(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "stats <owner>",
+		Short: "Query stats of PDVs owner.",
+		Args:  cobra.RangeArgs(1, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", queryRoute, args[0]), nil)
+			if err != nil {
+				fmt.Printf("could not get stats - %s \n", err.Error())
+				return nil
+			}
+
+			fmt.Println(string(res))
+			return nil
 		},
 	}
 }

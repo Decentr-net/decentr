@@ -28,7 +28,6 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			GetCmdOwner(queryRoute, cdc),
 			GetCmdShow(queryRoute, cdc),
 			GetCmdList(queryRoute, cdc),
-			GetCmdStats(queryRoute, cdc),
 			GetCmdCerberusAddr(queryRoute, cdc),
 		)...,
 	)
@@ -97,27 +96,6 @@ func GetCmdList(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", queryRoute, owner, from, limit), nil)
 			if err != nil {
 				fmt.Printf("could not list PDV - %s \n", err.Error())
-				return nil
-			}
-
-			fmt.Println(string(res))
-			return nil
-		},
-	}
-}
-
-// GetCmdStats queries owner's stats
-func GetCmdStats(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "stats <owner>",
-		Short: "Query stats of PDVs owner.",
-		Args:  cobra.RangeArgs(1, 3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", queryRoute, args[0]), nil)
-			if err != nil {
-				fmt.Printf("could not get stats - %s \n", err.Error())
 				return nil
 			}
 

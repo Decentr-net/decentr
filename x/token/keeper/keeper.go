@@ -1,7 +1,12 @@
 package keeper
 
 import (
+	"time"
+
 	"github.com/Decentr-net/decentr/x/token/types"
+
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -12,22 +17,27 @@ var totalSupplyKey = []byte("totalSupply")
 type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
+	stats    Stats
 }
 
 // NewKeeper creates new instances of the token Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, stats Stats) Keeper {
 	return Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
+		stats:    stats,
 	}
 }
 
 // AddTokens adds token to the given owner
-func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
+func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp time.Time, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
 	k.addTotalSupply(ctx, amount)
+	if err := k.stats.AddToken(owner, timestamp, amount); err != nil {
+		panic(fmt.Errorf("failed to add tokens: %w", err))
+	}
 }
 
 // addTotalSupply increase or decrease total supply with the given amount of tokens

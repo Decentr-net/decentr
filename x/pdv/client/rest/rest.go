@@ -25,7 +25,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/owner", storeName), queryOwnerHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/show", storeName), queryShowHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{owner}/list", storeName), queryListHandler(cliCtx)).Methods(http.MethodGet)
-	r.HandleFunc(fmt.Sprintf("/%s/{owner}/stats", storeName), queryStatsHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s", storeName), createPDVHandler(cliCtx)).Methods(http.MethodPost)
 
 	r.HandleFunc(fmt.Sprintf("/%s/cerberus-addr", storeName), cerberusAddrHandler(cliCtx)).Methods(http.MethodGet)
@@ -70,26 +69,6 @@ func queryListHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		q := r.URL.Query()
 
 		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", types.QuerierRoute, paramOwner, q.Get("from"), q.Get("limit")), nil)
-		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(sdkerrors.ErrInvalidRequest) {
-					rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-					return
-				}
-			}
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
-	}
-}
-
-func queryStatsHandler(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		paramOwner := mux.Vars(r)["owner"]
-
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, paramOwner), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
