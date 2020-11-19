@@ -11,6 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Decentr-net/decentr/x/community/types"
+	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 )
 
 const (
@@ -29,6 +30,7 @@ type Post struct {
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
 	CreatedAt     int64          `json:"createdAt"`
+	PDV           float64        `json:"pdv"`
 }
 
 // NewQuerier creates a new querier for community clients.
@@ -152,6 +154,7 @@ func postsToQuerierPosts(pp []types.Post) []Post {
 			LikesCount:    v.LikesCount,
 			DislikesCount: v.DislikesCount,
 			CreatedAt:     v.CreatedAt,
+			PDV:           tokenkeeper.TokenToFloat64(v.PDV),
 		}
 	}
 

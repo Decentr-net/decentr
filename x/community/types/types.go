@@ -34,6 +34,7 @@ type Post struct {
 	Text          string         `json:"text"`
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
+	PDV           sdk.Int        `json:"pdv"`
 	CreatedAt     int64          `json:"createdAt"`
 }
 

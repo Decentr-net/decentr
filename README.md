@@ -221,6 +221,13 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
 | 5 | Health & Culture |
 | 6 | Fitness & Exercise |
 
+### Likes weight
+|Value | Description |
+| --- | --- |
+| 1 | Like |
+| 0 | Delete |
+| -1 | Dislike |
+
 #### CLI
 ```bash
 # Create post
@@ -228,6 +235,9 @@ decentrcli tx community create-post [text] --title [title] --image-preview [url 
 
 # Delete post
 decentrcli tx community delete-post [uuid] --from [account]
+
+# Like post
+decentrcli tx community like-post like-post [postOwner] [postUUID] --weight [weight]
 
 # Get user's posts
 decentrcli query community user-posts <account> [--from uuid] [--limit int]
@@ -237,28 +247,30 @@ decentrcli query community posts [--from-owner account --from-uuid uuid] [--cate
 
 # Get the most popular posts
 decentrcli query community popular-posts [--from-owner account --from-uuid uuid] [--category string] [--limit int]
-
 ```
 
 #### REST
 ```bash
-# Create post
-curl -XPOST -s http://localhost:1317/post \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"text": "my new post's text", "title":"my first post title", "imagePreview": "https://localhost/mypicture.jpg", "category": 2}' > unsignedTx.json
+# Create post, note category is a quoted number.
+curl -XPOST -s http://localhost:1317/community/posts \
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"text": "my brand new text", "title":"my first post title", "imagePreview": "https://localhost/mypicture.jpg", "category": "2"}' > unsignedTx.json
 
 # Delete post
-curl -XPOST -s http://localhost:1317/post/{address}/{uuid}/delete \ 
+curl -XPOST -s http://localhost:1317/community/posts/{address}/{uuid}/delete \
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+
+# Like post
+curl -XPOST -s http://localhost:1317/community/posts/owner/{postOwner}/{postUUID}/like\
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
 
 # Get the latest posts
 curl -s "http://localhost:1317/community/posts?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
 
 # Get the most popular posts
-curl -s "http://localhost:1317/community/popular?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
+curl -s "http://localhost:1317/community/posts/popular?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
 
 # Get user's posts
-curl -s "http://localhost:1317/community/{account}/posts?from={uuid}&limit={limit}"
-
+curl -s "http://localhost:1317/community/owner/{account}/posts?from={uuid}&limit={limit}"
 ```
 
 ## Build

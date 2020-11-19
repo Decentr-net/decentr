@@ -14,13 +14,13 @@ import (
 
 // RegisterRoutes registers community-related REST handlers to a router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
-	r.HandleFunc(fmt.Sprintf("/%s", storeName), createPostHandler(cliCtx)).Methods(http.MethodPost)
-	r.HandleFunc(fmt.Sprintf("/%s/owner/{postOwner}/{postUUID}/like", storeName), likePostHandler(cliCtx)).Methods(http.MethodPost)
-	r.HandleFunc(fmt.Sprintf("/%s/{owner}/{uuid}/delete", storeName), deletePostHandler(cliCtx)).Methods(http.MethodPost)
+	r.HandleFunc(fmt.Sprintf("/%s/posts", storeName), createPostHandler(cliCtx)).Methods(http.MethodPost)
+	r.HandleFunc(fmt.Sprintf("/%s/posts/owner/{postOwner}/{postUUID}/like", storeName), likePostHandler(cliCtx)).Methods(http.MethodPost)
+	r.HandleFunc(fmt.Sprintf("/%s/posts/{owner}/{uuid}/delete", storeName), deletePostHandler(cliCtx)).Methods(http.MethodPost)
 
-	r.HandleFunc(fmt.Sprintf("/%s", storeName), queryListPostsHandler(cliCtx)).Methods(http.MethodGet)
-	r.HandleFunc(fmt.Sprintf("/%s/popular", storeName), queryListPopularPostsHandler(cliCtx)).Methods(http.MethodGet)
-	r.HandleFunc(fmt.Sprintf("/%s/{owner}/posts", storeName), queryListUserPostsHandler(cliCtx)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/posts", storeName), queryListPostsHandler(cliCtx)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/posts/popular", storeName), queryListPopularPostsHandler(cliCtx)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/owner/{owner}/posts", storeName), queryListUserPostsHandler(cliCtx)).Methods(http.MethodGet)
 }
 
 func queryListUserPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
