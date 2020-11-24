@@ -1,11 +1,15 @@
 package keeper
 
 import (
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 // query endpoints supported by the token Querier
@@ -44,7 +48,7 @@ func queryBalance(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	}
 
 	balance := keeper.GetBalance(ctx, owner)
-	out := TokenToFloat64(balance)
+	out := utils.TokenToFloat64(balance)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, struct {
 		Balance float64 `json:"balance" amino:"unsafe"`
@@ -74,7 +78,7 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 	i := 0
 	stats := make([]DateValue, len(s))
 	for k, v := range s {
-		stats[i] = DateValue{Date: k.Format(isoDateFormat), Value: v}
+		stats[i] = DateValue{Date: time.Unix(int64(k), 0).Format(isoDateFormat), Value: v}
 		i++
 	}
 

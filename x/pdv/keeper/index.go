@@ -3,12 +3,12 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/boltdb/bolt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 
 type Index interface {
 	AddPDV(pdv types.PDV) error
-	ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]types.PDV, error)
+	ListPDV(owner sdk.AccAddress, from *uint64, limit uint) ([]types.PDV, error)
 }
 
 type index struct {
@@ -58,7 +58,7 @@ func (s *index) AddPDV(pdv types.PDV) error {
 			return fmt.Errorf("failed to marshal index item: %w", err)
 		}
 
-		if err := b.Put([]byte(pdv.Timestamp.Format(time.RFC3339)), v); err != nil {
+		if err := b.Put(utils.Uint64ToBytes(pdv.Timestamp), v); err != nil {
 			return fmt.Errorf("failed to put index item: %w", err)
 		}
 
@@ -70,7 +70,7 @@ func (s *index) AddPDV(pdv types.PDV) error {
 	return nil
 }
 
-func (s *index) ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]types.PDV, error) {
+func (s *index) ListPDV(owner sdk.AccAddress, from *uint64, limit uint) ([]types.PDV, error) {
 	res := make([]types.PDV, 0, limit)
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket)).Bucket(owner)
@@ -81,7 +81,7 @@ func (s *index) ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]ty
 		c := b.Cursor()
 		k, v := c.Last()
 		if from != nil {
-			k, _ = c.Seek([]byte(from.Format(time.RFC3339)))
+			k, _ = c.Seek(utils.Uint64ToBytes(*from))
 			if k == nil {
 				k, v = c.Last()
 			} else {
@@ -92,18 +92,13 @@ func (s *index) ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]ty
 		var i uint
 
 		for ; k != nil && i < limit; k, v = c.Prev() {
-			timestamp, err := time.Parse(time.RFC3339, string(k))
-			if err != nil {
-				return fmt.Errorf("invalid index item key: %s", k)
-			}
-
 			var si statsItem
 			if err := json.Unmarshal(v, &si); err != nil {
 				return fmt.Errorf("failed to unmarshal index item: %s", k)
 			}
 
 			res = append(res, types.PDV{
-				Timestamp: timestamp,
+				Timestamp: utils.BytesToUint64(k),
 				Address:   si.Address,
 				Owner:     owner,
 				Type:      si.Type,

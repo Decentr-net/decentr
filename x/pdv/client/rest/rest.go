@@ -125,7 +125,7 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreatePDV(time.Now().UTC(), req.Address, types.PDVTypeCookie, owner)
+		msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), req.Address, types.PDVTypeCookie, owner)
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx.WithHeight(height), req.BaseReq, []sdk.Msg{msg})
 	}

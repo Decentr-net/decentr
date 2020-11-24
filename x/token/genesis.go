@@ -2,7 +2,6 @@ package token
 
 import (
 	"fmt"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -33,8 +32,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.TokenRecords {
-		// what we should do with index?
-		keeper.AddTokens(ctx, record.Owner, time.Now(), record.Balance)
+		keeper.AddTokens(ctx, record.Owner, 0, record.Balance)
 	}
 }
 

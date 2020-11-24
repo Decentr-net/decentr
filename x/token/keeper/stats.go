@@ -8,13 +8,15 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 const ownersBucket = "owners"
 
 type Stats interface {
-	AddToken(owner sdk.AccAddress, timestamp time.Time, token sdk.Int) error
-	GetStats(owner sdk.AccAddress) (map[time.Time]float64, error)
+	AddToken(owner sdk.AccAddress, timestamp uint64, token sdk.Int) error
+	GetStats(owner sdk.AccAddress) (map[uint64]float64, error)
 }
 
 type stats struct {
@@ -38,7 +40,7 @@ func NewStats(db *bolt.DB) (Stats, error) {
 	}, nil
 }
 
-func (s *stats) AddToken(owner sdk.AccAddress, timestamp time.Time, amount sdk.Int) error {
+func (s *stats) AddToken(owner sdk.AccAddress, timestamp uint64, amount sdk.Int) error {
 	if err := s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket))
 		b, err := b.CreateBucketIfNotExists(owner)
@@ -50,7 +52,7 @@ func (s *stats) AddToken(owner sdk.AccAddress, timestamp time.Time, amount sdk.I
 		if err != nil {
 			return fmt.Errorf("failed to marshall amount: %w", err)
 		}
-		if err := b.Put([]byte(timestamp.Format(time.RFC3339)), v); err != nil {
+		if err := b.Put(utils.Uint64ToBytes(timestamp), v); err != nil {
 			return fmt.Errorf("failed to put stats item: %w", err)
 		}
 
@@ -62,8 +64,8 @@ func (s *stats) AddToken(owner sdk.AccAddress, timestamp time.Time, amount sdk.I
 	return nil
 }
 
-func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]float64, error) {
-	res := make(map[time.Time]float64, 365)
+func (s *stats) GetStats(owner sdk.AccAddress) (map[uint64]float64, error) {
+	res := make(map[uint64]float64, 365)
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket)).Bucket(owner)
 		if b == nil {
@@ -71,18 +73,17 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]float64, error) {
 		}
 
 		c := b.Cursor()
-		d := time.Time{}
+		d := uint64(0)
 		t := sdk.NewInt(0)
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			timestamp, err := time.Parse(time.RFC3339, string(k))
-			if err != nil {
-				return fmt.Errorf("invalid stats item key: %s", k)
-			}
+			timestamp := utils.BytesToUint64(k)
 
-			if timestamp.Truncate(time.Hour*24) != d {
-				res[d] = TokenToFloat64(t)
-				d = timestamp.Truncate(time.Hour * 24)
+			truncated := truncateUnixTime(timestamp, time.Hour*24)
+
+			if truncated != d {
+				res[d] = utils.TokenToFloat64(t)
+				d = truncated
 			}
 
 			var amount sdk.Int
@@ -93,7 +94,7 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]float64, error) {
 			t = t.Add(amount)
 		}
 
-		res[d] = TokenToFloat64(t)
+		res[d] = utils.TokenToFloat64(t)
 
 		return nil
 	}); err != nil {
@@ -101,4 +102,8 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[time.Time]float64, error) {
 	}
 
 	return res, nil
+}
+
+func truncateUnixTime(t uint64, d time.Duration) uint64 {
+	return t - t%(uint64)(d/time.Second)
 }

@@ -1,12 +1,6 @@
 package keeper
 
 import (
-	"time"
-
-	"github.com/Decentr-net/decentr/x/token/types"
-
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -30,13 +24,13 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, stats Stats) Keeper {
 }
 
 // AddTokens adds token to the given owner
-func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp time.Time, amount sdk.Int) {
+func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp uint64, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
 	k.addTotalSupply(ctx, amount)
 	if err := k.stats.AddToken(owner, timestamp, amount); err != nil {
-		panic(fmt.Errorf("failed to add tokens: %w", err))
+		ctx.Logger().Error("failed to add tokens to stats", "err", err.Error())
 	}
 }
 
@@ -75,9 +69,4 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) sdk.Int {
 func (k Keeper) GetBalanceIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
-}
-
-// TokenToFloat64 converts token to its float64 representation
-func TokenToFloat64(token sdk.Int) float64 {
-	return float64(token.Int64()) / float64(types.Denominator)
 }

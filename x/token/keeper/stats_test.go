@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Decentr-net/decentr/x/utils"
 	"github.com/boltdb/bolt"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ func getStats() Stats {
 		log.Fatal(err)
 	}
 
-	stats, err := NewStats(codec.New(), db)
+	stats, err := NewStats(db)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,17 +37,17 @@ func TestStats_AddToken(t *testing.T) {
 	s := getStats()
 
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 7}
-	timestamp := time.Date(time.Now().Year(), 2, 3, 4, 5, 6, 0, time.UTC)
+	timestamp := uint64(time.Date(time.Now().Year(), 1, 3, 4, 5, 0, 0, time.UTC).Unix())
 
 	require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(1)))
 
 	stats, err := s.GetStats(owner)
 	require.NoError(t, err)
 	for i, v := range stats {
-		if i.Format(isoDateFormat) == timestamp.Format(isoDateFormat) {
+		if i == truncateUnixTime(timestamp, time.Hour*24) {
 			assert.EqualValues(t, 0.0000001, v)
 		} else {
-			assert.EqualValues(t, 0, v)
+			assert.EqualValues(t, float64(0), v)
 		}
 	}
 }
@@ -56,7 +56,7 @@ func TestStats_GetStats(t *testing.T) {
 	s := getStats()
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 200}
 	for i := 1; i <= 31; i++ {
-		timestamp := time.Date(time.Now().Year(), 1, i, 4, 5, 0, 0, time.UTC)
+		timestamp := uint64(time.Date(time.Now().Year(), 1, i, 4, 5, 0, 0, time.UTC).Unix())
 		require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(uint64(i))))
 	}
 
@@ -64,12 +64,12 @@ func TestStats_GetStats(t *testing.T) {
 	res, err := s.GetStats(owner)
 	require.NoError(t, err)
 	require.Len(t, res, 32)
-	assert.EqualValues(t, 0, res[time.Time{}])
+	assert.EqualValues(t, 0, res[0])
 	for i := 1; i <= 31; i++ {
-		tm := time.Date(2020, 1, i, 0, 0, 0, 0, time.UTC)
+		tm := uint64(time.Date(2020, 1, i, 0, 0, 0, 0, time.UTC).Unix())
 
 		sum += i
 
-		assert.EqualValues(t, TokenToFloat64(sdk.NewInt(int64(sum))), res[tm])
+		assert.EqualValues(t, utils.TokenToFloat64(sdk.NewInt(int64(sum))), res[tm])
 	}
 }

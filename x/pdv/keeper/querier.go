@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/viper"
@@ -61,7 +60,7 @@ func queryShow(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 // nolint: unparam
 func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	var (
-		from  *time.Time
+		from  *uint64
 		limit = uint(20)
 	)
 
@@ -71,9 +70,9 @@ func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	}
 
 	if path[1] != "" {
-		v, err := time.Parse(time.RFC3339, path[1])
+		v, err := strconv.ParseUint(path[1], 10, 64)
 		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid page")
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid from")
 		}
 		from = &v
 	}

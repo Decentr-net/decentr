@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"time"
-
 	"github.com/Decentr-net/decentr/x/pdv/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -10,7 +8,7 @@ import (
 )
 
 type TokenKeeper interface {
-	AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp time.Time, amount sdk.Int)
+	AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp uint64, amount sdk.Int)
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -46,7 +44,7 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 	}
 
 	if err := k.index.AddPDV(pdv); err != nil {
-		panic(err)
+		ctx.Logger().Error("failed to add pdv to index", "err", err.Error())
 	}
 
 	k.tokens.AddTokens(ctx, pdv.Owner, pdv.Timestamp, t)
