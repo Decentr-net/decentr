@@ -3,7 +3,6 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/boltdb/bolt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +17,7 @@ const (
 
 type Index interface {
 	AddPDV(pdv types.PDV) error
-	ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]types.PDV, error)
+	ListPDV(owner sdk.AccAddress, from *uint64, limit uint) ([]types.PDV, error)
 }
 
 type index struct {
@@ -71,7 +70,7 @@ func (s *index) AddPDV(pdv types.PDV) error {
 	return nil
 }
 
-func (s *index) ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]types.PDV, error) {
+func (s *index) ListPDV(owner sdk.AccAddress, from *uint64, limit uint) ([]types.PDV, error) {
 	res := make([]types.PDV, 0, limit)
 	if err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket)).Bucket(owner)
@@ -82,7 +81,7 @@ func (s *index) ListPDV(owner sdk.AccAddress, from *time.Time, limit uint) ([]ty
 		c := b.Cursor()
 		k, v := c.Last()
 		if from != nil {
-			k, _ = c.Seek([]byte(from.Format(time.RFC3339)))
+			k, _ = c.Seek(utils.Uint64ToBytes(*from))
 			if k == nil {
 				k, v = c.Last()
 			} else {
