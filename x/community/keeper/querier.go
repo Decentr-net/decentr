@@ -20,6 +20,8 @@ const (
 	QueryUser    = "user"
 )
 
+const defaultLimit = 20
+
 type Post struct {
 	UUID          string         `json:"uuid"`
 	Owner         sdk.AccAddress `json:"owner"`
@@ -38,9 +40,9 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case QueryPopular:
-			return getIndexPostQuerier(popularityIndexBucket, getPopularityIndexKey)(ctx, path[1:], req, keeper)
+			return getPopularPosts(ctx, path[1:], req, keeper)
 		case QueryPosts:
-			return getIndexPostQuerier(createdAtIndexBucket, getCreateAtIndexKey)(ctx, path[1:], req, keeper)
+			return getRecentPosts(ctx, path[1:], req, keeper)
 		case QueryUser:
 			return queryUserPosts(ctx, path[1:], req, keeper)
 		default:
@@ -52,29 +54,9 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 // nolint: unparam
 // queryPopular returns posts.
 func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
-	var (
-		from  uuid.UUID
-		limit = uint32(20)
-	)
-
-	owner, err := sdk.AccAddressFromBech32(path[0])
+	owner, from, limit, err := extractCommonGetParameters(path)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
-	}
-
-	if path[1] != "" {
-		from, err = uuid.FromString(path[1])
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid from")
-		}
-	}
-
-	if path[2] != "" {
-		v, err := strconv.Atoi(path[2])
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid limit")
-		}
-		limit = uint32(v)
+		return nil, err
 	}
 
 	p := keeper.ListUserPosts(ctx, owner, from, limit)
@@ -87,57 +69,82 @@ func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	return res, nil
 }
 
-func getIndexPostQuerier(index string, keyResolver func(p types.Post) []byte) func(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
-		var (
-			from     []byte
-			category types.Category
-			limit    = uint32(20)
-		)
-
-		if path[0] != "" || path[1] != "" {
-			owner, err := sdk.AccAddressFromBech32(path[0])
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
-			}
-
-			id, err := uuid.FromString(path[1])
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
-			}
-
-			post := keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id))
-			from = keyResolver(post)
-		}
-
-		if path[2] != "" {
-			v, err := strconv.Atoi(path[2])
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid page")
-			}
-			category = types.Category(v)
-		}
-
-		if path[3] != "" {
-			v, err := strconv.Atoi(path[3])
-			if err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid page")
-			}
-			limit = uint32(v)
-		}
-
-		p, err := keeper.index.GetPosts(index, keeper.getPostResolver(ctx), category, from, limit)
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
-		}
-
-		res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
-		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-		}
-
-		return res, nil
+func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, id, limit, err := extractCommonGetParameters(path)
+	if err != nil {
+		return nil, err
 	}
+
+	var from []byte
+	if !owner.Empty() && id != uuid.Nil {
+		from = getCreateAtIndexKey(keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id)))
+	}
+
+	var category types.Category
+	if path[3] != "" {
+		v, err := strconv.Atoi(path[3])
+		if err != nil {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
+		}
+		category = types.Category(v)
+	}
+
+	p, err := keeper.index.GetRecentPosts(keeper.getPostResolver(ctx), category, from, limit)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
+}
+
+func getPopularPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, id, limit, err := extractCommonGetParameters(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var from []byte
+	if !owner.Empty() && id != uuid.Nil {
+		from = getPopularityIndexKey(keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id)))
+	}
+
+	var category types.Category
+	if path[3] != "" {
+		v, err := strconv.Atoi(path[3])
+		if err != nil {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
+		}
+		category = types.Category(v)
+	}
+
+	var interval Interval
+	if path[4] != "" {
+		v, err := strconv.Atoi(path[4])
+		if err != nil {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid interval")
+		}
+		interval = Interval(v)
+	}
+	if interval == InvalidInterval || interval > MonthInterval {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid interval")
+	}
+
+	p, err := keeper.index.GetPopularPosts(keeper.getPostResolver(ctx), interval, category, from, limit)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
 }
 
 func postsToQuerierPosts(pp []types.Post) []Post {
@@ -159,4 +166,36 @@ func postsToQuerierPosts(pp []types.Post) []Post {
 	}
 
 	return out
+}
+
+func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UUID, limit uint32, err error) {
+	limit = defaultLimit
+
+	if path[0] != "" {
+		owner, err = sdk.AccAddressFromBech32(path[0])
+		if err != nil {
+			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+			return
+		}
+	}
+
+	if path[1] != "" {
+		id, err = uuid.FromString(path[1])
+		if err != nil {
+			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
+			return
+		}
+	}
+
+	if path[2] != "" {
+		var v int
+		v, err = strconv.Atoi(path[3])
+		if err != nil {
+			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid limit")
+			return
+		}
+		limit = uint32(v)
+	}
+
+	return
 }

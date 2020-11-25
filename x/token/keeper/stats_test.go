@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Decentr-net/decentr/x/utils"
 	"github.com/boltdb/bolt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -45,13 +44,8 @@ func TestStats_AddToken(t *testing.T) {
 
 	stats, err := s.GetStats(owner)
 	require.NoError(t, err)
-	for i, v := range stats {
-		if i == truncateUnixTime(timestamp, time.Hour*24) {
-			assert.EqualValues(t, 0.0000001, v)
-		} else {
-			assert.EqualValues(t, float64(0), v)
-		}
-	}
+	assert.Len(t, stats, 1)
+	assert.EqualValues(t, 0.0000001, stats[truncateUnixTime(timestamp, time.Hour*24)])
 }
 
 func TestStats_GetStats(t *testing.T) {
@@ -65,7 +59,7 @@ func TestStats_GetStats(t *testing.T) {
 	sum := 0
 	res, err := s.GetStats(owner)
 	require.NoError(t, err)
-	require.Len(t, res, 32)
+	require.Len(t, res, 31)
 	assert.EqualValues(t, 0, res[0])
 	for i := 1; i <= 31; i++ {
 		tm := uint64(time.Date(2020, 1, i, 0, 0, 0, 0, time.UTC).Unix())
