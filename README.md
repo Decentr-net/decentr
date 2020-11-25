@@ -138,9 +138,6 @@ curl -s http://localhost:1317/pdv/{address}/show
 # List account's pdv
 curl -s http://localhost:1317/pdv/{owner}/list
 
-# List account's daily stats
-curl -s http://localhost:1317/pdv/{owner}/stats
-
 # Get cerberus address
 curl -s http://localhost:1317/pdv/cerberus-addr
 
@@ -157,11 +154,18 @@ There are no transactions, only query to get PDV token balance of the specific u
 ```bash
 # Query pdv token balance
 decentrcli query token balance [address]
+
+# Query pdv token stats
+decentrcli query token stats [address]
 ```
 
 #### REST
 ```bash
+# Query pdv token balance
 curl -s http://localhost:1317/token/balance/{address}
+
+# Query pdv token stats
+curl -s http://localhost:1317/token/stats/{address}
 ```
 
 ### Profile

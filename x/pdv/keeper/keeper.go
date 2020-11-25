@@ -8,7 +8,7 @@ import (
 )
 
 type TokenKeeper interface {
-	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
+	AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp uint64, amount sdk.Int)
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -16,16 +16,16 @@ type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
 	tokens   TokenKeeper
-	stats    Stats
+	index    Index
 }
 
 // NewKeeper creates new instances of the PDV Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper, stats Stats) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper, index Index) Keeper {
 	return Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
 		tokens:   tokens,
-		stats:    stats,
+		index:    index,
 	}
 }
 
@@ -43,8 +43,11 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		t = sdk.NewInt(1)
 	}
 
-	k.tokens.AddTokens(ctx, pdv.Owner, t)
-	k.stats.AddPDV(pdv, t)
+	if err := k.index.AddPDV(pdv); err != nil {
+		ctx.Logger().Error("failed to add pdv to index", "err", err.Error())
+	}
+
+	k.tokens.AddTokens(ctx, pdv.Owner, pdv.Timestamp, t)
 }
 
 // Gets the entire PDV metadata struct for an address

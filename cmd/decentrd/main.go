@@ -30,11 +30,13 @@ import (
 	"github.com/Decentr-net/decentr/app"
 	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
+	"github.com/Decentr-net/decentr/x/token"
 )
 
 const (
 	flagInvCheckPeriod = "inv-check-period"
-	statsDBFile        = "stats.db"
+	tokenDBFile        = "token.db"
+	pdvDBFile          = "pdv.db"
 	communityDBFile    = "community.db"
 )
 
@@ -107,12 +109,22 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(fmt.Errorf("failed to parse %s: %w", pdv.FlagCerberusAddr, err))
 	}
 
-	statsDB, err := bolt.Open(fmt.Sprintf("%s/data/%s", viper.GetString(cli.HomeFlag), statsDBFile), 0600, nil)
+	pdvIndexDB, err := bolt.Open(fmt.Sprintf("%s/data/%s", viper.GetString(cli.HomeFlag), pdvDBFile), 0600, nil)
 	if err != nil {
-		panic(fmt.Errorf("failed to open statsDB: %w", err))
+		panic(fmt.Errorf("failed to open pdvIndexDB: %w", err))
 	}
 
-	stats, err := pdv.NewStats(statsDB)
+	tokenStatsDB, err := bolt.Open(fmt.Sprintf("%s/data/%s", viper.GetString(cli.HomeFlag), tokenDBFile), 0600, nil)
+	if err != nil {
+		panic(fmt.Errorf("failed to open tokenStatsDB: %w", err))
+	}
+
+	pdvIndex, err := pdv.NewIndex(pdvIndexDB)
+	if err != nil {
+		panic(fmt.Errorf("failed to open pdvDB: %w", err))
+	}
+
+	tokenStats, err := token.NewStats(tokenStatsDB)
 	if err != nil {
 		panic(fmt.Errorf("failed to create stats: %w", err))
 	}
@@ -135,7 +147,8 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
 		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
-		stats,
+		pdvIndex,
+		tokenStats,
 		communityIndex,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
@@ -150,7 +163,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil, nil)
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil, nil, nil)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -158,7 +171,7 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil, nil)
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil, nil, nil)
 
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

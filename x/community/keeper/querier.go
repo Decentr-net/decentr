@@ -11,7 +11,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Decentr-net/decentr/x/community/types"
-	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 const (
@@ -29,7 +29,7 @@ type Post struct {
 	Text          string         `json:"text"`
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
-	CreatedAt     int64          `json:"createdAt"`
+	CreatedAt     uint64         `json:"createdAt"`
 	PDV           float64        `json:"pdv"`
 }
 
@@ -154,7 +154,7 @@ func postsToQuerierPosts(pp []types.Post) []Post {
 			LikesCount:    v.LikesCount,
 			DislikesCount: v.DislikesCount,
 			CreatedAt:     v.CreatedAt,
-			PDV:           tokenkeeper.TokenToFloat64(v.PDV),
+			PDV:           utils.TokenToFloat64(v.PDV),
 		}
 	}
 

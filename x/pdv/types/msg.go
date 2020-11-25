@@ -10,14 +10,14 @@ import (
 
 // MsgCreatePDV defines a CreatePDV message
 type MsgCreatePDV struct {
-	Timestamp time.Time      `json:"timestamp"`
+	Timestamp uint64         `json:"timestamp"`
 	Address   string         `json:"address"`
 	Owner     sdk.AccAddress `json:"owner"`
 	DataType  PDVType        `json:"type"`
 }
 
 // NewMsgCreatePDV is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(timestamp time.Time, value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
+func NewMsgCreatePDV(timestamp uint64, value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
 	return MsgCreatePDV{
 		Timestamp: timestamp,
 		Address:   value,
@@ -40,7 +40,7 @@ func (msg MsgCreatePDV) ValidateBasic() error {
 	if !cerberusapi.IsAddressValid(msg.Address) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
 	}
-	if time.Now().Before(msg.Timestamp) {
+	if uint64(time.Now().Unix()) < msg.Timestamp {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Timestamp can't be in the future")
 	}
 	return nil

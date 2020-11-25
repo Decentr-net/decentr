@@ -2,12 +2,12 @@ package keeper
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 
 	"github.com/boltdb/bolt"
 
 	"github.com/Decentr-net/decentr/x/community/types"
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 const (
@@ -106,7 +106,7 @@ func (i index) GetPosts(index string, resolver func([]byte) types.Post, c types.
 	out := make([]types.Post, 0)
 
 	if err := i.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(index)).Bucket(int64ToBytes(int64(c)))
+		b := tx.Bucket([]byte(index)).Bucket(utils.Uint64ToBytes(uint64(c)))
 
 		c := b.Cursor()
 		ik, kk := c.Last()
@@ -140,7 +140,7 @@ func createIndexBucket(name string, tx *bolt.Tx) error {
 	}
 
 	for i := types.UndefinedCategory; i <= types.FitnessAndExerciseCategory; i++ {
-		if _, err := b.CreateBucketIfNotExists(int64ToBytes(int64(i))); err != nil {
+		if _, err := b.CreateBucketIfNotExists(utils.Uint64ToBytes(uint64(i))); err != nil {
 			return fmt.Errorf("failed to create category bucket: %w", err)
 		}
 	}
@@ -149,34 +149,25 @@ func createIndexBucket(name string, tx *bolt.Tx) error {
 }
 
 func addPostToIndex(b *bolt.Bucket, c types.Category, indexKey, keeperKey []byte) error {
-	if err := b.Bucket(int64ToBytes(int64(types.UndefinedCategory))).Put(indexKey, keeperKey); err != nil {
+	if err := b.Bucket(utils.Uint64ToBytes(uint64(types.UndefinedCategory))).Put(indexKey, keeperKey); err != nil {
 		return err
 	}
 
-	return b.Bucket(int64ToBytes(int64(c))).Put(indexKey, keeperKey)
+	return b.Bucket(utils.Uint64ToBytes(uint64(c))).Put(indexKey, keeperKey)
 }
 
 func deletePostFromIndex(b *bolt.Bucket, c types.Category, indexKey []byte) error {
-	if err := b.Bucket(int64ToBytes(int64(types.UndefinedCategory))).Delete(indexKey); err != nil {
+	if err := b.Bucket(utils.Uint64ToBytes(uint64(types.UndefinedCategory))).Delete(indexKey); err != nil {
 		return err
 	}
 
-	return b.Bucket(int64ToBytes(int64(c))).Delete(indexKey)
+	return b.Bucket(utils.Uint64ToBytes(uint64(c))).Delete(indexKey)
 }
 
 func getCreateAtIndexKey(p types.Post) []byte {
-	return append(int64ToBytes(p.CreatedAt), p.UUID.Bytes()...)
+	return append(utils.Uint64ToBytes(p.CreatedAt), p.UUID.Bytes()...)
 }
 
 func getPopularityIndexKey(p types.Post) []byte {
-	diff := int64(p.LikesCount)
-	return append(int64ToBytes(diff), p.UUID.Bytes()...)
-}
-
-func int64ToBytes(i int64) []byte {
-	b := bytes.NewBuffer(make([]byte, 8))
-
-	_ = binary.Write(b, binary.BigEndian, i) // use BE endianness to have proper sort
-
-	return b.Bytes()
+	return append(utils.Uint64ToBytes(uint64(p.LikesCount)), p.UUID.Bytes()...)
 }

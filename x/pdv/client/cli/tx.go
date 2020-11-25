@@ -109,7 +109,7 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("pdv does not exist")
 			}
 
-			msg := types.NewMsgCreatePDV(time.Now().UTC(), args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
+			msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

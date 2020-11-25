@@ -35,7 +35,7 @@ type Post struct {
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
 	PDV           sdk.Int        `json:"pdv"`
-	CreatedAt     int64          `json:"createdAt"`
+	CreatedAt     uint64         `json:"createdAt"`
 }
 
 type Like struct {

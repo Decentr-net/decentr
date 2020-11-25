@@ -25,7 +25,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/owner", storeName), queryOwnerHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/show", storeName), queryShowHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{owner}/list", storeName), queryListHandler(cliCtx)).Methods(http.MethodGet)
-	r.HandleFunc(fmt.Sprintf("/%s/{owner}/stats", storeName), queryStatsHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s", storeName), createPDVHandler(cliCtx)).Methods(http.MethodPost)
 
 	r.HandleFunc(fmt.Sprintf("/%s/cerberus-addr", storeName), cerberusAddrHandler(cliCtx)).Methods(http.MethodGet)
@@ -85,26 +84,6 @@ func queryListHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func queryStatsHandler(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		paramOwner := mux.Vars(r)["owner"]
-
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, paramOwner), nil)
-		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(sdkerrors.ErrInvalidRequest) {
-					rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-					return
-				}
-			}
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
-	}
-}
-
 func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createPDVReq
@@ -146,7 +125,7 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreatePDV(time.Now().UTC(), req.Address, types.PDVTypeCookie, owner)
+		msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), req.Address, types.PDVTypeCookie, owner)
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx.WithHeight(height), req.BaseReq, []sdk.Msg{msg})
 	}
