@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +33,13 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, index Index, tokens Toke
 func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
 
-	k.index.AddPost(p)
+	if err := k.index.AddPost(p); err != nil {
+		ctx.Logger().Error("failed to add post to index",
+			"err", err.Error(),
+			"post", fmt.Sprintf("%s/%s", p.Owner, p.UUID.String()),
+		)
+	}
+
 	store.Set(getPostKeeperKeyFromPost(p), k.cdc.MustMarshalBinaryBare(p))
 }
 
@@ -41,7 +49,13 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 	key := append(owner.Bytes(), id.Bytes()...)
 
-	k.index.DeletePost(k.GetPostByKey(ctx, key))
+	if err := k.index.DeletePost(k.GetPostByKey(ctx, key)); err != nil {
+		ctx.Logger().Error("failed to delete post from index",
+			"err", err.Error(),
+			"post", fmt.Sprintf("%s/%s", owner, id.String()),
+		)
+	}
+
 	store.Delete(key)
 }
 
@@ -202,4 +216,8 @@ func getLikeKeeperKey(l types.Like) []byte {
 
 func getPostKeeperKeyFromLike(p types.Like) []byte {
 	return append(p.PostOwner.Bytes(), p.PostUUID[:]...)
+}
+
+func (k Keeper) SyncIndex(ctx sdk.Context) {
+	k.index.RemoveUnnecessaryPosts(ctx, uint64(ctx.BlockTime().Unix()), k.getPostResolver(ctx))
 }

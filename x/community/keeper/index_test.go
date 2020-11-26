@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/boltdb/bolt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -56,63 +57,66 @@ func (r localResolver) updateLikes(i Index, old, new types2.Post) error {
 
 func TestIndex_AddPost(t *testing.T) {
 	i := getIndex()
-
 	r := make(localResolver)
+
+	timestamp := uint64(time.Now().Unix())
+
 	require.NoError(t, r.add(i, types2.Post{
 		Owner:      testOwner,
 		Category:   types2.FitnessAndExerciseCategory,
 		UUID:       uuid.Must(uuid.NewV1()),
-		CreatedAt:  1,
+		CreatedAt:  timestamp,
 		LikesCount: 2,
 	}))
 	require.NoError(t, r.add(i, types2.Post{
 		Owner:      testOwner,
 		Category:   types2.HealthAndCultureCategory,
 		UUID:       uuid.Must(uuid.NewV1()),
-		CreatedAt:  2,
+		CreatedAt:  timestamp + 1,
 		LikesCount: 1,
 	}))
 
-	p, err := i.GetPosts(createdAtIndexBucket, r.resolve, types2.UndefinedCategory, nil, 10)
+	p, err := i.GetRecentPosts(r.resolve, types2.UndefinedCategory, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, p, 2)
-	require.EqualValues(t, 2, p[0].CreatedAt)
-	require.EqualValues(t, 1, p[1].CreatedAt)
+	require.EqualValues(t, timestamp+1, p[0].CreatedAt)
+	require.EqualValues(t, timestamp, p[1].CreatedAt)
 
-	p, err = i.GetPosts(popularityIndexBucket, r.resolve, types2.HealthAndCultureCategory, nil, 10)
+	p, err = i.GetPopularPosts(r.resolve, MonthInterval, types2.HealthAndCultureCategory, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, p, 1)
-	require.EqualValues(t, 2, p[0].CreatedAt)
+	require.EqualValues(t, timestamp+1, p[0].CreatedAt)
 }
 
 func TestIndex_DeletePost(t *testing.T) {
 	i := getIndex()
-
 	r := make(localResolver)
+
 	p := types2.Post{
 		Owner:      testOwner,
 		UUID:       uuid.Must(uuid.NewV1()),
-		CreatedAt:  1,
+		CreatedAt:  uint64(time.Now().Unix()),
 		LikesCount: 2,
 	}
 	require.NoError(t, r.add(i, p))
 
 	require.NoError(t, i.DeletePost(p))
 
-	posts, err := i.GetPosts(popularityIndexBucket, r.resolve, types2.UndefinedCategory, nil, 10)
+	posts, err := i.GetPopularPosts(r.resolve, MonthInterval, types2.UndefinedCategory, nil, 10)
 	require.NoError(t, err)
 	require.Empty(t, posts)
 }
 
 func TestIndex_UpdateLikes(t *testing.T) {
 	i := getIndex()
-
 	r := make(localResolver)
+
+	timestamp := uint64(time.Now().Unix())
 
 	old := types2.Post{
 		Owner:      testOwner,
 		UUID:       uuid.Must(uuid.NewV1()),
-		CreatedAt:  1,
+		CreatedAt:  timestamp,
 		LikesCount: 2,
 	}
 	require.NoError(t, r.add(i, old))
@@ -120,25 +124,25 @@ func TestIndex_UpdateLikes(t *testing.T) {
 	require.NoError(t, r.add(i, types2.Post{
 		Owner:      testOwner,
 		UUID:       uuid.Must(uuid.NewV1()),
-		CreatedAt:  2,
+		CreatedAt:  timestamp + 1,
 		LikesCount: 5,
 	}))
 
-	p, err := i.GetPosts(popularityIndexBucket, r.resolve, types2.UndefinedCategory, nil, 10)
+	p, err := i.GetPopularPosts(r.resolve, MonthInterval, types2.UndefinedCategory, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, p, 2)
-	require.EqualValues(t, 2, p[0].CreatedAt)
-	require.EqualValues(t, 1, p[1].CreatedAt)
+	require.EqualValues(t, timestamp+1, p[0].CreatedAt)
+	require.EqualValues(t, timestamp, p[1].CreatedAt)
 
 	new := old
 	new.LikesCount = 20
 	require.NoError(t, r.updateLikes(i, old, new))
 
-	p, err = i.GetPosts(popularityIndexBucket, r.resolve, types2.UndefinedCategory, nil, 10)
+	p, err = i.GetPopularPosts(r.resolve, MonthInterval, types2.UndefinedCategory, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, p, 2)
-	require.EqualValues(t, 1, p[0].CreatedAt)
-	require.EqualValues(t, 2, p[1].CreatedAt)
+	require.EqualValues(t, timestamp, p[0].CreatedAt)
+	require.EqualValues(t, timestamp+1, p[1].CreatedAt)
 }
 
 func TestIndex_getPosts(t *testing.T) {
@@ -158,8 +162,42 @@ func TestIndex_getPosts(t *testing.T) {
 		CreatedAt: 3,
 	}))
 
-	posts, err := i.GetPosts(createdAtIndexBucket, r.resolve, types2.UndefinedCategory, getCreateAtIndexKey(p), 10)
+	posts, err := i.GetRecentPosts(r.resolve, types2.UndefinedCategory, getCreateAtIndexKey(p), 10)
 	require.NoError(t, err)
 	require.Len(t, posts, 1)
 	require.EqualValues(t, 3, posts[0].CreatedAt)
+}
+
+func TestIndex_Flush(t *testing.T) {
+	t.Parallel()
+
+	i := getIndex()
+	r := make(localResolver)
+
+	timestamp := uint64(time.Now().Unix())
+
+	for c := types2.WorldNewsCategory; c <= types2.FitnessAndExerciseCategory; c++ {
+		for j := 0; j < 10; j++ {
+			require.NoError(t, r.add(i, types2.Post{
+				Owner:      testOwner,
+				Category:   c,
+				UUID:       uuid.Must(uuid.NewV1()),
+				CreatedAt:  timestamp + uint64(j*267800),
+				LikesCount: uint32(j),
+			}))
+		}
+		require.NoError(t, r.add(i, types2.Post{
+			Owner:      testOwner,
+			Category:   c,
+			UUID:       uuid.Must(uuid.NewV1()),
+			CreatedAt:  timestamp + 2678500, // add month with tail
+			LikesCount: 1,
+		}))
+	}
+
+	i.RemoveUnnecessaryPosts(sdk.Context{}, timestamp+2678400*2, r.resolve) // we will pretend that 2 month have passed
+
+	p, err := i.GetPopularPosts(r.resolve, MonthInterval, types2.UndefinedCategory, nil, 20)
+	require.NoError(t, err)
+	require.Len(t, p, 6)
 }

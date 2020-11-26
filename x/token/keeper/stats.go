@@ -81,6 +81,10 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[uint64]float64, error) {
 
 			truncated := truncateUnixTime(timestamp, time.Hour*24)
 
+			if d == 0 {
+				d = truncated
+			}
+
 			if truncated != d {
 				res[d] = utils.TokenToFloat64(t)
 				d = truncated

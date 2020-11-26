@@ -22,6 +22,10 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
+const (
+	rebuildIndexInterval = 100
+)
+
 // app module Basics object
 type AppModuleBasic struct{}
 
@@ -97,7 +101,11 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 	return NewQuerier(am.keeper)
 }
 
-func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
+	if ctx.BlockHeight()%100 == rebuildIndexInterval {
+		am.keeper.SyncIndex(ctx)
+	}
+}
 
 func (am AppModule) EndBlock(sdk.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}

@@ -9,8 +9,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
+	"github.com/Decentr-net/decentr/x/community/keeper"
 	"github.com/Decentr-net/decentr/x/community/types"
 )
+
+var intervals = map[string]keeper.Interval{
+	"byDay":   keeper.DayInterval,
+	"byWeek":  keeper.WeekInterval,
+	"byMonth": keeper.MonthInterval,
+}
 
 // RegisterRoutes registers community-related REST handlers to a router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
@@ -19,7 +26,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/posts/{owner}/{uuid}/delete", storeName), deletePostHandler(cliCtx)).Methods(http.MethodPost)
 
 	r.HandleFunc(fmt.Sprintf("/%s/posts", storeName), queryListPostsHandler(cliCtx)).Methods(http.MethodGet)
-	r.HandleFunc(fmt.Sprintf("/%s/posts/popular", storeName), queryListPopularPostsHandler(cliCtx)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/posts/popular/{interval}", storeName), queryListPopularPostsHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/owner/{owner}/posts", storeName), queryListUserPostsHandler(cliCtx)).Methods(http.MethodGet)
 }
 
@@ -48,7 +55,15 @@ func queryListPopularPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/popular/%s/%s/%s/%s", types.QuerierRoute, q.Get("fromOwner"), q.Get("fromUUID"), q.Get("category"), q.Get("limit")), nil)
+		qPath := fmt.Sprintf("custom/%s/popular/%s/%s/%s/%s/%d", types.QuerierRoute,
+			q.Get("fromOwner"),
+			q.Get("fromUUID"),
+			q.Get("limit"),
+			q.Get("category"),
+			intervals[q.Get("interval")],
+		)
+
+		res, height, err := cliCtx.QueryWithData(qPath, nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -68,7 +83,14 @@ func queryListPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/posts/%s/%s/%s/%s", types.QuerierRoute, q.Get("fromOwner"), q.Get("fromUUID"), q.Get("category"), q.Get("limit")), nil)
+		qPath := fmt.Sprintf("custom/%s/posts/%s/%s/%s/%s", types.QuerierRoute,
+			q.Get("fromOwner"),
+			q.Get("fromUUID"),
+			q.Get("limit"),
+			q.Get("category"),
+		)
+
+		res, height, err := cliCtx.QueryWithData(qPath, nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
