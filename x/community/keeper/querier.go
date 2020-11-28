@@ -32,7 +32,7 @@ type Post struct {
 	LikesCount    uint32         `json:"likesCount"`
 	DislikesCount uint32         `json:"dislikesCount"`
 	CreatedAt     uint64         `json:"createdAt"`
-	PDV           float64        `json:"pdv"`
+	PDV           float64        `json:"pdv" amino:"unsafe"`
 }
 
 // NewQuerier creates a new querier for community clients.
@@ -87,6 +87,9 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 		}
 		category = types.Category(v)
+		if category < types.UndefinedCategory || category > types.FitnessAndExerciseCategory {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown category")
+		}
 	}
 
 	p, err := keeper.index.GetRecentPosts(keeper.getPostResolver(ctx), category, from, limit)
@@ -189,7 +192,7 @@ func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UU
 
 	if path[2] != "" {
 		var v int
-		v, err = strconv.Atoi(path[3])
+		v, err = strconv.Atoi(path[2])
 		if err != nil {
 			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid limit")
 			return

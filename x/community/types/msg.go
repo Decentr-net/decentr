@@ -164,7 +164,7 @@ func (msg MsgSetLike) Type() string { return "set_like" }
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetLike) ValidateBasic() error {
 	if msg.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner is empty")
 	}
 
 	if _, err := uuid.FromString(msg.PostUUID); err != nil {

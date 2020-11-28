@@ -95,7 +95,9 @@ func (k Keeper) ListUserPosts(ctx sdk.Context, owner sdk.AccAddress, from uuid.U
 
 func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	if newLike.Owner.Equals(newLike.PostOwner) {
-		// post owner can not like their post
+		ctx.Logger().Info("SetLike: owner tries to like own post",
+			"postUUID", newLike.PostUUID,
+			"postOwner", newLike.PostOwner)
 		return
 	}
 
@@ -103,7 +105,9 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	oldPostBytes := postsStore.Get(getPostKeeperKeyFromLike(newLike))
 
 	if oldPostBytes == nil {
-		// post does not exists
+		ctx.Logger().Info("SetLike: post not found",
+			"postUUID", newLike.PostUUID,
+			"postOwner", newLike.PostOwner)
 		return
 	}
 
@@ -131,7 +135,8 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 
 func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post) {
 	oldPDV := post.PDV
-	newPDV := sdk.NewInt(int64(post.LikesCount - post.DislikesCount))
+	newPDV := sdk.NewInt(int64(post.LikesCount) - int64(post.DislikesCount))
+
 	diff := newPDV.Sub(oldPDV)
 	k.tokens.AddTokens(ctx, post.Owner, post.CreatedAt, diff)
 
