@@ -99,7 +99,7 @@ unsignedTx.json will contain
   
 Then sign this transaction
 ```bash
-decentrcli tx sign unsignedTx.json --from jack --offline --chain-id testnet --sequence 1 --account-number 3 > signedTx.json
+decentrcli tx sign unsignedTx.json --from jack --chain-id testnet > signedTx.json
 ```
   
 And finally broadcast the signed transaction
@@ -260,12 +260,12 @@ curl -XPOST -s http://localhost:1317/community/posts \
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"text": "my brand new text", "title":"my first post title", "imagePreview": "https://localhost/mypicture.jpg", "category": "2"}' > unsignedTx.json
 
 # Delete post
-curl -XPOST -s http://localhost:1317/community/posts/{address}/{uuid}/delete \
+curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/delete \
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
 
 # Like post
-curl -XPOST -s http://localhost:1317/community/posts/owner/{postOwner}/{postUUID}/like\
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/like\
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "weight": 1}' > unsignedTx.json
 
 # Get the latest posts
 curl -s "http://localhost:1317/community/posts?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
@@ -280,7 +280,7 @@ curl -s "http://localhost:1317/community/posts/popular/byWeek?category={category
 curl -s "http://localhost:1317/community/posts/popular/byMonth?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
 
 # Get user's posts
-curl -s "http://localhost:1317/community/owner/{account}/posts?from={uuid}&limit={limit}"
+curl -s "http://localhost:1317/community/posts/{account}?from={postUUID}&limit={limit}"
 ```
 
 ## Build

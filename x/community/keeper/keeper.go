@@ -166,7 +166,7 @@ func updatePostLikesCounters(post *types.Post, oldWeight types.LikeWeight, newWe
 		case types.LikeWeightUp:
 			post.LikesCount += 1
 		case types.LikeWeightDown:
-			post.DislikesCount -= 1
+			post.DislikesCount += 1
 		}
 	}
 }

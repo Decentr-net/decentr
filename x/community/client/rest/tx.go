@@ -105,7 +105,7 @@ func likePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		bech32Addr := vars["address"]
+		bech32Addr := vars["postOwner"]
 
 		owner, err := sdk.AccAddressFromBech32(bech32Addr)
 		if err != nil {
@@ -113,7 +113,7 @@ func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		id, err := uuid.FromString(vars["uuid"])
+		id, err := uuid.FromString(vars["postUUID"])
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

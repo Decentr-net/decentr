@@ -23,7 +23,7 @@ func TestUpdatePostLikesCounters(t *testing.T) {
 		{"up=>up", types.LikeWeightUp, types.LikeWeightUp, 1, 2, 1, 2},
 		{"down=>down", types.LikeWeightDown, types.LikeWeightDown, 1, 2, 1, 2},
 		{"zero=>up", types.LikeWeightZero, types.LikeWeightUp, 1, 2, 2, 2},
-		{"zero=>down", types.LikeWeightZero, types.LikeWeightDown, 1, 2, 1, 1},
+		{"zero=>down", types.LikeWeightZero, types.LikeWeightDown, 1, 2, 1, 3},
 		{"up=>zero", types.LikeWeightUp, types.LikeWeightZero, 1, 2, 0, 2},
 		{"down=>zero", types.LikeWeightDown, types.LikeWeightZero, 1, 2, 1, 1},
 	}
