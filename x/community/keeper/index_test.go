@@ -88,6 +88,33 @@ func TestIndex_AddPost(t *testing.T) {
 	require.EqualValues(t, timestamp+1, p[0].CreatedAt)
 }
 
+func TestIndex_Add10Posts(t *testing.T) {
+	const num = 10
+
+	index := getIndex()
+	r := make(localResolver)
+
+	timestamp := uint64(time.Now().Unix())
+
+	for i := 0; i < num; i++ {
+		require.NoError(t, r.add(index, types2.Post{
+			Owner:      testOwner,
+			Category:   types2.FitnessAndExerciseCategory,
+			UUID:       uuid.Must(uuid.NewV1()),
+			CreatedAt:  timestamp,
+			LikesCount: 0,
+		}))
+	}
+
+	p, err := index.GetRecentPosts(r.resolve, types2.UndefinedCategory, nil, 10)
+	require.NoError(t, err)
+	require.Len(t, p, num)
+
+	p, err = index.GetRecentPosts(r.resolve, types2.FitnessAndExerciseCategory, nil, 10)
+	require.NoError(t, err)
+	require.Len(t, p, num)
+}
+
 func TestIndex_DeletePost(t *testing.T) {
 	i := getIndex()
 	r := make(localResolver)

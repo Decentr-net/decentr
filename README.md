@@ -235,22 +235,22 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
 #### CLI
 ```bash
 # Create post
-decentrcli tx community create-post [text] --title [title] --image-preview [url to preview] --category 2 --from [account]
+decentrcli tx community create-post [text] --title [title] --preview-image [url to preview] --category 2 --from [account]
 
 # Delete post
 decentrcli tx community delete-post [uuid] --from [account]
 
 # Like post
-decentrcli tx community like-post like-post [postOwner] [postUUID] --weight [weight]
+decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --from [account]
 
 # Get user's posts
 decentrcli query community user-posts <account> [--from uuid] [--limit int]
 
-# Get the latest posts
-decentrcli query community posts [--from-owner account --from-uuid uuid] [--category string] [--limit int]
+# Get the recent posts
+decentrcli query community posts [--from-owner account --from-uuid uuid] [--category int] [--limit int]
 
 # Get the most popular posts
-decentrcli query community popular-posts [--from-owner account --from-uuid uuid] [--category string] [--limit int] [--interval day/week/month]
+decentrcli query community popular-posts [--from-owner account --from-uuid uuid] [--category int] [--limit int] [--interval day/week/month]
 ```
 
 #### REST
