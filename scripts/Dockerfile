@@ -1,4 +1,7 @@
-FROM golang:alpine AS build-env
+ARG ALPINE_VERSION=3.10
+ARG GOLANG_VERSION=1.15-alpine
+
+FROM golang:${GOLANG_VERSION} AS build-env
 
 WORKDIR /go/scr/github.com/decentr/decentr/
 
@@ -8,7 +11,7 @@ COPY . .
 
 RUN make install
 
-FROM alpine:edge
+FROM alpine:${ALPINE_VERSION}
 
 RUN apk add --update ca-certificates
 

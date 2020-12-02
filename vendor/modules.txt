@@ -1,8 +1,9 @@
-# github.com/99designs/keyring v1.1.3
+# github.com/99designs/keyring v1.1.6
 github.com/99designs/keyring
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 github.com/ChainSafe/go-schnorrkel
 # github.com/Decentr-net/cerberus v0.2.0
+## explicit
 github.com/Decentr-net/cerberus/pkg/api
 github.com/Decentr-net/cerberus/pkg/schema
 # github.com/Workiva/go-datastructures v1.0.52
@@ -16,6 +17,7 @@ github.com/beorn7/perks/quantile
 # github.com/bgentry/speakeasy v0.1.0
 github.com/bgentry/speakeasy
 # github.com/boltdb/bolt v1.3.1
+## explicit
 github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.20.1-beta
 github.com/btcsuite/btcd/btcec
@@ -23,7 +25,8 @@ github.com/btcsuite/btcd/btcec
 github.com/btcsuite/btcutil/bech32
 # github.com/cespare/xxhash/v2 v2.1.1
 github.com/cespare/xxhash/v2
-# github.com/cosmos/cosmos-sdk v0.39.1
+# github.com/cosmos/cosmos-sdk v0.39.2
+## explicit
 github.com/cosmos/cosmos-sdk/baseapp
 github.com/cosmos/cosmos-sdk/client
 github.com/cosmos/cosmos-sdk/client/context
@@ -182,7 +185,7 @@ github.com/cosmos/ledger-go
 github.com/danieljoos/wincred
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/dvsekhvalnov/jose2go v0.0.0-20180829124132-7f401d37b68a
+# github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b
 github.com/dvsekhvalnov/jose2go
 github.com/dvsekhvalnov/jose2go/aes
 github.com/dvsekhvalnov/jose2go/arrays
@@ -206,6 +209,7 @@ github.com/go-logfmt/logfmt
 # github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2
 github.com/godbus/dbus
 # github.com/gofrs/uuid v3.3.0+incompatible
+## explicit
 github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/gogoproto
@@ -216,19 +220,20 @@ github.com/gogo/protobuf/sortkeys
 github.com/gogo/protobuf/types
 # github.com/golang/mock v1.4.3
 github.com/golang/mock/gomock
-# github.com/golang/protobuf v1.4.0
+# github.com/golang/protobuf v1.4.1
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/golang/snappy v0.0.1
+# github.com/golang/snappy v0.0.2
 github.com/golang/snappy
 # github.com/google/btree v1.0.0
 github.com/google/btree
 # github.com/gorilla/handlers v1.4.2
 github.com/gorilla/handlers
 # github.com/gorilla/mux v1.7.4
+## explicit
 github.com/gorilla/mux
 # github.com/gorilla/websocket v1.4.2
 github.com/gorilla/websocket
@@ -277,6 +282,8 @@ github.com/minio/highwayhash
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.1.2
 github.com/mitchellh/mapstructure
+# github.com/mtibben/percent v0.2.1
+github.com/mtibben/percent
 # github.com/pelletier/go-toml v1.6.0
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
@@ -304,19 +311,23 @@ github.com/rcrowley/go-metrics
 # github.com/rs/cors v1.7.0
 github.com/rs/cors
 # github.com/spf13/afero v1.2.2
+## explicit
 github.com/spf13/afero
 github.com/spf13/afero/mem
 # github.com/spf13/cast v1.3.0
 github.com/spf13/cast
 # github.com/spf13/cobra v1.0.0
+## explicit
 github.com/spf13/cobra
 # github.com/spf13/jwalterweatherman v1.1.0
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
 # github.com/spf13/viper v1.6.3
+## explicit
 github.com/spf13/viper
 # github.com/stretchr/testify v1.6.1
+## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.2.0
@@ -341,11 +352,13 @@ github.com/tendermint/btcd/btcec
 # github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15
 github.com/tendermint/crypto/bcrypt
 # github.com/tendermint/go-amino v0.15.1
+## explicit
 github.com/tendermint/go-amino
-# github.com/tendermint/iavl v0.14.0
+# github.com/tendermint/iavl v0.14.1
 github.com/tendermint/iavl
 github.com/tendermint/iavl/common
-# github.com/tendermint/tendermint v0.33.7
+# github.com/tendermint/tendermint v0.33.9
+## explicit
 github.com/tendermint/tendermint/abci/client
 github.com/tendermint/tendermint/abci/example/code
 github.com/tendermint/tendermint/abci/example/counter
@@ -440,6 +453,7 @@ github.com/tendermint/tendermint/types
 github.com/tendermint/tendermint/types/time
 github.com/tendermint/tendermint/version
 # github.com/tendermint/tm-db v0.5.1
+## explicit
 github.com/tendermint/tm-db
 # github.com/zondax/hid v0.9.0
 github.com/zondax/hid
@@ -464,7 +478,7 @@ golang.org/x/crypto/poly1305
 golang.org/x/crypto/ripemd160
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20200707034311-ab3426394381
+# golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -473,16 +487,17 @@ golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/netutil
 golang.org/x/net/trace
-# golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
+# golang.org/x/sys v0.0.0-20201013132646-2da7054afaeb
 golang.org/x/sys/cpu
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.2
+# golang.org/x/text v0.3.3
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+# google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.30.0
 google.golang.org/grpc
@@ -525,7 +540,7 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/protobuf v1.21.0
+# google.golang.org/protobuf v1.25.0
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -536,12 +551,11 @@ google.golang.org/protobuf/internal/encoding/messageset
 google.golang.org/protobuf/internal/encoding/tag
 google.golang.org/protobuf/internal/encoding/text
 google.golang.org/protobuf/internal/errors
-google.golang.org/protobuf/internal/fieldnum
 google.golang.org/protobuf/internal/fieldsort
 google.golang.org/protobuf/internal/filedesc
 google.golang.org/protobuf/internal/filetype
 google.golang.org/protobuf/internal/flags
-google.golang.org/protobuf/internal/genname
+google.golang.org/protobuf/internal/genid
 google.golang.org/protobuf/internal/impl
 google.golang.org/protobuf/internal/mapsort
 google.golang.org/protobuf/internal/pragma
