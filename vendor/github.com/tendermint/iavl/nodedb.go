@@ -38,7 +38,7 @@ type nodeDB struct {
 	mtx            sync.Mutex       // Read/write lock.
 	db             dbm.DB           // Persistent node storage.
 	batch          dbm.Batch        // Batched writing buffer.
-	opts           *Options         // Options to customize for pruning/writing
+	opts           Options          // Options to customize for pruning/writing
 	versionReaders map[int64]uint32 // Number of active version readers
 
 	latestVersion  int64
@@ -49,12 +49,13 @@ type nodeDB struct {
 
 func newNodeDB(db dbm.DB, cacheSize int, opts *Options) *nodeDB {
 	if opts == nil {
-		opts = DefaultOptions()
+		o := DefaultOptions()
+		opts = &o
 	}
 	return &nodeDB{
 		db:             db,
 		batch:          db.NewBatch(),
-		opts:           opts,
+		opts:           *opts,
 		latestVersion:  0, // initially invalid
 		nodeCache:      make(map[string]*list.Element),
 		nodeCacheSize:  cacheSize,
@@ -491,8 +492,10 @@ func (ndb *nodeDB) saveRoot(hash []byte, version int64) error {
 	ndb.mtx.Lock()
 	defer ndb.mtx.Unlock()
 
-	if version != ndb.getLatestVersion()+1 {
-		return fmt.Errorf("must save consecutive versions; expected %d, got %d", ndb.getLatestVersion()+1, version)
+	// We allow the initial version to be arbitrary
+	latest := ndb.getLatestVersion()
+	if latest > 0 && version != latest+1 {
+		return fmt.Errorf("must save consecutive versions; expected %d, got %d", latest+1, version)
 	}
 
 	ndb.batch.Set(ndb.rootKey(version), hash)

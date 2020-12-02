@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.1 (October 9, 2020)
+
+### Improvements
+
+- [\#299](https://github.com/cosmos/iavl/pull/299) Added `Options.InitialVersion` to specify the 
+  initial version for new IAVL trees.
+
+- [\#312](https://github.com/cosmos/iavl/pull/312) Added `MutableTree.SetInitialVersion()` to
+  set the initial version after tree initialization.
+
+### Bug Fixes
+
+- [\#288](https://github.com/cosmos/iavl/pull/288) Fix panics when generating proofs for keys that are all `0xFF`.
+
 ## 0.14.0 (July 2, 2020)
 
 **Important information:** the pruning functionality introduced with IAVL 0.13.0 via the options 
