@@ -5,7 +5,7 @@ Decentr blockchain
 
 
 ## Testnet Full Node Quick Start
-This assumes that you're running Linux or MacOS and have installed [Go 1.14+](https://golang.org/dl/).  This guide helps you:
+This assumes that you're running Linux or MacOS and have installed [Go 1.15+](https://golang.org/dl/).  This guide helps you:
 
 * build and install Decentr
 * allow you to name your node

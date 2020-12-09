@@ -10,7 +10,7 @@ import (
 
 const (
 	maxTitleLength = 150
-	maxPostLength  = 5000
+	maxPostLength  = 10000
 	minPostLength  = 15
 	maxURLLength   = 4 * 1024
 )
