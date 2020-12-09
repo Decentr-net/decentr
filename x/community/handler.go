@@ -2,7 +2,6 @@ package community
 
 import (
 	"fmt"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -38,7 +37,7 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 		Text:          msg.Text,
 		LikesCount:    0,
 		DislikesCount: 0,
-		CreatedAt:     uint64(time.Now().Unix()),
+		CreatedAt:     uint64(ctx.BlockTime().Unix()),
 	})
 
 	return &sdk.Result{}, nil
