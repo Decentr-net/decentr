@@ -41,9 +41,15 @@ func queryBalanceHandler(cliCtx context.CLIContext, storeName string) http.Handl
 
 func queryStatsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramOwner := mux.Vars(r)["owner"]
+		bech32Addr := mux.Vars(r)["address"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, paramOwner), nil)
+		owner, err := sdk.AccAddressFromBech32(bech32Addr)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, owner), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
