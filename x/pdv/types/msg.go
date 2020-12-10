@@ -1,8 +1,6 @@
 package types
 
 import (
-	"time"
-
 	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -40,8 +38,8 @@ func (msg MsgCreatePDV) ValidateBasic() error {
 	if !cerberusapi.IsAddressValid(msg.Address) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
 	}
-	if uint64(time.Now().Unix()) < msg.Timestamp {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Timestamp can't be in the future")
+	if msg.Timestamp == 0 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Timestamp can not be 0")
 	}
 	return nil
 }
