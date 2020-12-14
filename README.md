@@ -37,11 +37,11 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
 
 ```c
-253f5dd5309e47cda8c1ad4db9c5cd056ec54f88@ares.testnet.decentr.xyz:26656
-25635874579827697da420227dcebe7424238eaa@hera.testnet.decentr.xyz:26656
-b98336c214cd7319fa79cef40f52f681d71fbfbb@hermes.testnet.decentr.xyz:26656
-3bddcf4f6856b3546a10c7574c614f47c499ca43@poseidon.testnet.decentr.xyz:26656
-37c2b10599ed9926aacb96639f2c8f54dc674db2@zeus.testnet.decentr.xyz:26656
+43932e5aa9847f749a6007c6408f1182408a89c4@ares.testnet.decentr.xyz:26656
+d2e2a2b274f2d9aa102838c30405949eb71cddcd@hera.testnet.decentr.xyz:26656
+52a9524e6225ea5b0a727647333a91095ddaeec0@hermes.testnet.decentr.xyz:26656
+f9455b31b3fef5ee34b2ce8d7baf83f933c314cc@poseidon.testnet.decentr.xyz:26656
+841894a697747f9952f55256db1da37801b4cfb3@zeus.testnet.decentr.xyz:26656
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
@@ -170,7 +170,7 @@ curl -s http://localhost:1317/token/stats/{address}
 
 ### Profile
 User profile consists of two parts: private and public. Private data is encrypted with user's private key.
-Public one includes gender and birthday.
+Public one includes first name, last name, avatar, gender and birthday.
 
 #### CLI
 ```bash
@@ -202,7 +202,7 @@ curl -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a)
 
 # Query public profile.
 curl -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a)
-# > { "height": "0", "result": { "firstName": "foo", "lastName": "bar", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01"}}
+# > { "height": "0", "result": { "firstName": "foo", "lastName": "bar", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01", "registeredAt:"1607972947"}}
 
 # Set private profile
 curl -XPOST -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a) \ 

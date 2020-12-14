@@ -87,7 +87,7 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 		}
 		category = types.Category(v)
-		if category < types.UndefinedCategory || category > types.FitnessAndExerciseCategory {
+		if category < types.UndefinedCategory || category > types.CryptoCategory {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown category")
 		}
 	}

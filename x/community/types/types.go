@@ -15,6 +15,7 @@ const (
 	StrangeWorldCategory
 	HealthAndCultureCategory
 	FitnessAndExerciseCategory
+	CryptoCategory
 )
 
 type LikeWeight int8
