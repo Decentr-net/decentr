@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 const (
 	createdAtIndexBucket  = "created_at_idx" // key: timestamp+uuid, value: keeper key
 	popularityIndexBucket = "popularity_idx" // key: (likes-dislikes)+uuid, value: keeper key
+	userLikesIndexBucket  = "user_likes_idx" // key: user address
 )
 
 type Interval uint8
@@ -37,6 +39,9 @@ type Index interface {
 	AddPost(p types.Post) error
 	DeletePost(p types.Post) error
 	UpdateLikes(old, new types.Post) error
+
+	AddLike(l types.Like) error
+	GetUserLikes(owner sdk.AccAddress) (map[string]types.LikeWeight, error)
 
 	GetRecentPosts(resolver func([]byte) types.Post, c types.Category, from []byte, limit uint32) ([]types.Post, error)
 	GetPopularPosts(resolver func([]byte) types.Post, i Interval, c types.Category, from []byte, limit uint32) ([]types.Post, error)
@@ -72,6 +77,8 @@ func NewIndex(db *bolt.DB) (Index, error) {
 				})
 			}
 		}
+
+		buckets = append(buckets, [][]byte{[]byte(userLikesIndexBucket)})
 
 		for _, b := range buckets {
 			if err := createBucket(tx, b); err != nil {
@@ -242,6 +249,58 @@ func (i index) getPosts(path [][]byte, resolver func([]byte) types.Post, from []
 		for i := uint32(0); i < limit && ik != nil; i++ {
 			out = append(out, resolver(kk))
 			ik, kk = c.Prev()
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (i index) AddLike(l types.Like) error {
+	if err := i.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(userLikesIndexBucket))
+
+		post := fmt.Sprintf("%s/%s", l.PostOwner, l.PostUUID)
+		likes := make(map[string]types.LikeWeight)
+
+		if v := b.Get(l.Owner); v != nil {
+			if err := json.Unmarshal(v, &likes); err != nil {
+				return err
+			}
+		}
+
+		if l.Weight == types.LikeWeightZero {
+			delete(likes, post)
+		} else {
+			likes[post] = l.Weight
+		}
+
+		v, err := json.Marshal(likes)
+		if err != nil {
+			return err
+		}
+
+		return b.Put(l.Owner, v)
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i index) GetUserLikes(owner sdk.AccAddress) (map[string]types.LikeWeight, error) {
+	out := make(map[string]types.LikeWeight)
+
+	if err := i.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(userLikesIndexBucket))
+
+		if v := b.Get(owner); v != nil {
+			if err := json.Unmarshal(v, &out); err != nil {
+				return err
+			}
 		}
 
 		return nil

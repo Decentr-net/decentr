@@ -18,6 +18,7 @@ const (
 	QueryPopular = "popular"
 	QueryPosts   = "posts"
 	QueryUser    = "user"
+	QueryLikes   = "likes"
 )
 
 const defaultLimit = 20
@@ -45,6 +46,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return getRecentPosts(ctx, path[1:], req, keeper)
 		case QueryUser:
 			return queryUserPosts(ctx, path[1:], req, keeper)
+		case QueryLikes:
+			return queryUserLikes(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown community query endpoint")
 		}
@@ -62,6 +65,27 @@ func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	p := keeper.ListUserPosts(ctx, owner, from, limit)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
+}
+
+// nolint: unparam
+// queryPopular returns posts.
+func queryUserLikes(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+	}
+
+	l, err := keeper.index.GetUserLikes(owner)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, l)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

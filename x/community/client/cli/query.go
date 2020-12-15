@@ -41,6 +41,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			GetCmdUsersPosts(queryRoute, cdc),
 			GetCmdPopularPostsList(queryRoute, cdc),
 			GetCmdPostsList(queryRoute, cdc),
+			GetCmdUsersLikes(queryRoute, cdc),
 		)...,
 	)
 
@@ -194,4 +195,24 @@ func GetCmdPostsList(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd.Flags().Int("limit", 20, "limit")
 
 	return cmd
+}
+
+// GetCmdUsersLikes queries users likes
+func GetCmdUsersLikes(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "user-likes <owner>",
+		Short: "Query user's likes",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/likes/%s", queryRoute, args[0]), nil)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(string(res))
+			return nil
+		},
+	}
 }

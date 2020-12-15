@@ -130,7 +130,21 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 
 	postsStore.Set(getPostKeeperKey(newPost.Owner, newPost.UUID), k.cdc.MustMarshalBinaryBare(newPost))
 	likesStore.Set(getLikeKeeperKey(newLike), k.cdc.MustMarshalBinaryBare(newLike))
-	_ = k.index.UpdateLikes(oldPost, newPost)
+	if err := k.index.UpdateLikes(oldPost, newPost); err != nil {
+		ctx.Logger().Error("failed to update post's likes",
+			"err", err.Error(),
+			"post", fmt.Sprintf("%s/%s", newLike.PostOwner, newLike.PostUUID),
+			"liker", newLike.Owner,
+		)
+	}
+
+	if err := k.index.AddLike(newLike); err != nil {
+		ctx.Logger().Error("failed to update post's likes",
+			"err", err.Error(),
+			"post", fmt.Sprintf("%s/%s", newLike.PostOwner, newLike.PostUUID),
+			"liker", newLike.Owner,
+		)
+	}
 }
 
 func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post) {
