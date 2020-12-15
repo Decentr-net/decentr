@@ -32,7 +32,7 @@ func handleMsgCreatePDV(ctx sdk.Context, cerberus cerberusapi.Cerberus, keeper K
 
 	exist, err := cerberus.DoesPDVExist(ctx.Context(), msg.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, fmt.Sprintf("cerberus call failed: %s", err.Error()))
+		return nil, fmt.Errorf("cerberus call failed: %w", err)
 	}
 
 	if !exist {
