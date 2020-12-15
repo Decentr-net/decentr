@@ -253,7 +253,7 @@ decentrcli query community posts [--from-owner account --from-uuid uuid] [--cate
 decentrcli query community popular-posts [--from-owner account --from-uuid uuid] [--category int] [--limit int] [--interval day/week/month]
 
 # Get user's likes
-decentrcli query community user-likes [owner]
+decentrcli query community user-liked-posts [owner]
 ```
 
 #### REST
@@ -286,7 +286,7 @@ curl -s "http://localhost:1317/community/posts/popular/byMonth?category={categor
 curl -s "http://localhost:1317/community/posts/{account}?from={postUUID}&limit={limit}"
 
 # Get user's likes
-curl -s "http://localhost:1317/community/likes/{account}"
+curl -s "http://localhost:1317/community/likedPosts/{account}"
 ```
 
 ## Build
