@@ -41,7 +41,7 @@ type Index interface {
 	UpdateLikes(old, new types.Post) error
 
 	AddLike(l types.Like) error
-	GetUserLikes(owner sdk.AccAddress) (map[string]types.LikeWeight, error)
+	GetUserLikedPosts(owner sdk.AccAddress) (map[string]types.LikeWeight, error)
 
 	GetRecentPosts(resolver func([]byte) types.Post, c types.Category, from []byte, limit uint32) ([]types.Post, error)
 	GetPopularPosts(resolver func([]byte) types.Post, i Interval, c types.Category, from []byte, limit uint32) ([]types.Post, error)
@@ -291,7 +291,7 @@ func (i index) AddLike(l types.Like) error {
 	return nil
 }
 
-func (i index) GetUserLikes(owner sdk.AccAddress) (map[string]types.LikeWeight, error) {
+func (i index) GetUserLikedPosts(owner sdk.AccAddress) (map[string]types.LikeWeight, error) {
 	out := make(map[string]types.LikeWeight)
 
 	if err := i.db.View(func(tx *bolt.Tx) error {

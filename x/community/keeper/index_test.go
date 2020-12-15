@@ -242,24 +242,24 @@ func TestIndex_AddLike(t *testing.T) {
 	}
 	require.NoError(t, i.AddLike(l))
 
-	ll, err := i.GetUserLikes(testOwner)
+	ll, err := i.GetUserLikedPosts(testOwner)
 	require.NoError(t, err)
 	require.Len(t, ll, 1)
 	require.Equal(t, ll[fmt.Sprintf("%s/%s", l.PostOwner, l.PostUUID)], types.LikeWeightUp)
 
 	l.Weight = types.LikeWeightZero
 	require.NoError(t, i.AddLike(l))
-	ll, err = i.GetUserLikes(testOwner)
+	ll, err = i.GetUserLikedPosts(testOwner)
 	require.NoError(t, err)
 	require.Len(t, ll, 0)
 }
 
-func TestIndex_GetUserLikes(t *testing.T) {
+func TestIndex_GetUserLikedPosts(t *testing.T) {
 	t.Parallel()
 
 	i := getIndex()
 
-	ll, err := i.GetUserLikes(testOwner)
+	ll, err := i.GetUserLikedPosts(testOwner)
 	require.NoError(t, err)
 	require.Len(t, ll, 0)
 
@@ -272,7 +272,7 @@ func TestIndex_GetUserLikes(t *testing.T) {
 		}))
 	}
 
-	ll, err = i.GetUserLikes(testOwner)
+	ll, err = i.GetUserLikedPosts(testOwner)
 	require.NoError(t, err)
 	require.Len(t, ll, 20)
 }

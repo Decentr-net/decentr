@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	QueryPopular = "popular"
-	QueryPosts   = "posts"
-	QueryUser    = "user"
-	QueryLikes   = "likes"
+	QueryPopular    = "popular"
+	QueryPosts      = "posts"
+	QueryUser       = "user"
+	QueryLikedPosts = "liked-posts"
 )
 
 const defaultLimit = 20
@@ -46,8 +46,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return getRecentPosts(ctx, path[1:], req, keeper)
 		case QueryUser:
 			return queryUserPosts(ctx, path[1:], req, keeper)
-		case QueryLikes:
-			return queryUserLikes(ctx, path[1:], req, keeper)
+		case QueryLikedPosts:
+			return queryUserLikedPosts(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown community query endpoint")
 		}
@@ -73,16 +73,16 @@ func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 }
 
 // nolint: unparam
-// queryPopular returns posts.
-func queryUserLikes(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+// queryPopular returns map with post and its like weight.
+func queryUserLikedPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	owner, err := sdk.AccAddressFromBech32(path[0])
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
 	}
 
-	l, err := keeper.index.GetUserLikes(owner)
+	l, err := keeper.index.GetUserLikedPosts(owner)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+		return nil, err
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, l)
@@ -118,7 +118,7 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 	p, err := keeper.index.GetRecentPosts(keeper.getPostResolver(ctx), category, from, limit)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+		return nil, err
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
@@ -163,7 +163,7 @@ func getPopularPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 	p, err := keeper.index.GetPopularPosts(keeper.getPostResolver(ctx), interval, category, from, limit)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+		return nil, err
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))

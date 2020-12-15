@@ -72,7 +72,7 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 
 	s, err := keeper.stats.GetStats(owner)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
+		return nil, err
 	}
 
 	i := 0
