@@ -37,6 +37,7 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 		Text:          msg.Text,
 		LikesCount:    0,
 		DislikesCount: 0,
+		PDV:           sdk.NewInt(0),
 		CreatedAt:     uint64(ctx.BlockTime().Unix()),
 	})
 
