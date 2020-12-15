@@ -76,8 +76,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Name() == "start" {
-			// TODO: set default value to cerberus public address when it will be deployed
-			cmd.PersistentFlags().String(pdv.FlagCerberusAddr, "http://localhost:7070", "cerberus host address")
+			cmd.PersistentFlags().String(pdv.FlagCerberusAddr, "https://cerberus.testnet.decentr.xyz", "cerberus host address")
 			viper.BindPFlag(pdv.FlagCerberusAddr, cmd.PersistentFlags().Lookup(pdv.FlagCerberusAddr))
 			break
 		}
