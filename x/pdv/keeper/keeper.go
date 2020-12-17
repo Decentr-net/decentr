@@ -43,11 +43,11 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		t = sdk.NewInt(1)
 	}
 
+	k.tokens.AddTokens(ctx, pdv.Owner, pdv.Timestamp, t)
+
 	if err := k.index.AddPDV(pdv); err != nil {
 		ctx.Logger().Error("failed to add pdv to index", "err", err.Error())
 	}
-
-	k.tokens.AddTokens(ctx, pdv.Owner, pdv.Timestamp, t)
 }
 
 // Gets the entire PDV metadata struct for an address
