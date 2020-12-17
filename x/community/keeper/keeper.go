@@ -33,14 +33,14 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, index Index, tokens Toke
 func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
 
+	store.Set(getPostKeeperKeyFromPost(p), k.cdc.MustMarshalBinaryBare(p))
+
 	if err := k.index.AddPost(p); err != nil {
 		ctx.Logger().Error("failed to add post to index",
 			"err", err.Error(),
 			"post", fmt.Sprintf("%s/%s", p.Owner, p.UUID.String()),
 		)
 	}
-
-	store.Set(getPostKeeperKeyFromPost(p), k.cdc.MustMarshalBinaryBare(p))
 }
 
 // DeletePost deletes the post from keeper.
