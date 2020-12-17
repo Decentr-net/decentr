@@ -22,5 +22,9 @@ func BytesToUint64(b []byte) uint64 {
 
 // TokenToFloat64 converts token to its float64 representation
 func TokenToFloat64(token sdk.Int) float64 {
+	if token.IsNil() {
+		return 0
+	}
+
 	return float64(token.Int64()) / float64(types.Denominator)
 }

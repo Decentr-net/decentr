@@ -22,4 +22,5 @@ func TestBytesToUint64(t *testing.T) {
 
 func TestTokenToFloat64(t *testing.T) {
 	assert.EqualValues(t, 1, TokenToFloat64(sdk.NewInt(10000000)))
+	assert.EqualValues(t, 0, TokenToFloat64(sdk.Int{}))
 }
