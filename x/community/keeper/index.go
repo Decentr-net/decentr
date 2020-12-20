@@ -63,7 +63,7 @@ func NewIndex(db *bolt.DB) (Index, error) {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		buckets := make([][][]byte, 0)
 
-		for c := types.UndefinedCategory; c <= types.CryptoCategory; c++ {
+		for c := types.UndefinedCategory; c <= types.CryptoAndBlockchainCategory; c++ {
 			buckets = append(buckets, [][]byte{
 				[]byte(createdAtIndexBucket),
 				utils.Uint64ToBytes(uint64(c)),
@@ -210,7 +210,7 @@ func (i index) RemoveUnnecessaryPosts(ctx sdk.Context, t uint64, resolver func([
 		}
 	}
 
-	for i := types.UndefinedCategory; i <= types.CryptoCategory; i++ {
+	for i := types.UndefinedCategory; i <= types.CryptoAndBlockchainCategory; i++ {
 		for b, d := range intervals {
 			wg.Add(1)
 			go flush(i, b, d)

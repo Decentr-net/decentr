@@ -2,6 +2,7 @@ package types
 
 import (
 	"net/url"
+	"unicode/utf8"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -10,7 +11,7 @@ import (
 
 const (
 	maxTitleLength = 150
-	maxPostLength  = 10000
+	maxPostLength  = 64 * 1000
 	minPostLength  = 15
 	maxURLLength   = 4 * 1024
 )
@@ -67,7 +68,7 @@ func (msg MsgCreatePost) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title should be shorter then %d and not empty", maxTitleLength)
 	}
 
-	if msg.Category == UndefinedCategory || msg.Category > CryptoCategory {
+	if msg.Category == UndefinedCategory || msg.Category > CryptoAndBlockchainCategory {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 	}
 
@@ -75,8 +76,8 @@ func (msg MsgCreatePost) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "previewImage is invalid")
 	}
 
-	if len(msg.Text) < minPostLength || len(msg.Text) > maxPostLength {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "post's length should be between %d and %d", minPostLength, maxPostLength)
+	if utf8.RuneCountInString(msg.Text) < minPostLength || len(msg.Text) > maxPostLength {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "post's length should be between %d symbols and %d bytes", minPostLength, maxPostLength)
 	}
 
 	return nil

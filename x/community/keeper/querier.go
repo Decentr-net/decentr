@@ -111,7 +111,7 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 		}
 		category = types.Category(v)
-		if category < types.UndefinedCategory || category > types.CryptoCategory {
+		if category < types.UndefinedCategory || category > types.CryptoAndBlockchainCategory {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown category")
 		}
 	}
