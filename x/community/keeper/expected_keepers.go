@@ -5,5 +5,5 @@ import (
 )
 
 type TokenKeeper interface {
-	AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp uint64, amount sdk.Int)
+	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
 }

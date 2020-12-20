@@ -46,23 +46,16 @@ func NewGasExcludingSetUpContextDecorator(exclude ...interface{}) GasExcludingSe
 }
 
 func (sud GasExcludingSetUpContextDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	freeFromGas := true
-
-check:
-	for _, v := range tx.GetMsgs() {
+	// We can't use GasMeter for part of messages, that's why we use freeGasMeter only for alone messages
+	if len(tx.GetMsgs()) == 1 {
 		for _, e := range sud.Exclude {
-			if reflect.TypeOf(v).String() != e.String() {
-				freeFromGas = false
-				break check
+			if reflect.TypeOf(tx.GetMsgs()[0]).String() == e.String() {
+				return next(ctx.WithGasMeter(freeGasMeter{}).WithMinGasPrices(nil), tx, simulate)
 			}
 		}
 	}
 
-	if !freeFromGas {
-		return ante.NewSetUpContextDecorator().AnteHandle(ctx, tx, simulate, next)
-	}
-
-	return next(ctx.WithGasMeter(freeGasMeter{}).WithMinGasPrices(nil), tx, simulate)
+	return ante.NewSetUpContextDecorator().AnteHandle(ctx, tx, simulate, next)
 }
 
 type freeGasMeter struct {
