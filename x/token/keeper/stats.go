@@ -8,6 +8,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gofrs/uuid"
 
 	"github.com/Decentr-net/decentr/x/utils"
 )
@@ -52,7 +53,9 @@ func (s *stats) AddToken(owner sdk.AccAddress, timestamp uint64, amount sdk.Int)
 		if err != nil {
 			return fmt.Errorf("failed to marshall amount: %w", err)
 		}
-		if err := b.Put(utils.Uint64ToBytes(timestamp), v); err != nil {
+
+		k := append(utils.Uint64ToBytes(timestamp), uuid.Must(uuid.NewV4()).Bytes()...)
+		if err := b.Put(k, v); err != nil {
 			return fmt.Errorf("failed to put stats item: %w", err)
 		}
 
@@ -77,7 +80,7 @@ func (s *stats) GetStats(owner sdk.AccAddress) (map[uint64]float64, error) {
 		t := sdk.NewInt(0)
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			timestamp := utils.BytesToUint64(k)
+			timestamp := utils.BytesToUint64(k[0:8]) // first part of key is timestamp, second - random uuid
 
 			truncated := truncateUnixTime(timestamp, time.Hour*24)
 

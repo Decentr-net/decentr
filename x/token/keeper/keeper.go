@@ -24,13 +24,14 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, stats Stats) Keeper {
 }
 
 // AddTokens adds token to the given owner
-func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp uint64, amount sdk.Int) {
+func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
 	k.addTotalSupply(ctx, amount)
-	if err := k.stats.AddToken(owner, timestamp, amount); err != nil {
+	if err := k.stats.AddToken(owner, uint64(ctx.BlockTime().Unix()), amount); err != nil {
 		ctx.Logger().Error("failed to add tokens to stats", "err", err.Error())
+		panic("failed to add tokens to stats")
 	}
 }
 

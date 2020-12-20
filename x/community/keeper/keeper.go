@@ -40,6 +40,7 @@ func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 			"err", err.Error(),
 			"post", fmt.Sprintf("%s/%s", p.Owner, p.UUID.String()),
 		)
+		panic("failed to add post to index")
 	}
 }
 
@@ -54,6 +55,8 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 			"err", err.Error(),
 			"post", fmt.Sprintf("%s/%s", owner, id.String()),
 		)
+
+		panic("failed to delete post from index")
 	}
 
 	store.Delete(key)
@@ -152,7 +155,7 @@ func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post) {
 	newPDV := sdk.NewInt(int64(post.LikesCount) - int64(post.DislikesCount))
 
 	diff := newPDV.Sub(oldPDV)
-	k.tokens.AddTokens(ctx, post.Owner, post.CreatedAt, diff)
+	k.tokens.AddTokens(ctx, post.Owner, diff)
 
 	post.PDV = newPDV
 }

@@ -175,10 +175,14 @@ func getPopularPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 func postsToQuerierPosts(pp []types.Post) []Post {
-	out := make([]Post, len(pp))
+	out := make([]Post, 0, len(pp))
 
-	for i, v := range pp {
-		out[i] = Post{
+	for _, v := range pp {
+		if v.UUID == uuid.Nil {
+			continue
+		}
+
+		out = append(out, Post{
 			UUID:          v.UUID.String(),
 			Owner:         v.Owner,
 			Title:         v.Title,
@@ -189,7 +193,7 @@ func postsToQuerierPosts(pp []types.Post) []Post {
 			DislikesCount: v.DislikesCount,
 			CreatedAt:     v.CreatedAt,
 			PDV:           utils.TokenToFloat64(v.PDV),
-		}
+		})
 	}
 
 	return out
