@@ -13,9 +13,10 @@ const (
 	TravelAndTourismCategory
 	ScienceAndTechnologyCategory
 	StrangeWorldCategory
-	HealthAndCultureCategory
-	FitnessAndExerciseCategory
-	CryptoCategory
+	ArtsAndEntertainmentCategory
+	WritersAndWritingCategory
+	HealthAndFitnessCategory
+	CryptoAndBlockchainCategory
 )
 
 type LikeWeight int8

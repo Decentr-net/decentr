@@ -63,14 +63,14 @@ func TestIndex_AddPost(t *testing.T) {
 
 	require.NoError(t, r.add(i, types.Post{
 		Owner:      testOwner,
-		Category:   types.FitnessAndExerciseCategory,
+		Category:   types.ArtsAndEntertainmentCategory,
 		UUID:       uuid.Must(uuid.NewV1()),
 		CreatedAt:  timestamp,
 		LikesCount: 2,
 	}))
 	require.NoError(t, r.add(i, types.Post{
 		Owner:      testOwner,
-		Category:   types.HealthAndCultureCategory,
+		Category:   types.HealthAndFitnessCategory,
 		UUID:       uuid.Must(uuid.NewV1()),
 		CreatedAt:  timestamp + 1,
 		LikesCount: 1,
@@ -82,7 +82,7 @@ func TestIndex_AddPost(t *testing.T) {
 	require.EqualValues(t, timestamp+1, p[0].CreatedAt)
 	require.EqualValues(t, timestamp, p[1].CreatedAt)
 
-	p, err = i.GetPopularPosts(r.resolve, MonthInterval, types.HealthAndCultureCategory, nil, 10)
+	p, err = i.GetPopularPosts(r.resolve, MonthInterval, types.HealthAndFitnessCategory, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, p, 1)
 	require.EqualValues(t, timestamp+1, p[0].CreatedAt)
@@ -99,7 +99,7 @@ func TestIndex_Add10Posts(t *testing.T) {
 	for i := 0; i < num; i++ {
 		require.NoError(t, r.add(index, types.Post{
 			Owner:      testOwner,
-			Category:   types.FitnessAndExerciseCategory,
+			Category:   types.HealthAndFitnessCategory,
 			UUID:       uuid.Must(uuid.NewV1()),
 			CreatedAt:  timestamp,
 			LikesCount: 0,
@@ -110,7 +110,7 @@ func TestIndex_Add10Posts(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, p, num)
 
-	p, err = index.GetRecentPosts(r.resolve, types.FitnessAndExerciseCategory, nil, 10)
+	p, err = index.GetRecentPosts(r.resolve, types.HealthAndFitnessCategory, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, p, num)
 }
@@ -203,7 +203,7 @@ func TestIndex_Flush(t *testing.T) {
 
 	timestamp := uint64(time.Now().Unix())
 
-	for c := types.WorldNewsCategory; c <= types.FitnessAndExerciseCategory; c++ {
+	for c := types.WorldNewsCategory; c <= types.WritersAndWritingCategory; c++ {
 		for j := 0; j < 10; j++ {
 			require.NoError(t, r.add(i, types.Post{
 				Owner:      testOwner,
@@ -226,7 +226,7 @@ func TestIndex_Flush(t *testing.T) {
 
 	p, err := i.GetPopularPosts(r.resolve, MonthInterval, types.UndefinedCategory, nil, 20)
 	require.NoError(t, err)
-	require.Len(t, p, 6)
+	require.Len(t, p, int(types.WritersAndWritingCategory))
 }
 
 func TestIndex_AddLike(t *testing.T) {
