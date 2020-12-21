@@ -37,11 +37,11 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
 
 ```c
-43932e5aa9847f749a6007c6408f1182408a89c4@ares.testnet.decentr.xyz:26656
-d2e2a2b274f2d9aa102838c30405949eb71cddcd@hera.testnet.decentr.xyz:26656
-52a9524e6225ea5b0a727647333a91095ddaeec0@hermes.testnet.decentr.xyz:26656
-f9455b31b3fef5ee34b2ce8d7baf83f933c314cc@poseidon.testnet.decentr.xyz:26656
-841894a697747f9952f55256db1da37801b4cfb3@zeus.testnet.decentr.xyz:26656
+d8ca83bf4253e158fbda462fc598a46067ed1669@ares.testnet.decentr.xyz:26656
+b80aad9f758f9f3f20b10aaf8081a42852c68393@hera.testnet.decentr.xyz:26656
+fa313ac831ab870d00d16cd277a447a5e9a9ade3@hermes.testnet.decentr.xyz:26656
+d93e8e1a05b21696b816e9015126bd765b1e41df@poseidon.testnet.decentr.xyz:26656
+2d971dd6a5a133957f48a99e95fdfb2972e7415c@zeus.testnet.decentr.xyz:26656
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
@@ -246,7 +246,7 @@ decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --fro
 # Get user's posts
 decentrcli query community user-posts <account> [--from uuid] [--limit int]
 
-# Get an post
+# Get a single post
 decentrcli query community post <owner> <uuid>
 
 # Get the recent posts
@@ -273,7 +273,7 @@ curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/dele
 curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/like\
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "weight": 1}' > unsignedTx.json
 
-# Get a post
+# Get a single post
 curl -s "http://localhost:1317/community/post/{owner}/{uuid}"
 
 # Get the latest posts
