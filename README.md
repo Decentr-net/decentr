@@ -246,6 +246,9 @@ decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --fro
 # Get user's posts
 decentrcli query community user-posts <account> [--from uuid] [--limit int]
 
+# Get an post
+decentrcli query community post <owner> <uuid>
+
 # Get the recent posts
 decentrcli query community posts [--from-owner account --from-uuid uuid] [--category int] [--limit int]
 
@@ -269,6 +272,9 @@ curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/dele
 # Like post
 curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/like\
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "weight": 1}' > unsignedTx.json
+
+# Get a post
+curl -s "http://localhost:1317/community/post/{owner}/{uuid}"
 
 # Get the latest posts
 curl -s "http://localhost:1317/community/posts?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
