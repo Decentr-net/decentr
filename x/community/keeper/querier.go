@@ -17,6 +17,7 @@ import (
 const (
 	QueryPopular    = "popular"
 	QueryPosts      = "posts"
+	QueryPost       = "post"
 	QueryUser       = "user"
 	QueryLikedPosts = "liked-posts"
 )
@@ -42,6 +43,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		switch path[0] {
 		case QueryPopular:
 			return getPopularPosts(ctx, path[1:], req, keeper)
+		case QueryPost:
+			return getPost(ctx, path[1:], req, keeper)
 		case QueryPosts:
 			return getRecentPosts(ctx, path[1:], req, keeper)
 		case QueryUser:
@@ -86,6 +89,38 @@ func queryUserLikedPosts(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, l)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
+}
+
+func getPost(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+	}
+
+	id, err := uuid.FromString(path[1])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
+	}
+
+	p := keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id))
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, Post{
+		UUID:          p.UUID.String(),
+		Owner:         p.Owner,
+		Title:         p.Title,
+		PreviewImage:  p.PreviewImage,
+		Category:      p.Category,
+		Text:          p.Text,
+		LikesCount:    p.LikesCount,
+		DislikesCount: p.DislikesCount,
+		CreatedAt:     p.CreatedAt,
+		PDV:           utils.TokenToFloat64(p.PDV),
+	})
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

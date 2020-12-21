@@ -38,6 +38,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	communityQueryCmd.AddCommand(
 		flags.GetCommands(
+			GetCmdPost(queryRoute, cdc),
 			GetCmdUsersPosts(queryRoute, cdc),
 			GetCmdPopularPostsList(queryRoute, cdc),
 			GetCmdPostsList(queryRoute, cdc),
@@ -46,6 +47,26 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	)
 
 	return communityQueryCmd
+}
+
+// GetCmdPost queries exact post
+func GetCmdPost(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "post <owner> <uuid>",
+		Short: "Query post",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", queryRoute, args[0], args[1]), nil)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(string(res))
+			return nil
+		},
+	}
 }
 
 // GetCmdUsersPosts queries users posts
