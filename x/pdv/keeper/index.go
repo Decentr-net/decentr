@@ -16,7 +16,7 @@ const (
 )
 
 type Index interface {
-	AddPDV(pdv types.PDV) error
+	AddPDV(timestamp uint64, pdv types.PDV) error
 	ListPDV(owner sdk.AccAddress, from *uint64, limit uint) ([]types.PDV, error)
 }
 
@@ -42,7 +42,7 @@ func NewIndex(db *bolt.DB) (Index, error) {
 	return &index{db}, nil
 }
 
-func (s *index) AddPDV(pdv types.PDV) error {
+func (s *index) AddPDV(timestamp uint64, pdv types.PDV) error {
 	if err := s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket))
 		b, err := b.CreateBucketIfNotExists(pdv.Owner)
@@ -58,7 +58,7 @@ func (s *index) AddPDV(pdv types.PDV) error {
 			return fmt.Errorf("failed to marshal index item: %w", err)
 		}
 
-		if err := b.Put(utils.Uint64ToBytes(pdv.Timestamp), v); err != nil {
+		if err := b.Put(utils.Uint64ToBytes(timestamp), v); err != nil {
 			return fmt.Errorf("failed to put index item: %w", err)
 		}
 

@@ -32,7 +32,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.TokenRecords {
-		keeper.AddTokens(ctx, record.Owner, record.Balance)
+		keeper.AddTokens(ctx, record.Owner, record.Balance, nil)
 	}
 }
 
