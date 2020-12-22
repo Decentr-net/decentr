@@ -43,7 +43,10 @@ func TestStats_AddPDV(t *testing.T) {
 		Owner:     owner,
 		Type:      types.PDVTypeCookie,
 	}
-	require.NoError(t, i.AddPDV(pdv))
+	require.NoError(t, i.AddPDV(pdv.Timestamp, pdv))
+	dup := pdv
+	dup.Timestamp += 1
+	require.NoError(t, i.AddPDV(pdv.Timestamp, dup))
 
 	p, err := i.ListPDV(sdk.AccAddress{1, 2, 3, 4, 5, 6, 7}, nil, 5)
 	require.NoError(t, err)
@@ -56,7 +59,7 @@ func TestStats_ListPDV(t *testing.T) {
 
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 1}
 	for j := 0; j < 20; j++ {
-		require.NoError(t, i.AddPDV(types.PDV{
+		require.NoError(t, i.AddPDV(1578009600+uint64(j), types.PDV{
 			Timestamp: 1578009600 + uint64(j),
 			Address:   "address",
 			Owner:     owner,

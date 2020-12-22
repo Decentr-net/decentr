@@ -8,7 +8,7 @@ import (
 )
 
 type TokenKeeper interface {
-	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
+	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int, description []byte)
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -43,9 +43,9 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		t = sdk.NewInt(1)
 	}
 
-	k.tokens.AddTokens(ctx, pdv.Owner, t)
+	k.tokens.AddTokens(ctx, pdv.Owner, t, []byte(address[:8]))
 
-	if err := k.index.AddPDV(pdv); err != nil {
+	if err := k.index.AddPDV(uint64(ctx.BlockTime().Unix()), pdv); err != nil {
 		ctx.Logger().Error("failed to add pdv to index", "err", err.Error())
 	}
 }
