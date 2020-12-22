@@ -28,3 +28,7 @@ func TokenToFloat64(token sdk.Int) float64 {
 
 	return float64(token.Int64()) / float64(types.Denominator)
 }
+
+func InitialTokenBalance() sdk.Int {
+	return sdk.NewInt(1 * types.Denominator)
+}

@@ -3,6 +3,8 @@ package app
 import (
 	"reflect"
 
+	"github.com/Decentr-net/decentr/x/profile"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -14,8 +16,9 @@ import (
 
 func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
-		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{}, community.MsgCreatePost{},
-			community.MsgDeletePost{}, community.MsgSetLike{}),
+		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{},
+			profile.MsgSetPrivate{}, profile.MsgSetPublic{},
+			community.MsgCreatePost{}, community.MsgDeletePost{}, community.MsgSetLike{}),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewValidateMemoDecorator(ak),
