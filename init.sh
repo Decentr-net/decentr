@@ -23,4 +23,4 @@ decentrd collect-gentxs
 echo "Validating genesis file..."
 decentrd validate-genesis
 
-decentrd start
+decentrd start --community-moderator-addr=$(decentrcli keys show jack -a)

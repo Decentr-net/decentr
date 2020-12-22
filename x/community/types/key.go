@@ -12,6 +12,8 @@ const (
 
 	// QuerierRoute to be used for querierer msgs
 	QuerierRoute = ModuleName
+
+	FlagModeratorAddr = "community-moderator-addr"
 )
 
 // Key prefixes

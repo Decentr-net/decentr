@@ -76,8 +76,14 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Name() == "start" {
+			// cerberus address
 			cmd.PersistentFlags().String(pdv.FlagCerberusAddr, "https://cerberus.testnet.decentr.xyz", "cerberus host address")
 			viper.BindPFlag(pdv.FlagCerberusAddr, cmd.PersistentFlags().Lookup(pdv.FlagCerberusAddr))
+
+			// moderator account
+			cmd.PersistentFlags().String(community.FlagModeratorAddr, "", "community moderator account address")
+			viper.BindPFlag(community.FlagModeratorAddr, cmd.PersistentFlags().Lookup(community.FlagModeratorAddr))
+
 			break
 		}
 	}
@@ -102,6 +108,11 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	cerberusAddr := viper.GetString(pdv.FlagCerberusAddr)
 	if cerberusAddr == "" {
 		panic(fmt.Errorf("%s isn't set", pdv.FlagCerberusAddr))
+	}
+
+	communityModeratorAddr, err := sdk.AccAddressFromBech32(viper.GetString(community.FlagModeratorAddr))
+	if err != nil {
+		panic(fmt.Errorf("%s is invalid or empty", community.FlagModeratorAddr))
 	}
 
 	if _, err := url.ParseRequestURI(cerberusAddr); err != nil {
@@ -146,9 +157,8 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
 		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
-		pdvIndex,
-		tokenStats,
-		communityIndex,
+		pdvIndex, tokenStats,
+		communityModeratorAddr, communityIndex,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -162,7 +172,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil, nil, nil)
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil, nil, nil, nil)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -170,7 +180,6 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil, nil, nil)
-
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil, nil, nil, nil)
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

@@ -155,7 +155,8 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, cerberus api.Cerberus, pdvIndex pdv.Index, tokenStats token.Stats, communityIdx community.Index, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, cerberus api.Cerberus, pdvIndex pdv.Index, tokenStats token.Stats,
+	communityModeratorAddress sdk.AccAddress, communityIdx community.Index, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -286,7 +287,7 @@ func NewDecentrApp(
 		pdv.NewAppModule(cerberus, app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
-		community.NewAppModule(app.communityKeeper),
+		community.NewAppModule(app.communityKeeper, communityModeratorAddress),
 		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)

@@ -105,7 +105,7 @@ func GetCmdList(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdShow queries PDV full data unencrypted data
+// GetCmdCerberusAddr queries for the cerberus-addr flag
 func GetCmdCerberusAddr(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "cerberus-addr",

@@ -28,8 +28,9 @@ type MsgCreatePost struct {
 
 // MsgDeletePost defines a DeletePost message
 type MsgDeletePost struct {
-	UUID  string         `json:"uuid"`
-	Owner sdk.AccAddress `json:"owner"`
+	PostUUID  string         `json:"postUUID"`
+	PostOwner sdk.AccAddress `json:"postOwner"`
+	Owner     sdk.AccAddress `json:"owner"`
 }
 
 // MsgSetLike defines a SetLike message
@@ -94,10 +95,11 @@ func (msg MsgCreatePost) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgDeletePost is a constructor function for MsgDeletePost
-func NewMsgDeletePost(id uuid.UUID, owner sdk.AccAddress) MsgDeletePost {
+func NewMsgDeletePost(owner sdk.AccAddress, postUUID uuid.UUID, postOwner sdk.AccAddress) MsgDeletePost {
 	return MsgDeletePost{
-		Owner: owner,
-		UUID:  id.String(),
+		Owner:     owner,
+		PostUUID:  postUUID.String(),
+		PostOwner: postOwner,
 	}
 }
 
@@ -113,7 +115,11 @@ func (msg MsgDeletePost) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
 
-	if _, err := uuid.FromString(msg.UUID); err != nil {
+	if msg.PostOwner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.PostOwner.String())
+	}
+
+	if _, err := uuid.FromString(msg.PostUUID); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
 	}
 
