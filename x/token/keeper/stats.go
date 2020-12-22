@@ -8,7 +8,6 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/gofrs/uuid"
 
 	"github.com/Decentr-net/decentr/x/utils"
 )
@@ -16,7 +15,7 @@ import (
 const ownersBucket = "owners"
 
 type Stats interface {
-	AddToken(owner sdk.AccAddress, timestamp uint64, token sdk.Int) error
+	AddToken(owner sdk.AccAddress, timestamp uint64, token sdk.Int, description []byte) error
 	GetStats(owner sdk.AccAddress) (map[uint64]float64, error)
 }
 
@@ -41,7 +40,7 @@ func NewStats(db *bolt.DB) (Stats, error) {
 	}, nil
 }
 
-func (s *stats) AddToken(owner sdk.AccAddress, timestamp uint64, amount sdk.Int) error {
+func (s *stats) AddToken(owner sdk.AccAddress, timestamp uint64, amount sdk.Int, description []byte) error {
 	if err := s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ownersBucket))
 		b, err := b.CreateBucketIfNotExists(owner)
@@ -54,7 +53,7 @@ func (s *stats) AddToken(owner sdk.AccAddress, timestamp uint64, amount sdk.Int)
 			return fmt.Errorf("failed to marshall amount: %w", err)
 		}
 
-		k := append(utils.Uint64ToBytes(timestamp), uuid.Must(uuid.NewV4()).Bytes()...)
+		k := append(utils.Uint64ToBytes(timestamp), description...)
 		if err := b.Put(k, v); err != nil {
 			return fmt.Errorf("failed to put stats item: %w", err)
 		}

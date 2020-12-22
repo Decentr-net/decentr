@@ -40,7 +40,8 @@ func TestStats_AddToken(t *testing.T) {
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 7}
 	timestamp := uint64(time.Date(time.Now().Year(), 1, 3, 4, 5, 0, 0, time.UTC).Unix())
 
-	require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(1)))
+	require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(1), nil))
+	require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(1), nil))
 
 	stats, err := s.GetStats(owner)
 	require.NoError(t, err)
@@ -53,7 +54,7 @@ func TestStats_GetStats(t *testing.T) {
 	owner := sdk.AccAddress{1, 2, 3, 4, 5, 6, 200}
 	for i := 1; i <= 31; i++ {
 		timestamp := uint64(time.Date(time.Now().Year(), 1, i, 4, 5, 0, 0, time.UTC).Unix())
-		require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(uint64(i))))
+		require.NoError(t, s.AddToken(owner, timestamp, sdk.NewIntFromUint64(uint64(i)), nil))
 	}
 
 	sum := 0

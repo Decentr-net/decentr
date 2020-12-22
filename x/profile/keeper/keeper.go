@@ -8,7 +8,7 @@ import (
 )
 
 type TokenKeeper interface {
-	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
+	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int, description []byte)
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -34,7 +34,7 @@ func (k Keeper) SetProfile(ctx sdk.Context, owner sdk.AccAddress, new types.Prof
 	old := k.GetProfile(ctx, owner)
 	if old.Public.RegisteredAt == 0 {
 		new.Public.RegisteredAt = ctx.BlockTime().Unix()
-		k.tokens.AddTokens(ctx, owner, utils.InitialTokenBalance())
+		k.tokens.AddTokens(ctx, owner, utils.InitialTokenBalance(), nil)
 	} else {
 		new.Public.RegisteredAt = old.Public.RegisteredAt
 	}

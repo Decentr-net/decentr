@@ -155,7 +155,7 @@ func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post) {
 	newPDV := sdk.NewInt(int64(post.LikesCount) - int64(post.DislikesCount))
 
 	diff := newPDV.Sub(oldPDV)
-	k.tokens.AddTokens(ctx, post.Owner, diff)
+	k.tokens.AddTokens(ctx, post.Owner, diff, post.UUID[:8])
 
 	post.PDV = newPDV
 }
