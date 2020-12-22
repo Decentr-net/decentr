@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/gob"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -31,4 +34,13 @@ func TokenToFloat64(token sdk.Int) float64 {
 
 func InitialTokenBalance() sdk.Int {
 	return sdk.NewInt(1 * types.Denominator)
+}
+
+func GetHash(v interface{}) []byte {
+	buf := bytes.NewBuffer([]byte{})
+
+	gob.NewEncoder(buf).Encode(v)
+
+	h := sha256.Sum256(buf.Bytes())
+	return h[:]
 }
