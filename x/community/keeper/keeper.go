@@ -9,6 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/Decentr-net/decentr/x/community/types"
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -129,7 +130,7 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	// copy old post to new post
 	newPost := oldPost
 	updatePostLikesCounters(&newPost, oldLike.Weight, newLike.Weight)
-	k.updatePostPDV(ctx, &newPost)
+	k.updatePostPDV(ctx, &newPost, utils.GetHash(newLike))
 
 	postsStore.Set(getPostKeeperKey(newPost.Owner, newPost.UUID), k.cdc.MustMarshalBinaryBare(newPost))
 	likesStore.Set(getLikeKeeperKey(newLike), k.cdc.MustMarshalBinaryBare(newLike))
@@ -150,12 +151,12 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	}
 }
 
-func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post) {
+func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post, description []byte) {
 	oldPDV := post.PDV
 	newPDV := sdk.NewInt(int64(post.LikesCount) - int64(post.DislikesCount))
 
 	diff := newPDV.Sub(oldPDV)
-	k.tokens.AddTokens(ctx, post.Owner, diff, post.UUID[:8])
+	k.tokens.AddTokens(ctx, post.Owner, diff, description)
 
 	post.PDV = newPDV
 }

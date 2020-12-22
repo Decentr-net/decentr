@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/utils"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -43,7 +44,7 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		t = sdk.NewInt(1)
 	}
 
-	k.tokens.AddTokens(ctx, pdv.Owner, t, []byte(address[:8]))
+	k.tokens.AddTokens(ctx, pdv.Owner, t, utils.GetHash(pdv.Address))
 
 	if err := k.index.AddPDV(uint64(ctx.BlockTime().Unix()), pdv); err != nil {
 		ctx.Logger().Error("failed to add pdv to index", "err", err.Error())
