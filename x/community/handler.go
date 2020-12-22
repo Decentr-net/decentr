@@ -46,7 +46,7 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 
 func handleMsgDeletePost(ctx sdk.Context, keeper Keeper, msg MsgDeletePost, moderatorAddress sdk.AccAddress) (*sdk.Result, error) {
 	if !msg.Owner.Equals(moderatorAddress) && !msg.Owner.Equals(msg.PostOwner) {
-		return &sdk.Result{}, nil
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Incorrect Owner")
 	}
 
 	postUUID, _ := uuid.FromString(msg.PostUUID)

@@ -238,10 +238,13 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
 decentrcli tx community create-post [text] --title [title] --preview-image [url to preview] --category 2 --from [account]
 
 # Delete post
-decentrcli tx community delete-post [uuid] --from [account]
+decentrcli tx community delete-post [postOwner] [postUUID] --from [account]
 
 # Like post
 decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --from [account]
+
+# Get moderator account address
+decentrcli query community moderator-addr
 
 # Get user's posts
 decentrcli query community user-posts <account> [--from uuid] [--limit int]
@@ -268,6 +271,9 @@ curl -XPOST -s http://localhost:1317/community/posts \
 # Delete post
 curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/delete \
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+
+# Get moderator account address
+curl -s http://localhost:1317/community/moderator-addr
 
 # Like post
 curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/like\
