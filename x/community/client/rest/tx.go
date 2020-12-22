@@ -107,13 +107,13 @@ func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		vars := mux.Vars(r)
 		bech32Addr := vars["postOwner"]
 
-		owner, err := sdk.AccAddressFromBech32(bech32Addr)
+		postOwner, err := sdk.AccAddressFromBech32(bech32Addr)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		id, err := uuid.FromString(vars["postUUID"])
+		postUUID, err := uuid.FromString(vars["postUUID"])
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -130,7 +130,13 @@ func deletePostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgDeletePost(id, owner)
+		owner, err := sdk.AccAddressFromBech32(baseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		msg := types.NewMsgDeletePost(owner, postUUID, postOwner)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

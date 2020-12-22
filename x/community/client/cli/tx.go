@@ -90,20 +90,25 @@ func GetCmdCreatePost(cdc *codec.Codec) *cobra.Command {
 // GetCmdDeletePost is the CLI command for sending a DeletePost transaction
 func GetCmdDeletePost(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete-post [uuid]",
+		Use:   "delete-post [postOwner] [postUUID]",
 		Short: "delete blog post",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			id, err := uuid.FromString(args[0])
+			postOwner, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("failed to parse uuid: %w", err)
+				return fmt.Errorf("failed to parse postOwner: %w", err)
 			}
 
-			msg := types.NewMsgDeletePost(id, cliCtx.GetFromAddress())
+			postUUID, err := uuid.FromString(args[1])
+			if err != nil {
+				return fmt.Errorf("failed to parse postUUID: %w", err)
+			}
+
+			msg := types.NewMsgDeletePost(cliCtx.GetFromAddress(), postUUID, postOwner)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -69,14 +69,16 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper Keeper
+	keeper        Keeper
+	moderatorAddr sdk.AccAddress
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper) AppModule {
+func NewAppModule(k Keeper, moderatorAddr sdk.AccAddress) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		moderatorAddr:  moderatorAddr,
 	}
 }
 
@@ -91,7 +93,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.keeper, am.moderatorAddr)
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
