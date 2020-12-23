@@ -52,14 +52,16 @@ func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 	key := getPostKeeperKeyFromPost(p)
 	store.Set(key, k.cdc.MustMarshalBinaryBare(p))
 
+	createdAtIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexCreatedAtPrefix)
 	indexKey := getCreateAtIndexKey(p)
 	for _, p := range getCreatedAtIndexPrefixes(p.Category) {
-		store.Set(append(p, indexKey...), key)
+		createdAtIndex.Set(append(p, indexKey...), key)
 	}
 
+	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
 	indexKey = getPopularityIndexKey(p)
 	for _, p := range getPopularityIndexPrefixes(p.Category, p.CreatedAt) {
-		store.Set(append(p, indexKey...), key)
+		popularityIndex.Set(append(p, indexKey...), key)
 	}
 }
 
@@ -73,14 +75,16 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 	p := k.GetPostByKey(ctx, key)
 
+	createdAtIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexCreatedAtPrefix)
 	indexKey := getCreateAtIndexKey(p)
 	for _, p := range getCreatedAtIndexPrefixes(p.Category) {
-		store.Delete(append(p, indexKey...))
+		createdAtIndex.Delete(append(p, indexKey...))
 	}
 
+	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
 	indexKey = getPopularityIndexKey(p)
 	for _, p := range getPopularityIndexPrefixes(p.Category, 0) {
-		store.Delete(append(p, indexKey...))
+		popularityIndex.Delete(append(p, indexKey...))
 	}
 }
 
@@ -168,15 +172,16 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	postsStore.Set(getPostKeeperKey(newPost.Owner, newPost.UUID), k.cdc.MustMarshalBinaryBare(newPost))
 	likesStore.Set(getLikeKeeperKey(newLike), k.cdc.MustMarshalBinaryBare(newLike))
 
-	// update popularity indxe
+	// update popularity index
+	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
 	indexKey := getPopularityIndexKey(oldPost)
 	for _, p := range getPopularityIndexPrefixes(oldPost.Category, 0) {
-		store.Delete(append(p, indexKey...))
+		popularityIndex.Delete(append(p, indexKey...))
 	}
 
 	indexKey = getPopularityIndexKey(newPost)
 	for _, p := range getPopularityIndexPrefixes(newPost.Category, newPost.CreatedAt) {
-		store.Set(append(p, indexKey...), indexKey)
+		popularityIndex.Set(append(p, indexKey...), indexKey)
 	}
 
 	// update user likes index
@@ -272,17 +277,19 @@ func getPostKeeperKeyFromLike(p types.Like) []byte {
 }
 
 func (k Keeper) SyncIndex(ctx sdk.Context) {
+	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
+
 	flush := func(c types.Category, interval Interval, limit time.Duration) {
 		l := uint64(ctx.BlockTime().Unix()) - uint64(limit/time.Second)
 
-		store := prefix.NewStore(ctx.KVStore(k.storeKey), append(types.IndexPopularPrefix, byte(c), byte(interval)))
+		index := prefix.NewStore(popularityIndex, []byte{byte(c), byte(interval)})
 
-		it := sdk.KVStorePrefixIterator(store, nil)
+		it := sdk.KVStorePrefixIterator(index, nil)
 		defer it.Close()
 
 		for ; it.Valid(); it.Next() {
 			if k.GetPostByKey(ctx, it.Value()).CreatedAt < l {
-				store.Delete(it.Value())
+				index.Delete(it.Value())
 			}
 		}
 	}
@@ -297,10 +304,10 @@ func (k Keeper) SyncIndex(ctx sdk.Context) {
 func (k Keeper) GetUserLikedPosts(ctx sdk.Context, owner sdk.AccAddress) map[string]types.LikeWeight {
 	out := make(map[string]types.LikeWeight)
 
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexUserLikesPrefix)
+	userLikesIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexUserLikesPrefix)
 
-	if store.Has(owner) {
-		k.cdc.MustUnmarshalBinaryBare(store.Get(owner), &out)
+	if userLikesIndex.Has(owner) {
+		k.cdc.MustUnmarshalBinaryBare(userLikesIndex.Get(owner), &out)
 	}
 
 	return out
@@ -315,9 +322,9 @@ func (k Keeper) GetPopularPosts(ctx sdk.Context, interval Interval, c types.Cate
 }
 
 func (k Keeper) getPosts(ctx sdk.Context, p []byte, from []byte, limit uint32) []types.Post {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), p)
+	index := prefix.NewStore(ctx.KVStore(k.storeKey), p)
 
-	it := sdk.KVStoreReversePrefixIterator(store, nil)
+	it := sdk.KVStoreReversePrefixIterator(index, nil)
 	defer it.Close()
 
 	if from != nil {
@@ -336,15 +343,15 @@ func (k Keeper) getPosts(ctx sdk.Context, p []byte, from []byte, limit uint32) [
 
 func getCreatedAtIndexPrefixes(c types.Category) [][]byte {
 	return [][]byte{
-		append(types.IndexCreatedAtPrefix, byte(types.UndefinedCategory)),
-		append(types.IndexCreatedAtPrefix, byte(c)),
+		{byte(types.UndefinedCategory)},
+		{byte(c)},
 	}
 }
 
 func getPopularityIndexPrefixes(c types.Category, createdAt uint64) [][]byte {
 	catPrefixes := [][]byte{
-		append(types.IndexPopularPrefix, byte(types.UndefinedCategory)),
-		append(types.IndexPopularPrefix, byte(c)),
+		{byte(types.UndefinedCategory)},
+		{byte(c)},
 	}
 
 	out := make([][]byte, 0, len(intervals)*len(catPrefixes))
