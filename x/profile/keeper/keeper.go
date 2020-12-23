@@ -34,7 +34,7 @@ func (k Keeper) SetProfile(ctx sdk.Context, owner sdk.AccAddress, new types.Prof
 	old := k.GetProfile(ctx, owner)
 	if old.Public.RegisteredAt == 0 {
 		new.Public.RegisteredAt = ctx.BlockTime().Unix()
-		k.tokens.AddTokens(ctx, owner, utils.InitialTokenBalance(), nil)
+		k.tokens.AddTokens(ctx, owner, utils.InitialTokenBalance(), []byte("profile"))
 	} else {
 		new.Public.RegisteredAt = old.Public.RegisteredAt
 	}
