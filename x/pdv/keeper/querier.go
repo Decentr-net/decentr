@@ -85,12 +85,7 @@ func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		limit = uint(v)
 	}
 
-	p, err := keeper.index.ListPDV(owner, from, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, p)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, keeper.ListPDV(ctx, owner, from, limit))
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

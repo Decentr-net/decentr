@@ -18,6 +18,7 @@ const (
 
 // Key prefixes
 var (
-	PostPrefix = []byte{0x00} // prefix for keys that store posts
-	LikePrefix = []byte{0x01} // prefix for keys that store likes
+	PostPrefix  = []byte{0x00} // prefix for keys that store posts
+	LikePrefix  = []byte{0x01} // prefix for keys that store likes
+	IndexPrefix = []byte{0x02} // prefix for index keys
 )
