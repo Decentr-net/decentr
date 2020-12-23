@@ -289,7 +289,7 @@ func (k Keeper) SyncIndex(ctx sdk.Context) {
 
 		for ; it.Valid(); it.Next() {
 			if k.GetPostByKey(ctx, it.Value()).CreatedAt < l {
-				index.Delete(it.Value())
+				index.Delete(it.Key())
 			}
 		}
 	}
