@@ -247,7 +247,7 @@ decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --fro
 decentrcli query community moderator-addr
 
 # Get user's posts
-decentrcli query community user-posts <account> [--from uuid] [--limit int]
+decentrcli query community user-posts <account> [--from-uuid uuid] [--limit int]
 
 # Get a single post
 decentrcli query community post <owner> <uuid>

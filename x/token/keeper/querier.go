@@ -70,10 +70,7 @@ func queryStats(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
 	}
 
-	s, err := keeper.stats.GetStats(owner)
-	if err != nil {
-		return nil, err
-	}
+	s := keeper.GetStats(ctx, owner)
 
 	i := 0
 	stats := make([]DateValue, len(s))

@@ -87,7 +87,7 @@ func GetCmdUsersPosts(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				err error
 			)
 
-			if from, err = f.GetString("from"); err != nil {
+			if from, err = f.GetString("from-uuid"); err != nil {
 				return err
 			}
 
@@ -105,7 +105,7 @@ func GetCmdUsersPosts(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("from", "", "list from uuid")
+	cmd.Flags().String("from-uuid", "", "list from uuid")
 	cmd.Flags().Int("limit", 20, "limit")
 
 	return cmd

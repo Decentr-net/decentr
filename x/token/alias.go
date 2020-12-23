@@ -13,7 +13,6 @@ const (
 )
 
 var (
-	NewStats      = keeper.NewStats
 	NewKeeper     = keeper.NewKeeper
 	NewQuerier    = keeper.NewQuerier
 	ModuleCdc     = types.ModuleCdc
@@ -22,5 +21,4 @@ var (
 
 type (
 	Keeper = keeper.Keeper
-	Stats  = keeper.Stats
 )

@@ -155,8 +155,8 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, cerberus api.Cerberus, pdvIndex pdv.Index, tokenStats token.Stats,
-	communityModeratorAddress sdk.AccAddress, communityIdx community.Index, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, cerberus api.Cerberus,
+	communityModeratorAddress sdk.AccAddress, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -252,15 +252,12 @@ func NewDecentrApp(
 	app.tokensKeeper = token.NewKeeper(
 		app.cdc,
 		keys[token.StoreKey],
-		tokenStats,
 	)
 
 	app.pdvKeeper = pdv.NewKeeper(
 		app.cdc,
 		keys[pdv.StoreKey],
-		app.tokensKeeper,
-		pdvIndex,
-	)
+		app.tokensKeeper)
 
 	app.profilesKeeper = profile.NewKeeper(
 		app.cdc,
@@ -271,7 +268,6 @@ func NewDecentrApp(
 	app.communityKeeper = community.NewKeeper(
 		app.cdc,
 		keys[community.StoreKey],
-		communityIdx,
 		app.tokensKeeper,
 	)
 
@@ -295,7 +291,7 @@ func NewDecentrApp(
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 
-	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
+	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName, community.ModuleName)
 	app.mm.SetOrderEndBlockers(staking.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
