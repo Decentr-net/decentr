@@ -61,7 +61,7 @@ func GetCmdStats(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "stats <owner>",
 		Short: "Query stats of PDVs owner.",
-		Args:  cobra.RangeArgs(1, 3),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 

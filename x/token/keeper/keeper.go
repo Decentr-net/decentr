@@ -108,6 +108,8 @@ func (k Keeper) GetStats(ctx sdk.Context, owner sdk.AccAddress) map[uint64]float
 		a = a.Add(amount)
 	}
 
+	out[t] = utils.TokenToFloat64(a)
+
 	return out
 }
 
