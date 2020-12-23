@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/url"
 
-	"github.com/boltdb/bolt"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -34,9 +33,6 @@ import (
 
 const (
 	flagInvCheckPeriod = "inv-check-period"
-	tokenDBFile        = "token.db"
-	pdvDBFile          = "pdv.db"
-	communityDBFile    = "community.db"
 )
 
 var invCheckPeriod uint
@@ -118,16 +114,6 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(fmt.Errorf("failed to parse %s: %w", pdv.FlagCerberusAddr, err))
 	}
 
-	communityDB, err := bolt.Open(fmt.Sprintf("%s/data/%s", viper.GetString(cli.HomeFlag), communityDBFile), 0600, nil)
-	if err != nil {
-		panic(fmt.Errorf("failed to open communityDB: %w", err))
-	}
-
-	communityIndex, err := community.NewIndex(communityDB)
-	if err != nil {
-		panic(fmt.Errorf("failed to create community index: %w", err))
-	}
-
 	pruningOpts, err := server.GetPruningOptionsFromFlags()
 	if err != nil {
 		panic(err)
@@ -136,7 +122,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
 		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
-		communityModeratorAddr, communityIndex,
+		communityModeratorAddr,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
@@ -150,7 +136,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil, nil)
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil)
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -158,6 +144,6 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil, nil)
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil)
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

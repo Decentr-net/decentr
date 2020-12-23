@@ -83,6 +83,7 @@ func (k Keeper) GetStats(ctx sdk.Context, owner sdk.AccAddress) map[uint64]float
 	store := ctx.KVStore(k.storeKey)
 
 	it := sdk.KVStorePrefixIterator(store, getStatsKey(owner))
+	defer it.Close()
 
 	t := uint64(0)
 	a := sdk.NewInt(0)

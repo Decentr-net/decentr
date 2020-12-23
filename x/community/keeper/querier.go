@@ -88,12 +88,7 @@ func queryUserLikedPosts(ctx sdk.Context, path []string, req abci.RequestQuery, 
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
 	}
 
-	l, err := keeper.index.GetUserLikedPosts(owner)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, l)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, keeper.GetUserLikedPosts(ctx, owner))
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -156,11 +151,7 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 		}
 	}
 
-	p, err := keeper.index.GetRecentPosts(keeper.getPostResolver(ctx), category, from, limit)
-	if err != nil {
-		return nil, err
-	}
-
+	p := keeper.GetRecentPosts(ctx, category, from, limit)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
@@ -201,11 +192,7 @@ func getPopularPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid interval")
 	}
 
-	p, err := keeper.index.GetPopularPosts(keeper.getPostResolver(ctx), interval, category, from, limit)
-	if err != nil {
-		return nil, err
-	}
-
+	p := keeper.GetPopularPosts(ctx, interval, category, from, limit)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())

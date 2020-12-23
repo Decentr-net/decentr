@@ -96,13 +96,11 @@ func (k *Keeper) ListPDV(ctx sdk.Context, owner sdk.AccAddress, from *uint64, li
 	store := ctx.KVStore(k.storeKey)
 
 	it := sdk.KVStoreReversePrefixIterator(store, getIndexKey(owner))
+	defer it.Close()
 
 	if from != nil {
 		t := utils.Uint64ToBytes(*from)
-		for ; it.Valid(); it.Next() {
-			if bytes.Compare(it.Value(), t) == -1 {
-				break
-			}
+		for ; it.Valid() && bytes.Compare(it.Value(), t) > -1; it.Next() {
 		}
 	}
 
