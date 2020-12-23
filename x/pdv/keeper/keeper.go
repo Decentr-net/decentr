@@ -3,6 +3,8 @@ package keeper
 import (
 	"bytes"
 
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+
 	"github.com/Decentr-net/decentr/x/pdv/types"
 	"github.com/Decentr-net/decentr/x/utils"
 
@@ -40,13 +42,14 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 	if pdv.Owner.Empty() {
 		return
 	}
-	store := ctx.KVStore(k.storeKey)
 
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
 	marshalled := k.cdc.MustMarshalBinaryBare(pdv)
+	store.Set([]byte(address), marshalled)
 
-	store.Set(getStoreKey([]byte(address)), marshalled)
-	indexKey := append(pdv.Owner.Bytes(), utils.Uint64ToBytes(pdv.Timestamp)...)
-	store.Set(getIndexKey(indexKey), k.cdc.MustMarshalBinaryBare(statsItem{
+	index := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPrefix)
+	indexKey := append(pdv.Owner, utils.Uint64ToBytes(pdv.Timestamp)...)
+	index.Set(indexKey, k.cdc.MustMarshalBinaryBare(statsItem{
 		Address: pdv.Address,
 		Type:    pdv.Type,
 	}))
@@ -62,13 +65,13 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 
 // Gets the entire PDV metadata struct for an address
 func (k Keeper) GetPDV(ctx sdk.Context, address string) types.PDV {
-	store := ctx.KVStore(k.storeKey)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
 
 	if !k.IsHashPresent(ctx, address) {
 		return types.PDV{}
 	}
 
-	bz := store.Get(getStoreKey([]byte(address)))
+	bz := store.Get([]byte(address))
 
 	var pdv types.PDV
 	k.cdc.MustUnmarshalBinaryBare(bz, &pdv)
@@ -82,8 +85,7 @@ func (k Keeper) GetOwner(ctx sdk.Context, name string) sdk.AccAddress {
 
 // Check if the address is present in the store or not
 func (k Keeper) IsHashPresent(ctx sdk.Context, address string) bool {
-	store := ctx.KVStore(k.storeKey)
-	return store.Has(getStoreKey([]byte(address)))
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix).Has([]byte(address))
 }
 
 // Get an iterator over all PDVs in which the keys are the address and the values are the PDV
@@ -93,14 +95,14 @@ func (k Keeper) GetPDVsIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 func (k *Keeper) ListPDV(ctx sdk.Context, owner sdk.AccAddress, from *uint64, limit uint) []types.PDV {
-	store := ctx.KVStore(k.storeKey)
+	index := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPrefix)
 
-	it := sdk.KVStoreReversePrefixIterator(store, getIndexKey(owner))
+	it := sdk.KVStoreReversePrefixIterator(prefix.NewStore(index, owner), nil)
 	defer it.Close()
 
 	if from != nil {
 		t := utils.Uint64ToBytes(*from)
-		for ; it.Valid() && bytes.Compare(it.Value(), t) > -1; it.Next() {
+		for ; it.Valid() && bytes.Compare(it.Key(), t) > -1; it.Next() {
 		}
 	}
 
@@ -108,7 +110,7 @@ func (k *Keeper) ListPDV(ctx sdk.Context, owner sdk.AccAddress, from *uint64, li
 
 	for i := uint(0); i < limit && it.Valid(); i++ {
 		var si statsItem
-		k.cdc.MustUnmarshalJSON(it.Value(), &si)
+		k.cdc.MustUnmarshalBinaryBare(it.Value(), &si)
 
 		out = append(out, types.PDV{
 			Timestamp: utils.BytesToUint64(it.Key()),
@@ -121,12 +123,4 @@ func (k *Keeper) ListPDV(ctx sdk.Context, owner sdk.AccAddress, from *uint64, li
 	}
 
 	return out
-}
-
-func getStoreKey(key []byte) []byte {
-	return append(types.StorePrefix, key...)
-}
-
-func getIndexKey(key []byte) []byte {
-	return append(types.IndexPrefix, key...)
 }
