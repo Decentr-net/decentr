@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+
 	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/Decentr-net/decentr/x/utils"
 
@@ -27,17 +29,17 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 // AddTokens adds token to the given owner
 // Description is needed to merge records in the index.
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int, description []byte) {
-	store := ctx.KVStore(k.storeKey)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
 
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 
-	store.Set(getStoreKey(owner), k.cdc.MustMarshalBinaryBare(balance))
+	store.Set(owner, k.cdc.MustMarshalBinaryBare(balance))
 
+	stats := prefix.NewStore(ctx.KVStore(k.storeKey), types.StatsPrefix)
 	timestamp := uint64(ctx.BlockTime().Unix())
-	statsKey := getStatsKey(append(append(owner, utils.Uint64ToBytes(timestamp)...), description...))
-
-	store.Set(statsKey, k.cdc.MustMarshalBinaryBare(amount))
+	statsKey := append(append(owner, utils.Uint64ToBytes(timestamp)...), description...)
+	stats.Set(statsKey, k.cdc.MustMarshalBinaryBare(amount))
 
 	k.addTotalSupply(ctx, amount)
 }
@@ -51,9 +53,9 @@ func (k Keeper) addTotalSupply(ctx sdk.Context, amount sdk.Int) {
 
 // GetBalance returns token balance for the given owner
 func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
-	store := ctx.KVStore(k.storeKey)
-	if store.Has(getStoreKey(owner)) {
-		balance := store.Get(getStoreKey(owner))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
+	if store.Has(owner) {
+		balance := store.Get(owner)
 		var amount sdk.Int
 		k.cdc.MustUnmarshalBinaryBare(balance, &amount)
 		return amount
@@ -80,9 +82,9 @@ func (k Keeper) GetBalanceIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 func (k Keeper) GetStats(ctx sdk.Context, owner sdk.AccAddress) map[uint64]float64 {
-	store := ctx.KVStore(k.storeKey)
+	stats := prefix.NewStore(ctx.KVStore(k.storeKey), types.StatsPrefix)
 
-	it := sdk.KVStorePrefixIterator(store, getStatsKey(owner))
+	it := sdk.KVStorePrefixIterator(prefix.NewStore(stats, owner), nil)
 	defer it.Close()
 
 	t := uint64(0)
@@ -111,12 +113,4 @@ func (k Keeper) GetStats(ctx sdk.Context, owner sdk.AccAddress) map[uint64]float
 	out[t] = utils.TokenToFloat64(a)
 
 	return out
-}
-
-func getStoreKey(key []byte) []byte {
-	return append(types.StorePrefix, key...)
-}
-
-func getStatsKey(key []byte) []byte {
-	return append(types.StatsPrefix, key...)
 }
