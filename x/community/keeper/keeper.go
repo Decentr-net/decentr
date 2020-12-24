@@ -71,8 +71,6 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 	key := append(owner.Bytes(), id.Bytes()...)
 
-	store.Delete(key)
-
 	p := k.GetPostByKey(ctx, key)
 
 	createdAtIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexCreatedAtPrefix)
@@ -86,6 +84,8 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 	for _, p := range getPopularityIndexPrefixes(p.Category, 0) {
 		popularityIndex.Delete(append(p, indexKey...))
 	}
+
+	store.Delete(key)
 }
 
 // GetPostByKey returns entire post by keeper's key.
