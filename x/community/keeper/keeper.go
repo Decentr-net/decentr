@@ -60,7 +60,7 @@ func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 
 	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
 	indexKey = getPopularityIndexKey(p)
-	for _, p := range getPopularityIndexPrefixes(p.Category, p.CreatedAt) {
+	for _, p := range getPopularityIndexPrefixes(p.Category, p.CreatedAt, uint64(ctx.BlockTime().Unix())) {
 		popularityIndex.Set(append(p, indexKey...), key)
 	}
 }
@@ -81,7 +81,7 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
 	indexKey = getPopularityIndexKey(p)
-	for _, p := range getPopularityIndexPrefixes(p.Category, 0) {
+	for _, p := range getPopularityIndexPrefixes(p.Category, 0, uint64(ctx.BlockTime().Unix())) {
 		popularityIndex.Delete(append(p, indexKey...))
 	}
 
@@ -175,12 +175,12 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 	// update popularity index
 	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
 	indexKey := getPopularityIndexKey(oldPost)
-	for _, p := range getPopularityIndexPrefixes(oldPost.Category, 0) {
+	for _, p := range getPopularityIndexPrefixes(oldPost.Category, 0, uint64(ctx.BlockTime().Unix())) {
 		popularityIndex.Delete(append(p, indexKey...))
 	}
 
 	indexKey = getPopularityIndexKey(newPost)
-	for _, p := range getPopularityIndexPrefixes(newPost.Category, newPost.CreatedAt) {
+	for _, p := range getPopularityIndexPrefixes(newPost.Category, newPost.CreatedAt, uint64(ctx.BlockTime().Unix())) {
 		popularityIndex.Set(append(p, indexKey...), postKey)
 	}
 
@@ -348,7 +348,7 @@ func getCreatedAtIndexPrefixes(c types.Category) [][]byte {
 	}
 }
 
-func getPopularityIndexPrefixes(c types.Category, createdAt uint64) [][]byte {
+func getPopularityIndexPrefixes(c types.Category, createdAt uint64, timestamp uint64) [][]byte {
 	catPrefixes := [][]byte{
 		{byte(types.UndefinedCategory)},
 		{byte(c)},
@@ -359,7 +359,7 @@ func getPopularityIndexPrefixes(c types.Category, createdAt uint64) [][]byte {
 	for _, p := range catPrefixes {
 		for i, v := range intervals {
 			if createdAt == 0 ||
-				createdAt+uint64(v/time.Second) > uint64(time.Now().Unix()) {
+				createdAt+uint64(v/time.Second) > timestamp {
 				out = append(out, append(p, byte(i)))
 			}
 		}
