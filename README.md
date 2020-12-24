@@ -37,11 +37,11 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
 
 ```c
-d8ca83bf4253e158fbda462fc598a46067ed1669@ares.testnet.decentr.xyz:26656
-b80aad9f758f9f3f20b10aaf8081a42852c68393@hera.testnet.decentr.xyz:26656
-fa313ac831ab870d00d16cd277a447a5e9a9ade3@hermes.testnet.decentr.xyz:26656
-d93e8e1a05b21696b816e9015126bd765b1e41df@poseidon.testnet.decentr.xyz:26656
-2d971dd6a5a133957f48a99e95fdfb2972e7415c@zeus.testnet.decentr.xyz:26656
+a70ff619a5ad88ec82d44f070befe81140eb9238@ares.testnet.decentr.xyz:26656
+b70099975e5e6543657113c23215eccca5d53382@hera.testnet.decentr.xyz:26656
+c834b071a0e45f886810faa16c9666df9895ee3b@hermes.testnet.decentr.xyz:26656
+31fca2768f10fd2ff5c4460becbef3faf5501792@poseidon.testnet.decentr.xyz:26656
+681b1ea83e575e8196a92b0efe902e476c6604a0@zeus.testnet.decentr.xyz:26656
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
@@ -222,8 +222,11 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
 | 2 | Travel & Tourism |
 | 3 | Science & Technology |
 | 4 | Strange World |
-| 5 | Health & Culture |
-| 6 | Fitness & Exercise |
+| 5 | Arts & Entertainment |
+| 6 | Writers& Writing |
+| 7 | Health & Fitness |
+| 8 | Crypto & Blockchain |
+
 
 ### Likes weight
 |Value | Description |
