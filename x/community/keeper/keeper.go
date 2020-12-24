@@ -199,7 +199,7 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 		likes[post] = newLike.Weight
 	}
 
-	userLikesIndex.Set(newLike.Owner, k.cdc.MustMarshalJSON(likes))
+	userLikesIndex.Set(newLike.Owner, sdk.MustSortJSON(k.cdc.MustMarshalJSON(likes)))
 }
 
 func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post, description []byte) {
