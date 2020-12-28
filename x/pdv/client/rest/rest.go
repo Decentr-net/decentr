@@ -33,6 +33,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 type createPDVReq struct {
 	BaseReq rest.BaseReq `json:"base_req"`
 	Address string       `json:"address"`
+	Type    uint8        `json:"type"`
 }
 
 func queryOwnerHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -92,6 +93,12 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		pdvType := types.PDVType(req.Type)
+		if pdvType < types.PDVTypeCookie || pdvType > types.PDVTypeLoginCookie {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "invalid type")
+			return
+		}
+
 		baseReq := req.BaseReq.Sanitize()
 		if !baseReq.ValidateBasic(w) {
 			return
@@ -125,7 +132,7 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), req.Address, types.PDVTypeCookie, owner)
+		msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), req.Address, pdvType, owner)
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx.WithHeight(height), req.BaseReq, []sdk.Msg{msg})
 	}

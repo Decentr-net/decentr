@@ -35,6 +35,9 @@ func (msg MsgCreatePDV) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
+	if msg.DataType < PDVTypeCookie || msg.DataType > PDVTypeLoginCookie {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid type")
+	}
 	if !cerberusapi.IsAddressValid(msg.Address) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
 	}

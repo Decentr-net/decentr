@@ -10,7 +10,8 @@ import (
 type PDVType int
 
 const (
-	PDVTypeCookie PDVType = 1
+	PDVTypeCookie PDVType = iota + 1
+	PDVTypeLoginCookie
 )
 
 type PDV struct {

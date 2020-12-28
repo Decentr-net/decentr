@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"strings"
 	"time"
 
@@ -83,9 +84,9 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 // GetCmdCreatePDV is the CLI command for sending a CreatePDV transaction
 func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create [pdv]",
+		Use:   "create [type] [pdv]",
 		Short: "create PDV",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -109,7 +110,12 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("pdv does not exist")
 			}
 
-			msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
+			t, err := strconv.Atoi(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse type: %w", err)
+			}
+
+			msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), args[1], types.PDVType(t), cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
