@@ -60,6 +60,7 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		t = sdk.NewInt(2)
 	case types.PDVTypeLoginCookie:
 		t = sdk.NewInt(4)
+	default:
 	}
 
 	k.tokens.AddTokens(ctx, pdv.Owner, t, utils.GetHash(pdv.Address))
