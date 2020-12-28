@@ -124,7 +124,7 @@ decentrcli query pdv list <owner> [page] [limit]
 decentrcli query pdv cerberus
 
 # Create pdv
-decentrcli tx pdv create [pdv] --from [account]
+decentrcli tx pdv create [type] [pdv] --from [account]
 ```
 
 #### REST
@@ -143,7 +143,7 @@ curl -s http://localhost:1317/pdv/cerberus-addr
 
 # Create PDV
 curl -XPOST -s http://localhost:1317/pdv \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"address": "address from cerberus"}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "type": 2, "address": "address from cerberus"}' > unsignedTx.json
 ```
 
 ## PDV Token
