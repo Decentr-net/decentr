@@ -17,6 +17,7 @@ const (
 	WritersAndWritingCategory
 	HealthAndFitnessCategory
 	CryptoAndBlockchainCategory
+	SportsCategory
 )
 
 type LikeWeight int8

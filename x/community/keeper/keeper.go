@@ -294,7 +294,7 @@ func (k Keeper) SyncIndex(ctx sdk.Context) {
 		}
 	}
 
-	for i := types.UndefinedCategory; i <= types.CryptoAndBlockchainCategory; i++ {
+	for i := types.UndefinedCategory; i <= types.SportsCategory; i++ {
 		for b, d := range intervals {
 			flush(i, b, d)
 		}
