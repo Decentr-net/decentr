@@ -118,7 +118,7 @@ decentrcli query pdv owner <address>
 decentrcli query pdv show <address>
 
 # List account's pdv
-decentrcli query pdv list <owner> [page] [limit]
+decentrcli query pdv list <owner> [from] [limit]
 
 # Get cerberus address
 decentrcli query pdv cerberus
@@ -136,7 +136,7 @@ curl -s http://localhost:1317/pdv/{address}/owner
 curl -s http://localhost:1317/pdv/{address}/show
 
 # List account's pdv
-curl -s http://localhost:1317/pdv/{owner}/list
+curl -s http://localhost:1317/pdv/{owner}/list?from={from}&limit={limit}
 
 # Get cerberus address
 curl -s http://localhost:1317/pdv/cerberus-addr
