@@ -212,6 +212,23 @@ curl -XPOST -s http://localhost:1317/profile/private/$(decentrcli keys show jack
 curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": { "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
 ```
+## Bank
+
+#### CLI
+```bash
+# Create and sign a send tx
+decentrcli tx send [from_key_or_address] [to_address] [amount]
+```
+
+#### REST
+```bash
+# Get balance
+curl http://localhost:1317/bank/balances/{address} 
+
+# Transfer coins (send coins to a address)
+curl -X POST http://localhost:1317/bank/accounts/{address}/transfers \ 
+    -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "amount": [{"denom": "udec", "amount": "15"}]}' > unsignedTx.json
+```
 
 ## Community
 
@@ -226,6 +243,7 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
 | 6 | Writers& Writing |
 | 7 | Health & Fitness |
 | 8 | Crypto & Blockchain |
+| 9 | Sports |
 
 
 ### Likes weight
