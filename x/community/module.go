@@ -104,7 +104,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
-	if ctx.BlockHeight()%100 == rebuildIndexInterval {
+	if ctx.BlockHeight()%rebuildIndexInterval == 0 {
 		am.keeper.SyncIndex(ctx)
 	}
 }
