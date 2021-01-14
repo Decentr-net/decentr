@@ -64,6 +64,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.PostRecords {
+		record.PDV = sdk.ZeroInt()
 		keeper.CreatePost(ctx, record)
 	}
 
@@ -79,6 +80,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 
 	for ; iterator.Valid(); iterator.Next() {
 		post := k.GetPostByKey(ctx, iterator.Key())
+		post.PDV = sdk.ZeroInt()
 		posts = append(posts, post)
 	}
 
