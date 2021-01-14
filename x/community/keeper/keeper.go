@@ -73,6 +73,13 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 	p := k.GetPostByKey(ctx, key)
 
+	likesStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.LikePrefix)
+	it := sdk.KVStorePrefixIterator(likesStore, key)
+	for ; it.Valid(); it.Next() {
+		likesStore.Delete(it.Key())
+	}
+	it.Close()
+
 	createdAtIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexCreatedAtPrefix)
 	indexKey := getCreateAtIndexKey(p)
 	for _, p := range getCreatedAtIndexPrefixes(p.Category) {
@@ -105,7 +112,7 @@ func (k Keeper) GetPostByKey(ctx sdk.Context, key []byte) types.Post {
 
 // GetPostsIterator returns an iterator over all posts
 func (k Keeper) GetPostsIterator(ctx sdk.Context) sdk.Iterator {
-	return sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), types.PostPrefix)
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix).Iterator(nil, nil)
 }
 
 func (k Keeper) ListUserPosts(ctx sdk.Context, owner sdk.AccAddress, from uuid.UUID, limit uint32) []types.Post {
@@ -257,7 +264,7 @@ func (k Keeper) GetLikeByKey(ctx sdk.Context, key []byte) types.Like {
 
 // GetLikesIterator returns an iterator over all likes
 func (k Keeper) GetLikesIterator(ctx sdk.Context) sdk.Iterator {
-	return sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), types.LikePrefix)
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.LikePrefix).Iterator(nil, nil)
 }
 
 func getPostKeeperKeyFromPost(p types.Post) []byte {

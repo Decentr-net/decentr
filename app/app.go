@@ -306,6 +306,7 @@ func NewDecentrApp(
 		pdv.ModuleName,
 		token.ModuleName,
 		profile.ModuleName,
+		community.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)

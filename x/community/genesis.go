@@ -64,6 +64,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.PostRecords {
+		record.PDV = sdk.ZeroInt()
 		keeper.CreatePost(ctx, record)
 	}
 
@@ -79,6 +80,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 
 	for ; iterator.Valid(); iterator.Next() {
 		post := k.GetPostByKey(ctx, iterator.Key())
+		post.PDV = sdk.ZeroInt()
 		posts = append(posts, post)
 	}
 
@@ -86,6 +88,13 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	iterator = k.GetLikesIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		like := k.GetLikeByKey(ctx, iterator.Key())
+
+		// temporary solution to avoid invalid likes in exported genesis
+		key := append(like.PostOwner.Bytes(), like.PostUUID.Bytes()...)
+		if p := k.GetPostByKey(ctx, key); p.UUID == uuid.Nil {
+			continue
+		}
+
 		likes = append(likes, like)
 	}
 
