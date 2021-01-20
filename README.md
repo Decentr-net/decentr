@@ -37,11 +37,11 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
 
 ```c
-a70ff619a5ad88ec82d44f070befe81140eb9238@ares.testnet.decentr.xyz:26656
-b70099975e5e6543657113c23215eccca5d53382@hera.testnet.decentr.xyz:26656
-c834b071a0e45f886810faa16c9666df9895ee3b@hermes.testnet.decentr.xyz:26656
-31fca2768f10fd2ff5c4460becbef3faf5501792@poseidon.testnet.decentr.xyz:26656
-681b1ea83e575e8196a92b0efe902e476c6604a0@zeus.testnet.decentr.xyz:26656
+fba90c20ade62a2c9564a03eff93c0603ccdf238@ares.testnet.decentr.xyz:26656
+9479eef715892a18249350fcb1eeca0efc4c9354@hera.testnet.decentr.xyz:26656
+d44010452fec5cb0b9b314aa089f1082fbaed185@hermes.testnet.decentr.xyz:26656
+28d55428c88a870c7c1737a31369f1c43595e4cf@poseidon.testnet.decentr.xyz:26656
+8e14add2e93231a41fb3736a12203ee22ad0069c@zeus.testnet.decentr.xyz:26656
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
@@ -50,7 +50,7 @@ Download Genesis, Start your Node, Check your Node Status:
 # Download genesis.json
 wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0/genesis.json
 # Start Decentrd
-decentrd start --cerberus-addr https://cerberus.testnet.decentr.xyz
+decentrd start --cerberus-addr https://cerberus.testnet.decentr.xyz --community-moderator-addr decentr1nt5k6eg9zq5t2v66pr6zgyt5hh5tu8sk30re3a
 # Check your node's status with decentrcli
 decentrcli status
 ```
