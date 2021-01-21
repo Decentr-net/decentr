@@ -18,7 +18,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
-git clone -b <latest_release> https://github.com/Decentr-net/decentr
+git clone -b v0.6.1 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
