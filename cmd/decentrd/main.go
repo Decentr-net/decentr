@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/url"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -18,17 +17,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
-
 	"github.com/Decentr-net/decentr/app"
 	"github.com/Decentr-net/decentr/x/community"
-	"github.com/Decentr-net/decentr/x/pdv"
 )
 
 const (
@@ -71,10 +66,6 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Name() == "start" {
-			// cerberus address
-			cmd.PersistentFlags().String(pdv.FlagCerberusAddr, "https://cerberus.testnet.decentr.xyz", "cerberus host address")
-			viper.BindPFlag(pdv.FlagCerberusAddr, cmd.PersistentFlags().Lookup(pdv.FlagCerberusAddr))
-
 			// moderator account
 			cmd.PersistentFlags().String(community.FlagModeratorAddr, "", "community moderator account address")
 			viper.BindPFlag(community.FlagModeratorAddr, cmd.PersistentFlags().Lookup(community.FlagModeratorAddr))
@@ -100,18 +91,9 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		cache = store.NewCommitKVStoreCacheManager()
 	}
 
-	cerberusAddr := viper.GetString(pdv.FlagCerberusAddr)
-	if cerberusAddr == "" {
-		panic(fmt.Errorf("%s isn't set", pdv.FlagCerberusAddr))
-	}
-
 	communityModeratorAddr, err := sdk.AccAddressFromBech32(viper.GetString(community.FlagModeratorAddr))
 	if err != nil {
 		panic(fmt.Errorf("%s is invalid or empty", community.FlagModeratorAddr))
-	}
-
-	if _, err := url.ParseRequestURI(cerberusAddr); err != nil {
-		panic(fmt.Errorf("failed to parse %s: %w", pdv.FlagCerberusAddr, err))
 	}
 
 	pruningOpts, err := server.GetPruningOptionsFromFlags()
@@ -121,7 +103,6 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
-		cerberusapi.NewClient(cerberusAddr, secp256k1.PrivKeySecp256k1{}),
 		communityModeratorAddr,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),

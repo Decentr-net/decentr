@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/Decentr-net/cerberus/pkg/api"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -119,8 +118,6 @@ type decentrApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
-	cerberus api.Cerberus
-
 	invCheckPeriod uint
 
 	// keys to access the substores
@@ -155,8 +152,7 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, cerberus api.Cerberus,
-	communityModeratorAddress sdk.AccAddress, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, communityModeratorAddress sdk.AccAddress, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -175,7 +171,6 @@ func NewDecentrApp(
 	// Here you initialize your application with the store keys it requires
 	var app = &decentrApp{
 		BaseApp:        bApp,
-		cerberus:       cerberus,
 		cdc:            cdc,
 		invCheckPeriod: invCheckPeriod,
 		keys:           keys,
@@ -191,6 +186,7 @@ func NewDecentrApp(
 	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
+	app.subspaces[pdv.ModuleName] = app.paramsKeeper.Subspace(pdv.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -257,6 +253,7 @@ func NewDecentrApp(
 	app.pdvKeeper = pdv.NewKeeper(
 		app.cdc,
 		keys[pdv.StoreKey],
+		app.subspaces[pdv.ModuleName],
 		app.tokensKeeper)
 
 	app.profilesKeeper = profile.NewKeeper(
@@ -280,7 +277,7 @@ func NewDecentrApp(
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		pdv.NewAppModule(cerberus, app.pdvKeeper),
+		pdv.NewAppModule(app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
 		community.NewAppModule(app.communityKeeper, communityModeratorAddress),
@@ -304,9 +301,9 @@ func NewDecentrApp(
 		bank.ModuleName,
 		slashing.ModuleName,
 		pdv.ModuleName,
-		token.ModuleName,
 		profile.ModuleName,
 		community.ModuleName,
+		token.ModuleName,
 		supply.ModuleName,
 		genutil.ModuleName,
 	)
