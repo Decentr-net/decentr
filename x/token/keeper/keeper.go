@@ -29,19 +29,15 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 // AddTokens adds token to the given owner
 // Description is needed to merge records in the index.
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int, description []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
-
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 
-	store.Set(owner, k.cdc.MustMarshalBinaryBare(balance))
+	k.SetBalance(ctx, owner, balance)
 
 	stats := prefix.NewStore(ctx.KVStore(k.storeKey), types.StatsPrefix)
 	timestamp := uint64(ctx.BlockTime().Unix())
 	statsKey := append(append(owner, utils.Uint64ToBytes(timestamp)...), description...)
 	stats.Set(statsKey, k.cdc.MustMarshalBinaryBare(amount))
-
-	k.addTotalSupply(ctx, amount)
 }
 
 // addTotalSupply increase or decrease total supply with the given amount of tokens
@@ -63,6 +59,19 @@ func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
 	return sdk.ZeroInt()
 }
 
+// SetBalance set balance to the given user
+func (k Keeper) SetBalance(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
+	store.Set(owner, k.cdc.MustMarshalBinaryBare(amount))
+	k.addTotalSupply(ctx, amount)
+}
+
+// Get an iterator over all balances in which the keys are the accounts and the values are their balance
+func (k Keeper) GetBalanceIterator(ctx sdk.Context) sdk.Iterator {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
+	return sdk.KVStorePrefixIterator(store, nil)
+}
+
 // GetTotalSupply returns total token supply
 func (k Keeper) GetTotalSupply(ctx sdk.Context) sdk.Int {
 	store := ctx.KVStore(k.storeKey)
@@ -73,12 +82,6 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) sdk.Int {
 	var amount sdk.Int
 	k.cdc.MustUnmarshalBinaryBare(totalSupply, &amount)
 	return amount
-}
-
-// Get an iterator over all balances in which the keys are the accounts and the values are their balance
-func (k Keeper) GetBalanceIterator(ctx sdk.Context) sdk.Iterator {
-	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, types.StorePrefix)
 }
 
 func (k Keeper) GetStats(ctx sdk.Context, owner sdk.AccAddress) map[uint64]float64 {

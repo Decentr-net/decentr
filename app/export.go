@@ -60,13 +60,17 @@ func (app *decentrApp) prepForZeroHeightGenesis(ctx sdk.Context, jailWhiteList [
 	/* Handle fee distribution state. */
 
 	// withdraw all validator commission
-	//app.stakingKeeper.IterateValidators(ctx, func(_ int64, val staking.ValidatorI) (stop bool) {
-	//	_, err := app.distrKeeper.WithdrawValidatorCommission(ctx, val.GetOperator())
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	return false
-	//})
+	app.stakingKeeper.IterateValidators(ctx, func(_ int64, val staking.ValidatorI) (stop bool) {
+		accumCommission := app.distrKeeper.GetValidatorAccumulatedCommission(ctx, val.GetOperator())
+		if accumCommission.IsZero() {
+			return false
+		}
+		_, err := app.distrKeeper.WithdrawValidatorCommission(ctx, val.GetOperator())
+		if err != nil {
+			log.Fatal(err)
+		}
+		return false
+	})
 
 	// withdraw all delegator rewards
 	dels := app.stakingKeeper.GetAllDelegations(ctx)
