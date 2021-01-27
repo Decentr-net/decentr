@@ -3,18 +3,15 @@ package pdv
 import (
 	"encoding/json"
 
-	"github.com/Decentr-net/cerberus/pkg/api"
-
 	"github.com/Decentr-net/decentr/x/pdv/client/cli"
 	"github.com/Decentr-net/decentr/x/pdv/client/rest"
-
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/gorilla/mux"
+	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -35,24 +32,31 @@ func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	RegisterCodec(cdc)
 }
 
-// DefaultGenesis is an empty object
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return []byte("{}")
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
 }
 
-// ValidateGenesis is always successful, as we ignore the value
+// Validation check of the Genesis
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	return nil
+	var data GenesisState
+	err := ModuleCdc.UnmarshalJSON(bz, &data)
+	if err != nil {
+		return err
+	}
+	// Once json successfully marshalled, passes along to genesis.go
+	return ValidateGenesis(data)
 }
 
-// InitGenesis is ignored
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState GenesisState
+	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
+	InitGenesis(ctx, am.keeper, genesisState)
 	return []abci.ValidatorUpdate{}
 }
 
-// ExportGenesis is always empty, as InitGenesis does nothing either
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return am.DefaultGenesis()
+	gs := ExportGenesis(ctx, am.keeper)
+	return ModuleCdc.MustMarshalJSON(gs)
 }
 
 // Register rest routes
@@ -72,15 +76,13 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	cerberus api.Cerberus
-	keeper   Keeper
+	keeper Keeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(c api.Cerberus, k Keeper) AppModule {
+func NewAppModule(k Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		cerberus:       c,
 		keeper:         k,
 	}
 }
@@ -96,7 +98,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.cerberus, am.keeper)
+	return NewHandler(am.keeper)
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute

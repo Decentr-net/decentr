@@ -3,6 +3,8 @@ package keeper
 import (
 	"bytes"
 
+	"github.com/cosmos/cosmos-sdk/x/params"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 
 	"github.com/Decentr-net/decentr/x/pdv/types"
@@ -26,14 +28,19 @@ type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
 	tokens   TokenKeeper
+
+	paramSpace params.Subspace
 }
 
 // NewKeeper creates new instances of the PDV Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, tokens TokenKeeper) Keeper {
+	ps := paramSpace.WithKeyTable(types.ParamKeyTable())
+
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-		tokens:   tokens,
+		cdc:        cdc,
+		storeKey:   storeKey,
+		tokens:     tokens,
+		paramSpace: ps,
 	}
 }
 
@@ -125,4 +132,16 @@ func (k *Keeper) ListPDV(ctx sdk.Context, owner sdk.AccAddress, from *uint64, li
 	}
 
 	return out
+}
+
+// GetCerberusAddr returns the current Cerberus address
+func (k *Keeper) GetCerberusAddr(ctx sdk.Context) string {
+	var addr string
+	k.paramSpace.Get(ctx, types.ParamCerberusAddress, &addr)
+	return addr
+}
+
+// SetCerberusAddr sets the Cerberus address
+func (k *Keeper) SetCerberusAddr(ctx sdk.Context, addr string) {
+	k.paramSpace.Set(ctx, types.ParamCerberusAddress, &addr)
 }

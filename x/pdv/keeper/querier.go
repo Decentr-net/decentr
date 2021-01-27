@@ -4,13 +4,10 @@ import (
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/Decentr-net/decentr/x/pdv/types"
 )
 
 // query endpoints supported by the pdv Querier
@@ -32,7 +29,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case QueryList:
 			return queryList(ctx, path[1:], req, keeper)
 		case QueryCerberusAddr:
-			return queryCerberusAddr(keeper)
+			return queryCerberusAddr(ctx, keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown pdv query endpoint")
 		}
@@ -93,7 +90,6 @@ func queryList(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	return res, nil
 }
 
-// nolint: unparam
-func queryCerberusAddr(keeper Keeper) ([]byte, error) {
-	return []byte(viper.GetString(types.FlagCerberusAddr)), nil
+func queryCerberusAddr(ctx sdk.Context, keeper Keeper) ([]byte, error) {
+	return []byte(keeper.GetCerberusAddr(ctx)), nil
 }
