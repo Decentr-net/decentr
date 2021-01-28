@@ -11,8 +11,9 @@ import (
 )
 
 type GenesisState struct {
-	PostRecords  []Post `json:"posts"`
-	LikesRecords []Like `json:"likes"`
+	PostRecords  []Post   `json:"posts"`
+	LikesRecords []Like   `json:"likes"`
+	Moderators   []string `json:"moderators"`
 }
 
 func ValidateGenesis(data GenesisState) error {
@@ -52,6 +53,10 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
+	if len(data.Moderators) == 0 {
+		return fmt.Errorf("at least one moderator should be specified")
+	}
+
 	return nil
 }
 
@@ -59,6 +64,7 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		PostRecords:  []Post{},
 		LikesRecords: []Like{},
+		Moderators:   types.DefaultModerators,
 	}
 }
 
@@ -71,6 +77,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.LikesRecords {
 		keeper.SetLike(ctx, record)
 	}
+
+	keeper.SetModerators(ctx, data.Moderators)
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
@@ -98,5 +106,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		likes = append(likes, like)
 	}
 
-	return GenesisState{PostRecords: posts, LikesRecords: likes}
+	return GenesisState{
+		PostRecords:  posts,
+		LikesRecords: likes,
+		Moderators:   k.GetModerators(ctx),
+	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -23,7 +22,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/Decentr-net/decentr/app"
-	"github.com/Decentr-net/decentr/x/community"
 )
 
 const (
@@ -64,15 +62,6 @@ func main() {
 	rootCmd.AddCommand(debug.Cmd(cdc))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
-	for _, cmd := range rootCmd.Commands() {
-		if cmd.Name() == "start" {
-			// moderator account
-			cmd.PersistentFlags().String(community.FlagModeratorAddr, "", "community moderator account address")
-			viper.BindPFlag(community.FlagModeratorAddr, cmd.PersistentFlags().Lookup(community.FlagModeratorAddr))
-
-			break
-		}
-	}
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "AU", app.DefaultNodeHome)
@@ -91,11 +80,6 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		cache = store.NewCommitKVStoreCacheManager()
 	}
 
-	communityModeratorAddr, err := sdk.AccAddressFromBech32(viper.GetString(community.FlagModeratorAddr))
-	if err != nil {
-		panic(fmt.Errorf("%s is invalid or empty", community.FlagModeratorAddr))
-	}
-
 	pruningOpts, err := server.GetPruningOptionsFromFlags()
 	if err != nil {
 		panic(err)
@@ -103,7 +87,6 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 
 	return app.NewDecentrApp(
 		logger, db, traceStore, true, invCheckPeriod,
-		communityModeratorAddr,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 		baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),

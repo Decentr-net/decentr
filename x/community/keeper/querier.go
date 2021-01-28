@@ -3,8 +3,6 @@ package keeper
 import (
 	"strconv"
 
-	"github.com/spf13/viper"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/gofrs/uuid"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -23,6 +21,7 @@ const (
 	QueryUser          = "user"
 	QueryLikedPosts    = "liked-posts"
 	QueryModeratorAddr = "moderator-addr"
+	QueryModerators    = "moderators"
 )
 
 const defaultLimit = 20
@@ -55,7 +54,9 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case QueryLikedPosts:
 			return queryUserLikedPosts(ctx, path[1:], req, keeper)
 		case QueryModeratorAddr:
-			return queryModeratorAddr()
+			return queryModeratorAddr(ctx, keeper)
+		case QueryModerators:
+			return queryModerators(ctx, keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown community query endpoint")
 		}
@@ -258,6 +259,20 @@ func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UU
 	return
 }
 
-func queryModeratorAddr() ([]byte, error) {
-	return []byte(viper.GetString(types.FlagModeratorAddr)), nil
+func queryModeratorAddr(ctx sdk.Context, keeper Keeper) ([]byte, error) {
+	moderators := keeper.GetModerators(ctx)
+	if len(moderators) != 0 {
+		return []byte(moderators[0]), nil
+	}
+
+	return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, "moderator not defined")
+}
+
+func queryModerators(ctx sdk.Context, keeper Keeper) ([]byte, error) {
+	moderators := keeper.GetModerators(ctx)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, moderators)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+	return res, nil
 }

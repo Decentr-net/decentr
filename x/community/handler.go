@@ -9,14 +9,14 @@ import (
 )
 
 // NewHandler creates an sdk.Handler for all the community type messages
-func NewHandler(keeper Keeper, moderatorAddress sdk.AccAddress) sdk.Handler {
+func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case MsgCreatePost:
 			return handleMsgCreatePost(ctx, keeper, msg)
 		case MsgDeletePost:
-			return handleMsgDeletePost(ctx, keeper, msg, moderatorAddress)
+			return handleMsgDeletePost(ctx, keeper, msg)
 		case MsgSetLike:
 			return handleMsgSetLike(ctx, keeper, msg)
 		default:
@@ -44,15 +44,25 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 	return &sdk.Result{}, nil
 }
 
-func handleMsgDeletePost(ctx sdk.Context, keeper Keeper, msg MsgDeletePost, moderatorAddress sdk.AccAddress) (*sdk.Result, error) {
-	if !msg.Owner.Equals(moderatorAddress) && !msg.Owner.Equals(msg.PostOwner) {
+func handleMsgDeletePost(ctx sdk.Context, keeper Keeper, msg MsgDeletePost) (*sdk.Result, error) {
+	moderators := keeper.GetModerators(ctx)
+	var isModerator bool
+	for _, moderator := range moderators {
+		addr, _ := sdk.AccAddressFromBech32(moderator)
+		if msg.Owner.Equals(addr) && !addr.Empty() {
+			isModerator = true
+			break
+		}
+	}
+
+	if !isModerator && !msg.Owner.Equals(msg.PostOwner) {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Incorrect Owner")
 	}
 
 	postUUID, _ := uuid.FromString(msg.PostUUID)
 	keeper.DeletePost(ctx, msg.PostOwner, postUUID)
 
-	if msg.Owner.Equals(moderatorAddress) {
+	if isModerator {
 		ctx.Logger().Info("moderator deleted post %s %s", msg.PostOwner, msg.PostUUID)
 	}
 

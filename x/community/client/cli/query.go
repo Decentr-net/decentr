@@ -39,7 +39,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	communityQueryCmd.AddCommand(
 		flags.GetCommands(
 			GetCmdPost(queryRoute, cdc),
-			GetCmdModeratorAddr(queryRoute, cdc),
+			GetCmdModerators(queryRoute, cdc),
 			GetCmdUsersPosts(queryRoute, cdc),
 			GetCmdPopularPostsList(queryRoute, cdc),
 			GetCmdPostsList(queryRoute, cdc),
@@ -239,18 +239,18 @@ func GetCmdUserLikedPosts(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdModeratorAddr queries for the moderator account address
-func GetCmdModeratorAddr(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdModerators queries for the community moderators
+func GetCmdModerators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "moderator-addr",
-		Short: "Returns current moderator account address",
+		Use:   "moderators",
+		Short: "Returns moderators addresses",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderator-addr", queryRoute), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", queryRoute), nil)
 			if err != nil {
-				fmt.Printf("failed to get cerberus addr - %s \n", err.Error())
+				fmt.Printf("failed to get moderators - %s \n", err.Error())
 				return nil
 			}
 			return cliCtx.PrintOutput(string(res))
