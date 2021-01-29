@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/x/params"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -34,15 +36,31 @@ type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
 	tokens   TokenKeeper
+
+	paramSpace params.Subspace
 }
 
 // NewKeeper creates new instances of the community Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens TokenKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, tokens TokenKeeper) Keeper {
+	ps := paramSpace.WithKeyTable(types.ParamKeyTable())
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-		tokens:   tokens,
+		cdc:        cdc,
+		storeKey:   storeKey,
+		tokens:     tokens,
+		paramSpace: ps,
 	}
+}
+
+// GetModerators returns the current moderators
+func (k *Keeper) GetModerators(ctx sdk.Context) []string {
+	var moderators []string
+	k.paramSpace.Get(ctx, types.ParamModeratorsKey, &moderators)
+	return moderators
+}
+
+// SetModerators sets the moderators
+func (k *Keeper) SetModerators(ctx sdk.Context, moderators []string) {
+	k.paramSpace.Set(ctx, types.ParamModeratorsKey, &moderators)
 }
 
 // CreatePost creates new post. Keeper's key is joined owner and uuid.

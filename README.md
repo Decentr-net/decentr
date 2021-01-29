@@ -18,7 +18,8 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
-git clone -b v0.6.1 https://github.com/Decentr-net/decentr
+# Replace <latest_release> with the latest Decentr version. Looks like v0.6.1 
+git clone -b <latest_release> https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
@@ -50,7 +51,7 @@ Download Genesis, Start your Node, Check your Node Status:
 # Download genesis.json
 wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0/genesis.json
 # Start Decentrd
-decentrd start --cerberus-addr https://cerberus.testnet.decentr.xyz --community-moderator-addr decentr1nt5k6eg9zq5t2v66pr6zgyt5hh5tu8sk30re3a
+decentrd start
 # Check your node's status with decentrcli
 decentrcli status
 ```
@@ -264,8 +265,8 @@ decentrcli tx community delete-post [postOwner] [postUUID] --from [account]
 # Like post
 decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --from [account]
 
-# Get moderator account address
-decentrcli query community moderator-addr
+# Get moderator accouns addresses
+decentrcli query community moderators
 
 # Get user's posts
 decentrcli query community user-posts <account> [--from-uuid uuid] [--limit int]
@@ -293,8 +294,8 @@ curl -XPOST -s http://localhost:1317/community/posts \
 curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/delete \
      -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
 
-# Get moderator account address
-curl -s http://localhost:1317/community/moderator-addr
+# Get moderator accouns addresses
+curl -s http://localhost:1317/community/moderators
 
 # Like post
 curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/like\

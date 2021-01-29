@@ -10,7 +10,7 @@ const (
 	RouterKey         = types.RouterKey
 	StoreKey          = types.StoreKey
 	QuerierRoute      = types.QuerierRoute
-	FlagModeratorAddr = types.FlagModeratorAddr
+	DefaultParamspace = types.DefaultParamspace
 )
 
 var (

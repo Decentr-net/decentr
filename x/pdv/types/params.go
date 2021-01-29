@@ -12,13 +12,13 @@ const (
 	DefaultParamspace = ModuleName
 )
 
-// ParamCerberusAddress is store's key for CerberusAddress
-var ParamCerberusAddress = []byte("cerberusaddress")
+// ParamCerberusAddressKey is store's key for CerberusAddress
+var ParamCerberusAddressKey = []byte("ParamCerberusAddress")
 
 // ParamKeyTable type declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable(
-		params.NewParamSetPair(ParamCerberusAddress, "", validateCerberusAddress),
+		params.NewParamSetPair(ParamCerberusAddressKey, "", validateCerberusAddress),
 	)
 }
 

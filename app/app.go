@@ -152,7 +152,7 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, communityModeratorAddress sdk.AccAddress, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -187,6 +187,7 @@ func NewDecentrApp(
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	app.subspaces[pdv.ModuleName] = app.paramsKeeper.Subspace(pdv.DefaultParamspace)
+	app.subspaces[community.ModuleName] = app.paramsKeeper.Subspace(community.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -265,6 +266,7 @@ func NewDecentrApp(
 	app.communityKeeper = community.NewKeeper(
 		app.cdc,
 		keys[community.StoreKey],
+		app.subspaces[community.ModuleName],
 		app.tokensKeeper,
 	)
 
@@ -280,7 +282,7 @@ func NewDecentrApp(
 		pdv.NewAppModule(app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
-		community.NewAppModule(app.communityKeeper, communityModeratorAddress),
+		community.NewAppModule(app.communityKeeper),
 		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
