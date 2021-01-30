@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -121,14 +122,12 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		exists, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).DoesPDVExist(r.Context(), req.Address)
-		if err != nil {
+		if _, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).GetPDVMeta(r.Context(), req.Address); err != nil {
+			if errors.Is(err, cerberusapi.ErrNotFound) {
+				rest.WriteErrorResponse(w, http.StatusNotFound, "pdv does not exist")
+				return
+			}
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to check pdv existence: %w", err).Error())
-			return
-		}
-
-		if !exists {
-			rest.WriteErrorResponse(w, http.StatusNotFound, "pdv does not exist")
 			return
 		}
 
