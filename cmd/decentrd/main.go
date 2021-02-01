@@ -100,7 +100,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1), nil, nil)
+		aApp := app.NewDecentrApp(logger, db, traceStore, false, uint(1))
 		err := aApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -108,6 +108,6 @@ func exportAppStateAndTMValidators(
 		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1), nil, nil)
+	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1))
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

@@ -124,7 +124,7 @@ func (k *Keeper) ListPDV(ctx sdk.Context, owner sdk.AccAddress, from *uint64, li
 // GetCerberusAddr returns the current Cerberus address
 func (k *Keeper) GetCerberusAddr(ctx sdk.Context) string {
 	var addr string
-	k.paramSpace.Get(ctx, types.ParamCerberusAddressKey, &addr)
+	k.paramSpace.GetIfExists(ctx, types.ParamCerberusAddressKey, &addr)
 	return addr
 }
 

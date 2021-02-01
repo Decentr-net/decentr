@@ -54,7 +54,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspa
 // GetModerators returns the current moderators
 func (k *Keeper) GetModerators(ctx sdk.Context) []string {
 	var moderators []string
-	k.paramSpace.Get(ctx, types.ParamModeratorsKey, &moderators)
+	k.paramSpace.GetIfExists(ctx, types.ParamModeratorsKey, &moderators)
 	return moderators
 }
 
