@@ -1,5 +1,5 @@
 # decentr
-![img](https://img.shields.io/docker/cloud/build/decentr/decentr.svg)
+![img](https://img.shields.io/docker/cloud/build/decentr/decentr.svg) ![img](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr) ![img](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=version)
 
 Decentr blockchain
 
