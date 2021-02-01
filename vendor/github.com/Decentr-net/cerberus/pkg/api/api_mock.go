@@ -6,7 +6,6 @@ package api
 
 import (
 	context "context"
-	json "encoding/json"
 	schema "github.com/Decentr-net/cerberus/pkg/schema"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -36,7 +35,7 @@ func (m *MockCerberus) EXPECT() *MockCerberusMockRecorder {
 }
 
 // SavePDV mocks base method
-func (m *MockCerberus) SavePDV(ctx context.Context, p *schema.PDV) (string, error) {
+func (m *MockCerberus) SavePDV(ctx context.Context, p schema.PDV) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SavePDV", ctx, p)
 	ret0, _ := ret[0].(string)
@@ -51,10 +50,10 @@ func (mr *MockCerberusMockRecorder) SavePDV(ctx, p interface{}) *gomock.Call {
 }
 
 // ReceivePDV mocks base method
-func (m *MockCerberus) ReceivePDV(ctx context.Context, address string) (json.RawMessage, error) {
+func (m *MockCerberus) ReceivePDV(ctx context.Context, address string) (schema.PDV, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReceivePDV", ctx, address)
-	ret0, _ := ret[0].(json.RawMessage)
+	ret0, _ := ret[0].(schema.PDV)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,17 +64,17 @@ func (mr *MockCerberusMockRecorder) ReceivePDV(ctx, address interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePDV", reflect.TypeOf((*MockCerberus)(nil).ReceivePDV), ctx, address)
 }
 
-// DoesPDVExist mocks base method
-func (m *MockCerberus) DoesPDVExist(ctx context.Context, address string) (bool, error) {
+// GetPDVMeta mocks base method
+func (m *MockCerberus) GetPDVMeta(ctx context.Context, address string) (PDVMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DoesPDVExist", ctx, address)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "GetPDVMeta", ctx, address)
+	ret0, _ := ret[0].(PDVMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DoesPDVExist indicates an expected call of DoesPDVExist
-func (mr *MockCerberusMockRecorder) DoesPDVExist(ctx, address interface{}) *gomock.Call {
+// GetPDVMeta indicates an expected call of GetPDVMeta
+func (mr *MockCerberusMockRecorder) GetPDVMeta(ctx, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesPDVExist", reflect.TypeOf((*MockCerberus)(nil).DoesPDVExist), ctx, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPDVMeta", reflect.TypeOf((*MockCerberus)(nil).GetPDVMeta), ctx, address)
 }

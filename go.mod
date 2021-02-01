@@ -3,7 +3,7 @@ module github.com/Decentr-net/decentr
 go 1.15
 
 require (
-	github.com/Decentr-net/cerberus v0.2.0
+	github.com/Decentr-net/cerberus v1.0.0
 	github.com/cosmos/cosmos-sdk v0.39.2
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gorilla/mux v1.7.4

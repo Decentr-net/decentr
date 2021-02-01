@@ -255,7 +255,7 @@ func NewDecentrApp(
 		app.cdc,
 		keys[pdv.StoreKey],
 		app.subspaces[pdv.ModuleName],
-		app.tokensKeeper)
+	)
 
 	app.profilesKeeper = profile.NewKeeper(
 		app.cdc,
@@ -279,7 +279,7 @@ func NewDecentrApp(
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		pdv.NewAppModule(app.pdvKeeper),
+		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
 		community.NewAppModule(app.communityKeeper),

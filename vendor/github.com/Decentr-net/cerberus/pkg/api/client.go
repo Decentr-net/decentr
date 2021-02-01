@@ -38,10 +38,10 @@ func NewClientWithHTTPClient(host string, pk secp256k1.PrivKeySecp256k1, c *http
 
 // SavePDV sends bytes slice to Cerberus.
 // SavePDV can return ErrInvalidRequest besides general api package's errors.
-func (c *client) SavePDV(ctx context.Context, p *schema.PDV) (string, error) {
+func (c *client) SavePDV(ctx context.Context, p schema.PDV) (string, error) {
 	// validate data
 
-	if !p.PDV.Validate() {
+	if !p.Validate() {
 		return "", ErrInvalidRequest
 	}
 
@@ -65,35 +65,42 @@ func (c *client) SavePDV(ctx context.Context, p *schema.PDV) (string, error) {
 
 // ReceivePDV receives bytes slice from Cerberus by provided address.
 // ReceivePDV can return ErrInvalidRequest and ErrNotFound besides general api package's errors.
-func (c *client) ReceivePDV(ctx context.Context, address string) (json.RawMessage, error) {
+func (c *client) ReceivePDV(ctx context.Context, address string) (schema.PDV, error) {
 	if !IsAddressValid(address) {
-		return nil, ErrInvalidRequest
+		return schema.PDV{}, ErrInvalidRequest
 	}
 
 	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s", address), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make ReceivePDV request: %w", err)
+		return schema.PDV{}, fmt.Errorf("failed to make ReceivePDV request: %w", err)
 	}
 
-	return data, nil
+	var pdv schema.PDV
+	if err := json.Unmarshal(data, &pdv); err != nil {
+		return schema.PDV{}, fmt.Errorf("failed to unmarshal pdv: %w", err)
+	}
+
+	return pdv, nil
 }
 
-// DoesPDVExist returns is data exists in Cerberus by provided address.
+// GetPDVMeta returns PDVMeta by provided address.
 // DoesPDVExist can return ErrInvalidRequest and ErrNotFound besides general api package's errors.
-func (c *client) DoesPDVExist(ctx context.Context, address string) (bool, error) {
+func (c *client) GetPDVMeta(ctx context.Context, address string) (PDVMeta, error) {
 	if !IsAddressValid(address) {
-		return false, ErrInvalidRequest
+		return PDVMeta{}, ErrInvalidRequest
 	}
 
-	_, err := c.sendRequest(ctx, http.MethodHead, fmt.Sprintf("v1/pdv/%s", address), nil)
+	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s/meta", address), nil)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return false, nil
-		}
-		return false, fmt.Errorf("failed to make DoesPDVExist request: %w", err)
+		return PDVMeta{}, fmt.Errorf("failed to make GetPDVMeta request: %w", err)
 	}
 
-	return true, nil
+	var m PDVMeta
+	if err := json.Unmarshal(data, &m); err != nil {
+		return PDVMeta{}, fmt.Errorf("failed to unmarshal meta: %w", err)
+	}
+
+	return m, nil
 }
 
 // sendRequest is utility method which signs request, if it's needed, and send POST request to Cerberus.

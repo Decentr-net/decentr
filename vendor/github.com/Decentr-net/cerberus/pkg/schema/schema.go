@@ -8,58 +8,46 @@ import (
 	"reflect"
 )
 
+// PDVVersion represents version.
+// swagger:enum PDVVersion
+type PDVVersion string
+
 const (
-	// PDVv1 ...
-	PDVv1 PDVVersion = "v1"
+	// PDVV1 ...
+	PDVV1 PDVVersion = "v1"
 )
+
 const (
-	// PDVCookieType ...
-	PDVCookieType PDVType = "cookie"
-)
-const (
-	// DataPerPDVLimit is limit how much data we allow per PDV.
-	DataPerPDVLimit = 20
 	// PDVDataSizeLimit is limit to PDVData's size.
 	PDVDataSizeLimit = 8 * 1024
 )
 
-// PDVVersion represents version.
-type PDVVersion string
-
-// PDVType represents data type.
-type PDVType string
-
 // nolint: gochecknoglobals
 var (
 	pdvObjectSchemes = map[PDVVersion]reflect.Type{
-		PDVv1: reflect.TypeOf(PDVObjectV1{}),
-	}
-
-	pdvDataSchemes = map[PDVType]map[PDVVersion]reflect.Type{
-		PDVCookieType: {
-			PDVv1: reflect.TypeOf(PDVDataCookieV1{}),
-		},
+		PDVV1: reflect.TypeOf(PDVObjectV1{}),
 	}
 )
 
-// PDV is main data object.
+// PDV is main Data object.
 type PDV struct {
 	Version PDVVersion `json:"version"`
 
-	PDV PDVObject `json:"pdv"`
+	PDV []PDVObject `json:"pdv"`
 }
 
 // PDVObject is interface for all versions objects.
 type PDVObject interface {
 	Validate
 
-	Version() PDVVersion
+	GetData() []PDVData
 }
 
-// PDVObjectMetaV1 is PDVObjectV1 meta data.
+// PDVObjectMetaV1 is PDVObjectV1 meta Data.
 type PDVObjectMetaV1 struct {
-	// Website information
+	// Domain of website where object was taken
 	Host string `json:"domain"`
+	// Path of website's url where object was taken
 	Path string `json:"path"`
 }
 
@@ -70,35 +58,9 @@ type PDVObjectV1 struct {
 	Data []PDVData `json:"data"`
 }
 
-// Version ...
-func (o *PDVObjectV1) Version() PDVVersion {
-	return PDVv1
-}
-
-// PDVDataMeta contains common information about data.
-type PDVDataMeta struct {
-	PDVVersion PDVVersion `json:"version"`
-	PDVType    PDVType    `json:"type"`
-}
-
-// PDVData is interface for all data types.
-type PDVData interface {
-	Validate
-
-	Version() PDVVersion
-	Type() PDVType
-}
-
-// PDVDataCookieV1 is PDVData implementation for Cookies(according to https://developer.chrome.com/extensions/cookies) with version v1.
-type PDVDataCookieV1 struct {
-	Name           string `json:"name"`
-	Value          string `json:"value"`
-	Domain         string `json:"domain"`
-	Path           string `json:"path"`
-	SameSite       string `json:"same_site"`
-	HostOnly       bool   `json:"host_only"`
-	Secure         bool   `json:"secure"`
-	ExpirationDate uint64 `json:"expiration_date,omitempty"`
+// GetData returns slice of PDVData.
+func (o PDVObjectV1) GetData() []PDVData {
+	return o.Data
 }
 
 // UnmarshalJSON ...
@@ -106,7 +68,7 @@ func (p *PDV) UnmarshalJSON(b []byte) error {
 	var i struct {
 		Version PDVVersion `json:"version"`
 
-		PDV json.RawMessage `json:"pdv"`
+		PDV []json.RawMessage `json:"pdv"`
 	}
 
 	if err := json.Unmarshal(b, &i); err != nil {
@@ -118,13 +80,17 @@ func (p *PDV) UnmarshalJSON(b []byte) error {
 		return errors.New("unknown version of object")
 	}
 
-	v := reflect.New(t).Interface()
-	if err := json.Unmarshal(i.PDV, v); err != nil {
-		return err
-	}
-
 	p.Version = i.Version
-	p.PDV = v.(PDVObject) // nolint
+
+	for _, v := range i.PDV {
+		o := reflect.New(t).Interface()
+
+		if err := json.Unmarshal(v, o); err != nil {
+			return err
+		}
+
+		p.PDV = append(p.PDV, o.(PDVObject))
+	}
 
 	return nil
 }
@@ -134,79 +100,45 @@ func (o *PDVObjectV1) UnmarshalJSON(b []byte) error {
 	var i struct {
 		PDVObjectMetaV1
 
-		PDVData []json.RawMessage `json:"data"`
+		Data []json.RawMessage `json:"data"`
 	}
 
 	if err := json.Unmarshal(b, &i); err != nil {
 		return err
 	}
 
-	if len(i.PDVData) > DataPerPDVLimit {
-		return errors.New("too much data in PDV")
-	}
-
 	*o = PDVObjectV1{
 		PDVObjectMetaV1: i.PDVObjectMetaV1,
-		Data:            make([]PDVData, len(i.PDVData)),
+		Data:            make([]PDVData, len(i.Data)),
 	}
 
-	for i, v := range i.PDVData {
+	for i, v := range i.Data {
 		if len(v) > PDVDataSizeLimit {
-			return errors.New("pdv data is too big")
+			return errors.New("pdv Data is too big")
 		}
 
-		var m PDVDataMeta
+		type T struct {
+			Type PDVType `json:"type"`
+		}
+
+		var m T
 		if err := json.Unmarshal(v, &m); err != nil {
-			return fmt.Errorf("failed to unmarshal PDV data meta: %w", err)
+			return fmt.Errorf("failed to unmarshal PDV Data meta: %w", err)
 		}
 
-		t, ok := pdvDataSchemes[m.PDVType][m.PDVVersion]
+		t, ok := pdvDataSchemes[m.Type]
 		if !ok {
-			return fmt.Errorf("unknown pdv data: %s %s", m.PDVType, m.PDVVersion)
+			return fmt.Errorf("unknown pdv Data: %s", m.Type)
 		}
 
 		d := reflect.New(t).Interface().(PDVData) // nolint:errcheck
 
 		if err := json.Unmarshal(v, d); err != nil {
-			return fmt.Errorf("failed to unmarshal data: %w", err)
+			return fmt.Errorf("failed to unmarshal Data: %w", err)
 		}
 
 		o.Data[i] = d
 	}
 
 	return nil
-}
-
-// Version ...
-func (PDVDataCookieV1) Version() PDVVersion {
-	return PDVv1
-}
-
-// Type ...
-func (PDVDataCookieV1) Type() PDVType {
-	return PDVCookieType
-}
-
-// MarshalJSON ...
-func (p PDV) MarshalJSON() ([]byte, error) {
-	p.Version = p.PDV.Version()
-	type t PDV
-	return json.Marshal(t(p))
-}
-
-// MarshalJSON ...
-func (d PDVDataCookieV1) MarshalJSON() ([]byte, error) { // nolint:gocritic
-	type T PDVDataCookieV1
-	v := struct {
-		PDVDataMeta
-		T
-	}{
-		PDVDataMeta: PDVDataMeta{
-			PDVVersion: d.Version(),
-			PDVType:    d.Type(),
-		},
-		T: T(d),
-	}
-
-	return json.Marshal(v)
 }

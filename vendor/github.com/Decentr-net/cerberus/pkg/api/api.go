@@ -3,7 +3,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -33,19 +32,28 @@ var ErrNotVerified = errors.New("failed to verify message")
 
 // Cerberus provides user-friendly API methods.
 type Cerberus interface {
-	SavePDV(ctx context.Context, p *schema.PDV) (string, error)
-	ReceivePDV(ctx context.Context, address string) (json.RawMessage, error)
-	DoesPDVExist(ctx context.Context, address string) (bool, error)
+	SavePDV(ctx context.Context, p schema.PDV) (string, error)
+	ReceivePDV(ctx context.Context, address string) (schema.PDV, error)
+	GetPDVMeta(ctx context.Context, address string) (PDVMeta, error)
 }
 
 // Error ...
+// swagger:model Error
 type Error struct {
 	Error string `json:"error"`
 }
 
 // SavePDVResponse ...
+// swagger:model SavePDVResponse
 type SavePDVResponse struct {
 	Address string `json:"address"`
+}
+
+// PDVMeta contains info about PDV.
+type PDVMeta struct {
+	// ObjectTypes represents how much certain pdv data pdv contains.
+	ObjectTypes map[schema.PDVType]uint16 `json:"object_types"`
+	Reward      uint64                    `json:"reward"`
 }
 
 // IsAddressValid check is address is matching with regexp.

@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strconv"
@@ -101,13 +102,11 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("failed to get cerberus addr: %w", err)
 			}
 
-			exists, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).DoesPDVExist(cmd.Context(), args[0])
-			if err != nil {
+			if _, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).GetPDVMeta(cmd.Context(), args[0]); err != nil {
+				if errors.Is(err, cerberusapi.ErrNotFound) {
+					return fmt.Errorf("pdv does not exist")
+				}
 				return fmt.Errorf("failed to check pdv existence: %w", err)
-			}
-
-			if !exists {
-				return fmt.Errorf("pdv does not exist")
 			}
 
 			t, err := strconv.Atoi(args[0])

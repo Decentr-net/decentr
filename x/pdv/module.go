@@ -5,6 +5,7 @@ import (
 
 	"github.com/Decentr-net/decentr/x/pdv/client/cli"
 	"github.com/Decentr-net/decentr/x/pdv/client/rest"
+	"github.com/Decentr-net/decentr/x/token"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -76,14 +77,16 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper Keeper
+	keeper       Keeper
+	tokensKeeper token.Keeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper) AppModule {
+func NewAppModule(k Keeper, tk token.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		tokensKeeper:   tk,
 	}
 }
 
@@ -98,7 +101,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.keeper, am.tokensKeeper)
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute

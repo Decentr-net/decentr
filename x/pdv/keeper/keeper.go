@@ -27,19 +27,17 @@ type statsItem struct {
 type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
-	tokens   TokenKeeper
 
 	paramSpace params.Subspace
 }
 
 // NewKeeper creates new instances of the PDV Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, tokens TokenKeeper) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
 	ps := paramSpace.WithKeyTable(types.ParamKeyTable())
 
 	return Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,
-		tokens:     tokens,
 		paramSpace: ps,
 	}
 }
@@ -60,17 +58,6 @@ func (k Keeper) SetPDV(ctx sdk.Context, address string, pdv types.PDV) {
 		Address: pdv.Address,
 		Type:    pdv.Type,
 	}))
-
-	t := sdk.NewInt(0)
-	switch pdv.Type {
-	case types.PDVTypeCookie:
-		t = sdk.NewInt(2)
-	case types.PDVTypeLoginCookie:
-		t = sdk.NewInt(4)
-	default:
-	}
-
-	k.tokens.AddTokens(ctx, pdv.Owner, t, utils.GetHash(pdv.Address))
 }
 
 // Gets the entire PDV metadata struct for an address
