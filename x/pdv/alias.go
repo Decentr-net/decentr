@@ -22,6 +22,5 @@ var (
 
 type (
 	Keeper       = keeper.Keeper
-	PDV          = types.PDV
 	MsgCreatePDV = types.MsgCreatePDV
 )

@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
-	"strings"
-	"time"
 
 	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -85,7 +83,7 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 // GetCmdCreatePDV is the CLI command for sending a CreatePDV transaction
 func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create [type] [pdv]",
+		Use:   "create [id]",
 		Short: "create PDV",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -93,8 +91,9 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			if hex.EncodeToString(cliCtx.GetFromAddress()) != strings.Split(args[0], "-")[0] { // Checks if the the msg sender is the same as the current owner
-				return fmt.Errorf("invalid owner")
+			id, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse id: %w", err)
 			}
 
 			caddr, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/cerberus-addr", types.QuerierRoute), nil)
@@ -102,19 +101,14 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("failed to get cerberus addr: %w", err)
 			}
 
-			if _, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).GetPDVMeta(cmd.Context(), args[0]); err != nil {
+			if _, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).GetPDVMeta(cmd.Context(), cliCtx.GetFromAddress().String(), id); err != nil {
 				if errors.Is(err, cerberusapi.ErrNotFound) {
 					return fmt.Errorf("pdv does not exist")
 				}
 				return fmt.Errorf("failed to check pdv existence: %w", err)
 			}
 
-			t, err := strconv.Atoi(args[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse type: %w", err)
-			}
-
-			msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), args[1], types.PDVType(t), cliCtx.GetFromAddress())
+			msg := types.NewMsgCreatePDV(cliCtx.GetFromAddress(), id)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

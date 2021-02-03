@@ -1,5 +1,5 @@
 # decentr
-![img](https://img.shields.io/docker/cloud/build/decentr/decentr.svg) ![img](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr) ![img](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=version)
+![img](https://img.shields.io/docker/cloud/build/decentr/decentr.svg) ![img](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr) ![img](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version) [![Generic badge](https://img.shields.io/badge/network%20version-v0.6.2-blue.svg)](https://shields.io/)
 
 Decentr blockchain
 
@@ -112,39 +112,23 @@ decentrcli tx broadcast signedTx.json
 
 #### CLI
 ```bash
-# Query pdv owner by its address
-decentrcli query pdv owner <address>
-
-# Query pdv full
-decentrcli query pdv show <address>
-
-# List account's pdv
-decentrcli query pdv list <owner> [from] [limit]
 
 # Get cerberus address
 decentrcli query pdv cerberus
 
 # Create pdv
-decentrcli tx pdv create [type] [pdv] --from [account]
+decentrcli tx pdv create [id from cerberus] --from [account]
 ```
 
 #### REST
 ```bash
-# Query pdv owner by its address
-curl -s http://localhost:1317/pdv/{address}/owner
-
-# Query pdv full
-curl -s http://localhost:1317/pdv/{address}/show
-
-# List account's pdv
-curl -s http://localhost:1317/pdv/{owner}/list?from={from}&limit={limit}
 
 # Get cerberus address
 curl -s http://localhost:1317/pdv/cerberus-addr
 
 # Create PDV
 curl -XPOST -s http://localhost:1317/pdv \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "type": 2, "address": "address from cerberus"}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "id": <id from cerberus>}' > unsignedTx.json
 ```
 
 ## PDV Token

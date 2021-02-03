@@ -1,26 +1,21 @@
 package types
 
 import (
-	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // MsgCreatePDV defines a CreatePDV message
 type MsgCreatePDV struct {
-	Timestamp uint64         `json:"timestamp"`
-	Address   string         `json:"address"`
-	Owner     sdk.AccAddress `json:"owner"`
-	DataType  PDVType        `json:"type"`
+	Owner sdk.AccAddress `json:"owner"`
+	ID    uint64         `json:"id"`
 }
 
 // NewMsgCreatePDV is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(timestamp uint64, value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
+func NewMsgCreatePDV(owner sdk.AccAddress, id uint64) MsgCreatePDV {
 	return MsgCreatePDV{
-		Timestamp: timestamp,
-		Address:   value,
-		Owner:     owner,
-		DataType:  dataType,
+		Owner: owner,
+		ID:    id,
 	}
 }
 
@@ -35,15 +30,11 @@ func (msg MsgCreatePDV) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
-	if msg.DataType < PDVTypeCookie || msg.DataType > PDVTypeLoginCookie {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid type")
+
+	if msg.ID == 0 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "id can't be zero")
 	}
-	if !cerberusapi.IsAddressValid(msg.Address) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
-	}
-	if msg.Timestamp == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Timestamp can not be 0")
-	}
+
 	return nil
 }
 
