@@ -15,13 +15,12 @@ import (
 )
 
 const (
-	QueryPopular       = "popular"
-	QueryPosts         = "posts"
-	QueryPost          = "post"
-	QueryUser          = "user"
-	QueryLikedPosts    = "liked-posts"
-	QueryModeratorAddr = "moderator-addr"
-	QueryModerators    = "moderators"
+	QueryPopular    = "popular"
+	QueryPosts      = "posts"
+	QueryPost       = "post"
+	QueryUser       = "user"
+	QueryLikedPosts = "liked-posts"
+	QueryModerators = "moderators"
 )
 
 const defaultLimit = 20
@@ -53,8 +52,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryUserPosts(ctx, path[1:], req, keeper)
 		case QueryLikedPosts:
 			return queryUserLikedPosts(ctx, path[1:], req, keeper)
-		case QueryModeratorAddr:
-			return queryModeratorAddr(ctx, keeper)
 		case QueryModerators:
 			return queryModerators(ctx, keeper)
 		default:
@@ -257,15 +254,6 @@ func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UU
 	}
 
 	return
-}
-
-func queryModeratorAddr(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	moderators := keeper.GetModerators(ctx)
-	if len(moderators) != 0 {
-		return []byte(moderators[0]), nil
-	}
-
-	return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, "moderator not defined")
 }
 
 func queryModerators(ctx sdk.Context, keeper Keeper) ([]byte, error) {

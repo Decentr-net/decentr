@@ -1,5 +1,5 @@
 # decentr
-![img](https://img.shields.io/docker/cloud/build/decentr/decentr.svg) ![img](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr) ![img](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version) [![Generic badge](https://img.shields.io/badge/network%20version-v0.6.2-blue.svg)](https://shields.io/)
+![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) [![network version](https://img.shields.io/badge/network%20version-v0.6.2-blue.svg)](https://shields.io/) ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
 
@@ -116,6 +116,9 @@ decentrcli tx broadcast signedTx.json
 # Get cerberus address
 decentrcli query pdv cerberus
 
+# Get pdv meta
+decentrcli query pdv meta <id> --from [account]
+
 # Create pdv
 decentrcli tx pdv create [id from cerberus] --from [account]
 ```
@@ -125,6 +128,9 @@ decentrcli tx pdv create [id from cerberus] --from [account]
 
 # Get cerberus address
 curl -s http://localhost:1317/pdv/cerberus-addr
+
+# Get pdv meta
+curl -s http://localhost:1317/pdv/{owner}/{id}
 
 # Create PDV
 curl -XPOST -s http://localhost:1317/pdv \ 

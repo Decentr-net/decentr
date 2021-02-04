@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +23,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s", storeName), createPDVHandler(cliCtx)).Methods(http.MethodPost)
 
 	r.HandleFunc(fmt.Sprintf("/%s/cerberus-addr", storeName), cerberusAddrHandler(cliCtx)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/{owner}/{id}", storeName), getPDVMetaHandler(cliCtx)).Methods(http.MethodGet)
 }
 
 type createPDVReq struct {
@@ -66,6 +68,38 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		msg := types.NewMsgCreatePDV(owner, req.ID)
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx.WithHeight(height), req.BaseReq, []sdk.Msg{msg})
+	}
+}
+
+func getPDVMetaHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		owner := mux.Vars(r)["owner"]
+		id, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("invalid id: %s", err.Error()))
+			return
+		}
+
+		cerberusAddr, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/cerberus-addr", types.QuerierRoute), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		cerberus := cerberusapi.NewClient(string(cerberusAddr), secp256k1.PrivKeySecp256k1{})
+		meta, err := cerberus.GetPDVMeta(r.Context(), owner, id)
+		if err != nil {
+			status := http.StatusInternalServerError
+			if err == cerberusapi.ErrInvalidRequest {
+				status = http.StatusBadRequest
+			} else if err == cerberusapi.ErrNotFound {
+				status = http.StatusNotFound
+			}
+			rest.WriteErrorResponse(w, status, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), meta)
 	}
 }
 
