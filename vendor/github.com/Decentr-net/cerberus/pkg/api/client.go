@@ -38,39 +38,52 @@ func NewClientWithHTTPClient(host string, pk secp256k1.PrivKeySecp256k1, c *http
 
 // SavePDV sends bytes slice to Cerberus.
 // SavePDV can return ErrInvalidRequest besides general api package's errors.
-func (c *client) SavePDV(ctx context.Context, p schema.PDV) (string, error) {
-	// validate data
-
+func (c *client) SavePDV(ctx context.Context, p schema.PDV) (uint64, error) {
 	if !p.Validate() {
-		return "", ErrInvalidRequest
+		return 0, ErrInvalidRequest
 	}
 
 	data, err := json.Marshal(p)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode pdv: %w", err)
+		return 0, fmt.Errorf("failed to decode pdv: %w", err)
 	}
 
 	data, err = c.sendRequest(ctx, http.MethodPost, "v1/pdv", data)
 	if err != nil {
-		return "", fmt.Errorf("failed to make SavePDV request: %w", err)
+		return 0, fmt.Errorf("failed to make SavePDV request: %w", err)
 	}
 
 	resp := SavePDVResponse{}
 	if err := json.Unmarshal(data, &resp); err != nil {
-		return "", fmt.Errorf("failed to decode json: %w", err)
+		return 0, fmt.Errorf("failed to decode json: %w", err)
 	}
 
-	return resp.Address, nil
+	return resp.ID, nil
+}
+
+// SavePDV lists pdv for owner.
+func (c *client) ListPDV(ctx context.Context, owner string, from uint64, limit uint16) ([]uint64, error) {
+	if limit == 0 {
+		limit = 100
+	}
+
+	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s?from=%d&limit=%d", owner, from, limit), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make ListPDV request: %w", err)
+	}
+
+	list := make([]uint64, 0)
+
+	if err := json.Unmarshal(data, &list); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal list: %w", err)
+	}
+
+	return list, nil
 }
 
 // ReceivePDV receives bytes slice from Cerberus by provided address.
-// ReceivePDV can return ErrInvalidRequest and ErrNotFound besides general api package's errors.
-func (c *client) ReceivePDV(ctx context.Context, address string) (schema.PDV, error) {
-	if !IsAddressValid(address) {
-		return schema.PDV{}, ErrInvalidRequest
-	}
-
-	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s", address), nil)
+func (c *client) ReceivePDV(ctx context.Context, owner string, id uint64) (schema.PDV, error) {
+	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s/%d", owner, id), nil)
 	if err != nil {
 		return schema.PDV{}, fmt.Errorf("failed to make ReceivePDV request: %w", err)
 	}
@@ -84,13 +97,8 @@ func (c *client) ReceivePDV(ctx context.Context, address string) (schema.PDV, er
 }
 
 // GetPDVMeta returns PDVMeta by provided address.
-// DoesPDVExist can return ErrInvalidRequest and ErrNotFound besides general api package's errors.
-func (c *client) GetPDVMeta(ctx context.Context, address string) (PDVMeta, error) {
-	if !IsAddressValid(address) {
-		return PDVMeta{}, ErrInvalidRequest
-	}
-
-	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s/meta", address), nil)
+func (c *client) GetPDVMeta(ctx context.Context, owner string, id uint64) (PDVMeta, error) {
+	data, err := c.sendRequest(ctx, http.MethodGet, fmt.Sprintf("v1/pdv/%s/%d/meta", owner, id), nil)
 	if err != nil {
 		return PDVMeta{}, fmt.Errorf("failed to make GetPDVMeta request: %w", err)
 	}

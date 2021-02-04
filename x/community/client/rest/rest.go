@@ -33,8 +33,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 
 	r.HandleFunc(fmt.Sprintf("/%s/likedPosts/{owner}", storeName), queryListUserLikedPostsHandler(cliCtx)).Methods(http.MethodGet)
 
-	// backward compatibility
-	r.HandleFunc(fmt.Sprintf("/%s/moderator-addr", storeName), moderatorAddrHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/moderators", storeName), moderatorsHandler(cliCtx)).Methods(http.MethodGet)
 }
 
@@ -152,22 +150,6 @@ func queryListUserLikedPostsHandler(cliCtx context.CLIContext) http.HandlerFunc 
 		}
 
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
-	}
-}
-
-func moderatorAddrHandler(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderator-addr", types.QuerierRoute), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), struct {
-			Address string `json:"address"`
-		}{
-			Address: string(res),
-		})
 	}
 }
 

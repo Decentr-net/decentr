@@ -1,10 +1,8 @@
 package pdv
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 
 	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -47,15 +45,7 @@ func getCerberus(ctx sdk.Context, keeper Keeper) cerberusapi.Cerberus {
 }
 
 func handleMsgCreatePDV(ctx sdk.Context, cerberus cerberusapi.Cerberus, keeper Keeper, tokensKeeper token.Keeper, msg MsgCreatePDV) (*sdk.Result, error) {
-	if hex.EncodeToString(msg.Owner) != strings.Split(msg.Address, "-")[0] { // Checks if the the msg sender is the same as the current owner
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Incorrect Owner") // If not, throw an error
-	}
-
-	if keeper.IsHashPresent(ctx, msg.Address) {
-		return &sdk.Result{}, nil
-	}
-
-	meta, err := cerberus.GetPDVMeta(ctx.Context(), msg.Address)
+	meta, err := cerberus.GetPDVMeta(ctx.Context(), msg.Owner.String(), msg.ID)
 	if err != nil {
 		if errors.Is(err, cerberusapi.ErrNotFound) {
 			return nil, errors.New("pdv does not exist")
@@ -63,8 +53,7 @@ func handleMsgCreatePDV(ctx sdk.Context, cerberus cerberusapi.Cerberus, keeper K
 		return nil, fmt.Errorf("cerberus call failed: %w", err)
 	}
 
-	keeper.SetPDV(ctx, msg.Address, PDV{Timestamp: msg.Timestamp, Owner: msg.Owner, Address: msg.Address, Type: msg.DataType})
-	tokensKeeper.AddTokens(ctx, msg.Owner, sdk.NewIntFromUint64(meta.Reward), utils.GetHash(msg.Address))
+	tokensKeeper.AddTokens(ctx, msg.Owner, sdk.NewIntFromUint64(meta.Reward), utils.GetHash(msg))
 
 	return &sdk.Result{}, nil
 }
