@@ -255,7 +255,7 @@ decentrcli tx community delete-post [postOwner] [postUUID] --from [account]
 # Like post
 decentrcli tx community like-post [postOwner] [postUUID] --weight [weight] --from [account]
 
-# Get moderator accouns addresses
+# Get moderator accounts addresses
 decentrcli query community moderators
 
 # Get user's posts
