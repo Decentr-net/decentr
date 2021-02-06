@@ -2,7 +2,10 @@ package community
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gofrs/uuid"
@@ -14,6 +17,17 @@ type GenesisState struct {
 	PostRecords  []Post   `json:"posts"`
 	LikesRecords []Like   `json:"likes"`
 	Moderators   []string `json:"moderators"`
+}
+
+// GetGenesisStateFromAppState returns community GenesisState given raw application
+// genesis state.
+func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawMessage) GenesisState {
+	var genesisState GenesisState
+	if appState[ModuleName] != nil {
+		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
+	}
+
+	return genesisState
 }
 
 func ValidateGenesis(data GenesisState) error {

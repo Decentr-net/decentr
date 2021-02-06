@@ -2,7 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"strings"
+
+	"github.com/Decentr-net/decentr/x/community"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -58,6 +65,7 @@ func main() {
 	)
 	rootCmd.AddCommand(genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(AddGenesisCommunityModeratorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(flags.NewCompletionCmd(rootCmd, true))
 	rootCmd.AddCommand(debug.Cmd(cdc))
 
@@ -110,4 +118,55 @@ func exportAppStateAndTMValidators(
 
 	aApp := app.NewDecentrApp(logger, db, traceStore, true, uint(1))
 	return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+}
+
+// AddGenesisCommunityModeratorsCmd returns add-genesis-community-moderators cobra Command.
+func AddGenesisCommunityModeratorsCmd(
+	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
+) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "add-genesis-community-moderators [moderator][,[moderator]]",
+		Short: "Add a genesis community moderators to genesis.json",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
+
+			moderators := strings.Split(args[0], ",")
+			for _, moderator := range moderators {
+				if _, err := sdk.AccAddressFromBech32(moderator); err != nil {
+					return fmt.Errorf("failed to parse moderators: %w", err)
+				}
+			}
+
+			genFile := config.GenesisFile()
+			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
+			communityGenState := community.GetGenesisStateFromAppState(cdc, appState)
+			communityGenState.Moderators = moderators
+
+			communityGenStateBz, err := cdc.MarshalJSON(communityGenState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal community genesis state: %w", err)
+			}
+
+			appState[community.ModuleName] = communityGenStateBz
+
+			appStateJSON, err := cdc.MarshalJSON(appState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal application genesis state: %w", err)
+			}
+
+			genDoc.AppState = appStateJSON
+			return genutil.ExportGenesisFile(genDoc, genFile)
+		},
+	}
+
+	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
+
+	return cmd
 }

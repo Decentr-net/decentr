@@ -44,6 +44,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			GetCmdPopularPostsList(queryRoute, cdc),
 			GetCmdPostsList(queryRoute, cdc),
 			GetCmdUserLikedPosts(queryRoute, cdc),
+			GetCmdFollowee(queryRoute, cdc),
 		)...,
 	)
 
@@ -60,6 +61,26 @@ func GetCmdPost(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", queryRoute, args[0], args[1]), nil)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(string(res))
+			return nil
+		},
+	}
+}
+
+// GetCmdFollowee queries users followee
+func GetCmdFollowee(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "followee <owner>",
+		Short: "Query user's followee",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", queryRoute, args[0]), nil)
 			if err != nil {
 				return err
 			}

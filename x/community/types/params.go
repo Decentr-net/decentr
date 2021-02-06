@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	DefaultModerators = []string{"decentr1nt5k6eg9zq5t2v66pr6zgyt5hh5tu8sk30re3a"}
+	DefaultModerators = []string{}
 )
 
 // ParamModerators is store's key for ParamModerators

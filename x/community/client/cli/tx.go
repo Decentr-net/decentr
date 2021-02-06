@@ -29,6 +29,8 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 
 	communityTxCmd.AddCommand(flags.PostCommands(
 		GetCmdCreatePost(cdc),
+		GetCmdFollow(cdc),
+		GetCmdUnfollow(cdc),
 		GetCmdDeletePost(cdc),
 		GetCmdLikePost(cdc),
 	)...)
@@ -164,4 +166,56 @@ func GetCmdLikePost(cdc *codec.Codec) *cobra.Command {
 			types.LikeWeightUp, types.LikeWeightDown, types.LikeWeightZero))
 
 	return cmd
+}
+
+// GetCmdFollow is the CLI command for sending a Follow transaction
+func GetCmdFollow(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "follow [whom address]",
+		Short: "follow an account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			whom, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse whom address: %w", err)
+			}
+
+			msg := types.NewMsgFollow(cliCtx.GetFromAddress(), whom)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdUnfollow is the CLI command for sending a Unfollow transaction
+func GetCmdUnfollow(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "unfollow [whom address]",
+		Short: "unfollow an account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			whom, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse whom address: %w", err)
+			}
+
+			msg := types.NewMsgUnfollow(cliCtx.GetFromAddress(), whom)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }

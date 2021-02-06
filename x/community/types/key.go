@@ -21,4 +21,5 @@ var (
 	IndexCreatedAtPrefix = []byte{0x02} // prefix for created_at index keys
 	IndexPopularPrefix   = []byte{0x03} // prefix for popular index keys
 	IndexUserLikesPrefix = []byte{0x04} // prefix for user likes index keys
+	FollowersPrefix      = []byte{0x05} // prefix for store followers
 )

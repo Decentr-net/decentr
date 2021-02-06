@@ -26,5 +26,7 @@ type (
 	Like          = types.Like
 	MsgCreatePost = types.MsgCreatePost
 	MsgDeletePost = types.MsgDeletePost
+	MsgFollow     = types.MsgFollow
+	MsgUnfollow   = types.MsgUnfollow
 	MsgSetLike    = types.MsgSetLike
 )

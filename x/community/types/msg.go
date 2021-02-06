@@ -41,6 +41,18 @@ type MsgSetLike struct {
 	Weight    LikeWeight     `json:"weight"`
 }
 
+// MsgFollow defines a MsgFollow message
+type MsgFollow struct {
+	Owner sdk.AccAddress `json:"owner"`
+	Whom  sdk.AccAddress `json:"whom"`
+}
+
+// MsgUnfollow defines a MsgUnfollow message
+type MsgUnfollow struct {
+	Owner sdk.AccAddress `json:"owner"`
+	Whom  sdk.AccAddress `json:"whom"`
+}
+
 // NewMsgCreatePost is a constructor function for MsgCreatePost
 func NewMsgCreatePost(title string, category Category, previewImage string, text string, owner sdk.AccAddress) MsgCreatePost {
 	return MsgCreatePost{
@@ -192,5 +204,79 @@ func (msg MsgSetLike) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgSetLike) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// NewMsgFollow is a constructor function for MsgFollow
+func NewMsgFollow(owner, whom sdk.AccAddress) MsgFollow {
+	return MsgFollow{
+		Owner: owner,
+		Whom:  whom,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgFollow) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgFollow) Type() string { return "follow" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgFollow) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner is empty")
+	}
+
+	if msg.Whom.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "whom is empty")
+	}
+
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgFollow) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgFollow) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// NewMsgUnfollow is a constructor function for MsgUnfollow
+func NewMsgUnfollow(owner, whom sdk.AccAddress) MsgUnfollow {
+	return MsgUnfollow{
+		Owner: owner,
+		Whom:  whom,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgUnfollow) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgUnfollow) Type() string { return "unfollow" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgUnfollow) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "owner is empty")
+	}
+
+	if msg.Whom.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "whom is empty")
+	}
+
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgUnfollow) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgUnfollow) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
