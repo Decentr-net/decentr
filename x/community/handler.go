@@ -85,6 +85,10 @@ func handleMsgSetLike(ctx sdk.Context, keeper Keeper, msg MsgSetLike) (*sdk.Resu
 }
 
 func handleMsgFollow(ctx sdk.Context, keeper Keeper, msg MsgFollow) (*sdk.Result, error) {
+	if msg.Owner.Equals(msg.Whom) {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Owner cannot follow himself")
+	}
+
 	keeper.Follow(ctx, msg.Owner, msg.Whom)
 	return &sdk.Result{}, nil
 }
