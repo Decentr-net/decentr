@@ -19,6 +19,10 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgDeletePost(ctx, keeper, msg)
 		case MsgSetLike:
 			return handleMsgSetLike(ctx, keeper, msg)
+		case MsgFollow:
+			return handleMsgFollow(ctx, keeper, msg)
+		case MsgUnfollow:
+			return handleMsgUnfollow(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -77,5 +81,19 @@ func handleMsgSetLike(ctx sdk.Context, keeper Keeper, msg MsgSetLike) (*sdk.Resu
 		Owner:     msg.Owner,
 		Weight:    msg.Weight,
 	})
+	return &sdk.Result{}, nil
+}
+
+func handleMsgFollow(ctx sdk.Context, keeper Keeper, msg MsgFollow) (*sdk.Result, error) {
+	if msg.Owner.Equals(msg.Whom) {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Owner cannot follow himself")
+	}
+
+	keeper.Follow(ctx, msg.Owner, msg.Whom)
+	return &sdk.Result{}, nil
+}
+
+func handleMsgUnfollow(ctx sdk.Context, keeper Keeper, msg MsgUnfollow) (*sdk.Result, error) {
+	keeper.Unfollow(ctx, msg.Owner, msg.Whom)
 	return &sdk.Result{}, nil
 }

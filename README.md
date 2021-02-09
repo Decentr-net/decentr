@@ -1,5 +1,7 @@
 # decentr
-![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) [![network version](https://img.shields.io/badge/network%20version-v0.6.2-blue.svg)](https://shields.io/) ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
+![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
+[![network version](https://img.shields.io/badge/network%20version-v1.0.2-blue.svg)](https://shields.io/) 
+![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
 
@@ -18,7 +20,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
-# Replace <latest_release> with the latest Decentr version. Looks like v0.6.1 
+# Replace <latest_release> with the latest Decentr version. Looks like v1.0.2 
 git clone -b <latest_release> https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
@@ -49,7 +51,7 @@ Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0.2/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
@@ -117,7 +119,7 @@ decentrcli tx broadcast signedTx.json
 decentrcli query pdv cerberus
 
 # Get pdv meta
-decentrcli query pdv meta <id> --from [account]
+decentrcli query pdv meta [id from cerberus] --from [account]
 
 # Create pdv
 decentrcli tx pdv create [id from cerberus] --from [account]
@@ -272,6 +274,15 @@ decentrcli query community popular-posts [--from-owner account --from-uuid uuid]
 
 # Get user's likes
 decentrcli query community user-liked-posts [owner]
+
+# Follow
+decentrcli tx community follow [whom account] --from [who account]
+
+# Unfollow
+decentrcli tx community unfollow [whom account] --from [who account]
+
+# Get followee
+decentrcli query community followee [account]   
 ```
 
 #### REST
@@ -311,6 +322,18 @@ curl -s "http://localhost:1317/community/posts/{account}?from={postUUID}&limit={
 
 # Get user's likes
 curl -s "http://localhost:1317/community/likedPosts/{account}"
+
+
+# Follow
+curl -XPOST -s http://localhost:1317/community/followers/follow/{whom}\
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+
+# Unfollow
+curl -XPOST -s http://localhost:1317/community/followers/unfollow/{whom}\
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+
+# Get followee
+curl -s "http://localhost:1317/community/followers/{who}/followees"
 ```
 
 ## Build

@@ -12,7 +12,9 @@ type GenesisState struct {
 
 // NewGenesisState creates a new genesis state.
 func NewGenesisState(address string) GenesisState {
-	return GenesisState{CerberusAddr: address}
+	return GenesisState{
+		CerberusAddr: address,
+	}
 }
 
 // DefaultGenesisState returns a default genesis state
