@@ -20,7 +20,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
-# Replace <latest_release> with the latest Decentr version. Looks like v1.0.2 
+# Replace <latest_release> with the latest Decentr version. Looks like v1.0.4 
 git clone -b <latest_release> https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
@@ -51,7 +51,7 @@ Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0.2/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0.4/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
