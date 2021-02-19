@@ -1,6 +1,6 @@
 # decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![network version](https://img.shields.io/badge/network%20version-v1.0.2-blue.svg)](https://shields.io/) 
+[![network version](https://img.shields.io/badge/network%20version-v1.0.4-blue.svg)](https://shields.io/) 
 ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
@@ -15,6 +15,12 @@ This assumes that you're running Linux or MacOS and have installed [Go 1.15+](ht
 * download genesis state
 * start your node
 * use decentrdcli to check the status of your node.
+
+If you already have a previous version of Decentr installed:
+```
+rm -rf ~/.decentrd
+rm -rf ~/.decentrcli
+```
 
 Build, Install, and Name your Node:
 
@@ -37,14 +43,10 @@ Add Seeds:
 nano ~/.decentrd/config/config.toml
 ```
 
-Scroll down to `seeds` in `config.toml`, and add some of these seeds as a comma-separated list:
+Scroll down to `seeds` in `config.toml`, and replace with
 
-```c
-fba90c20ade62a2c9564a03eff93c0603ccdf238@ares.testnet.decentr.xyz:26656
-9479eef715892a18249350fcb1eeca0efc4c9354@hera.testnet.decentr.xyz:26656
-d44010452fec5cb0b9b314aa089f1082fbaed185@hermes.testnet.decentr.xyz:26656
-28d55428c88a870c7c1737a31369f1c43595e4cf@poseidon.testnet.decentr.xyz:26656
-8e14add2e93231a41fb3736a12203ee22ad0069c@zeus.testnet.decentr.xyz:26656
+```
+seeds = "30e2a771fea301dda483ac1f90abd826f90765ef@ares.testnet.decentr.xyz:26656,8fe44130287ed4172cad801f89b0dc65603e0755@hera.testnet.decentr.xyz:26656,3ce39f8227dc76a184dd0bacf297cef05f6d9331@hermes.testnet.decentr.xyz:26656,c437ded6d6c67b4fb660a12ae153e885abab5f66@poseidon.testnet.decentr.xyz:26656,bbf1b11e99bcb46de8a839738e814deb1bcec104@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
