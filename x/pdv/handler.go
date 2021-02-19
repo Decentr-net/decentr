@@ -48,9 +48,12 @@ func handleMsgCreatePDV(ctx sdk.Context, cerberus cerberusapi.Cerberus, keeper K
 	meta, err := cerberus.GetPDVMeta(ctx.Context(), msg.Owner.String(), msg.ID)
 	if err != nil {
 		if errors.Is(err, cerberusapi.ErrNotFound) {
+			ctx.Logger().Error("pdv doesn't exist", "owner", msg.Owner, "id", msg.ID)
 			return nil, errors.New("pdv does not exist")
 		}
-		return nil, fmt.Errorf("cerberus call failed: %w", err)
+		ctx.Logger().Error("failed to fetch meta from cerberus", "err", err)
+		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, fmt.Sprintf(
+			"cerberus call failed: %s", err.Error()))
 	}
 
 	tokensKeeper.AddTokens(ctx, msg.Owner, sdk.NewIntFromUint64(meta.Reward), utils.GetHash(msg))
