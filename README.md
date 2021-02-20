@@ -114,31 +114,12 @@ decentrcli tx broadcast signedTx.json
 
 ## PDV (Personal Data Value) Data
 
-#### CLI
-```bash
-
-# Get cerberus address
-decentrcli query pdv cerberus
-
-# Get pdv meta
-decentrcli query pdv meta [id from cerberus] --from [account]
-
-# Create pdv
-decentrcli tx pdv create [id from cerberus] --from [account]
-```
-
 #### REST
 ```bash
 
-# Get cerberus address
-curl -s http://localhost:1317/pdv/cerberus-addr
-
-# Get pdv meta
-curl -s http://localhost:1317/pdv/{owner}/{id}
-
 # Create PDV
 curl -XPOST -s http://localhost:1317/pdv \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "id": <id from cerberus>}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "id": <id from cerberus>, "reward": <reward>, "receiver: <reward receiver address>}' > unsignedTx.json
 ```
 
 ## PDV Token

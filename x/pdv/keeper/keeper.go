@@ -28,14 +28,14 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspa
 	}
 }
 
-// GetCerberusAddr returns the current Cerberus address
-func (k *Keeper) GetCerberusAddr(ctx sdk.Context) string {
-	var addr string
-	k.paramSpace.GetIfExists(ctx, types.ParamCerberusAddressKey, &addr)
-	return addr
+// GetCerberusOwners returns the current Cerberus owners
+func (k *Keeper) GetCerberusOwners(ctx sdk.Context) []string {
+	var moderators []string
+	k.paramSpace.GetIfExists(ctx, types.ParamCerberusOwnersKey, &moderators)
+	return moderators
 }
 
-// SetCerberusAddr sets the Cerberus address
-func (k *Keeper) SetCerberusAddr(ctx sdk.Context, addr string) {
-	k.paramSpace.Set(ctx, types.ParamCerberusAddressKey, &addr)
+// SetCerberusOwners sets the Cerberus owners
+func (k *Keeper) SetCerberusOwners(ctx sdk.Context, moderators []string) {
+	k.paramSpace.Set(ctx, types.ParamCerberusOwnersKey, &moderators)
 }

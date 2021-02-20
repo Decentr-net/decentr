@@ -7,15 +7,19 @@ import (
 
 // MsgCreatePDV defines a CreatePDV message
 type MsgCreatePDV struct {
-	Owner sdk.AccAddress `json:"owner"`
-	ID    uint64         `json:"id"`
+	Owner    sdk.AccAddress `json:"owner"`
+	Receiver sdk.AccAddress `json:"receiver"`
+	ID       uint64         `json:"id"`
+	Reward   uint64         `json:"reward"`
 }
 
 // NewMsgCreatePDV is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(owner sdk.AccAddress, id uint64) MsgCreatePDV {
+func NewMsgCreatePDV(owner sdk.AccAddress, id uint64, receiver sdk.AccAddress, reward uint64) MsgCreatePDV {
 	return MsgCreatePDV{
-		Owner: owner,
-		ID:    id,
+		Owner:    owner,
+		Receiver: receiver,
+		ID:       id,
+		Reward:   reward,
 	}
 }
 
@@ -28,11 +32,19 @@ func (msg MsgCreatePDV) Type() string { return "create_pdv" }
 // ValidateBasic runs stateless checks on the message
 func (msg MsgCreatePDV) ValidateBasic() error {
 	if msg.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+	}
+
+	if msg.Receiver.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Receiver is empty")
+	}
+
+	if msg.Reward == 0 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Reward can't be zero")
 	}
 
 	if msg.ID == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "id can't be zero")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "ID can't be zero")
 	}
 
 	return nil

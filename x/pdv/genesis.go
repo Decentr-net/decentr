@@ -1,40 +1,53 @@
 package pdv
 
 import (
-	"net/url"
+	"encoding/json"
+	"fmt"
+	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type GenesisState struct {
-	CerberusAddr string `json:"cerberus_address"`
+	CerberusOwners []string `json:"cerberus_owners"`
 }
 
-// NewGenesisState creates a new genesis state.
-func NewGenesisState(address string) GenesisState {
-	return GenesisState{
-		CerberusAddr: address,
+// GetGenesisStateFromAppState returns community GenesisState given raw application
+// genesis state.
+func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawMessage) GenesisState {
+	var genesisState GenesisState
+	if appState[ModuleName] != nil {
+		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
 	}
+
+	return genesisState
 }
 
 // DefaultGenesisState returns a default genesis state
 func DefaultGenesisState() GenesisState {
-	return NewGenesisState("https://cerberus.testnet.decentr.xyz")
+	return GenesisState{
+		CerberusOwners: types.DefaultCerberusOwners,
+	}
 }
 
 // ValidateGenesis performs basic validation of PDV genesis data returning an
 // error for any failed validation criteria.
 func ValidateGenesis(data GenesisState) error {
-	_, err := url.ParseRequestURI(data.CerberusAddr)
-	return err
+	if len(data.CerberusOwners) == 0 {
+		return fmt.Errorf("at least one cerberus has to be specified")
+	}
+	return nil
 }
 
 // InitGenesis sets distribution information for genesis.
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
-	keeper.SetCerberusAddr(ctx, data.CerberusAddr)
+	keeper.SetCerberusOwners(ctx, data.CerberusOwners)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
-	return NewGenesisState(keeper.GetCerberusAddr(ctx))
+	return GenesisState{
+		CerberusOwners: keeper.GetCerberusOwners(ctx),
+	}
 }

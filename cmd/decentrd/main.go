@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Decentr-net/decentr/x/pdv"
 	"io"
 	"strings"
 
@@ -66,6 +67,7 @@ func main() {
 	rootCmd.AddCommand(genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(AddGenesisCommunityModeratorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(AddGenesisPDVCerberusesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(flags.NewCompletionCmd(rootCmd, true))
 	rootCmd.AddCommand(debug.Cmd(cdc))
 
@@ -155,6 +157,57 @@ func AddGenesisCommunityModeratorsCmd(
 			}
 
 			appState[community.ModuleName] = communityGenStateBz
+
+			appStateJSON, err := cdc.MarshalJSON(appState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal application genesis state: %w", err)
+			}
+
+			genDoc.AppState = appStateJSON
+			return genutil.ExportGenesisFile(genDoc, genFile)
+		},
+	}
+
+	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
+
+	return cmd
+}
+
+// AddGenesisPDVCerberusesCmd returns add-genesis-pdv-cerberuses cobra Command.
+func AddGenesisPDVCerberusesCmd(
+	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
+) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "add-genesis-pdv-cerberuses [cerberus][,[cerberus]]",
+		Short: "Add a genesis PDV cerberuses to genesis.json",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
+
+			cerberuses := strings.Split(args[0], ",")
+			for _, cerberus := range cerberuses {
+				if _, err := sdk.AccAddressFromBech32(cerberus); err != nil {
+					return fmt.Errorf("failed to parse cerberuses: %w", err)
+				}
+			}
+
+			genFile := config.GenesisFile()
+			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
+			pdvGenState := pdv.GetGenesisStateFromAppState(cdc, appState)
+			pdvGenState.CerberusOwners = cerberuses
+
+			communityGenStateBz, err := cdc.MarshalJSON(pdvGenState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal pdv genesis state: %w", err)
+			}
+
+			appState[pdv.ModuleName] = communityGenStateBz
 
 			appStateJSON, err := cdc.MarshalJSON(appState)
 			if err != nil {
