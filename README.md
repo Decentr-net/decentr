@@ -112,16 +112,6 @@ And finally broadcast the signed transaction
 decentrcli tx broadcast signedTx.json
 ```
 
-## PDV (Personal Data Value) Data
-
-#### REST
-```bash
-
-# Create PDV
-curl -XPOST -s http://localhost:1317/pdv \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}, "id": <id from cerberus>, "reward": <reward>, "receiver: <reward receiver address>}' > unsignedTx.json
-```
-
 ## PDV Token
 PDV tokens are assigned to the user as soon as they reveal their personal data. 
 There are no transactions, only query to get PDV token balance of the specific user.

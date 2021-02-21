@@ -15,8 +15,8 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
-		case MsgCreatePDV:
-			return handleMsgCreatePDV(ctx, keeper, tokensKeeper, msg)
+		case MsgDistributeRewards:
+			return handleMsgDistributeRewards(ctx, keeper, tokensKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -24,13 +24,15 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgCreatePDV(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgCreatePDV) (*sdk.Result, error) {
+func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgDistributeRewards) (*sdk.Result, error) {
 	owners := keeper.GetCerberusOwners(ctx)
 
 	for _, v := range owners {
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
-			tokensKeeper.AddTokens(ctx, msg.Receiver, sdk.NewIntFromUint64(msg.Reward), utils.GetHash(msg))
+			for _, reward := range msg.Rewards {
+				tokensKeeper.AddTokens(ctx, reward.Receiver, sdk.NewIntFromUint64(reward.Reward), utils.GetHash(msg))
+			}
 			return &sdk.Result{}, nil
 		}
 	}

@@ -2,11 +2,8 @@ package pdv
 
 import (
 	"encoding/json"
-
 	"github.com/Decentr-net/decentr/x/pdv/client/cli"
-	"github.com/Decentr-net/decentr/x/pdv/client/rest"
 	"github.com/Decentr-net/decentr/x/token"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,7 +59,6 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 // Register rest routes
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	rest.RegisterRoutes(ctx, rtr, StoreKey)
 }
 
 // Get the root query command of this module

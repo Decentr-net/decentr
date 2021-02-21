@@ -20,6 +20,6 @@ var (
 )
 
 type (
-	Keeper       = keeper.Keeper
-	MsgCreatePDV = types.MsgCreatePDV
+	Keeper               = keeper.Keeper
+	MsgDistributeRewards = types.MsgDistributeRewards
 )
