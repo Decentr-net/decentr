@@ -2,11 +2,8 @@ package pdv
 
 import (
 	"encoding/json"
-
 	"github.com/Decentr-net/decentr/x/pdv/client/cli"
-	"github.com/Decentr-net/decentr/x/pdv/client/rest"
 	"github.com/Decentr-net/decentr/x/token"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,12 +59,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 // Register rest routes
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	rest.RegisterRoutes(ctx, rtr, StoreKey)
 }
 
 // Get the root query command of this module
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(StoreKey, cdc)
+func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
+	return nil
 }
 
 // Get the root tx command of this module
@@ -94,7 +90,7 @@ func (AppModule) Name() string {
 	return ModuleName
 }
 
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 func (am AppModule) Route() string {
 	return RouterKey
@@ -107,9 +103,7 @@ func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
 }
 
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
-}
+func (am AppModule) NewQuerierHandler() sdk.Querier { return nil }
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 

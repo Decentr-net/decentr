@@ -16,7 +16,7 @@ import (
 
 func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
-		NewGasExcludingSetUpContextDecorator(pdv.MsgCreatePDV{},
+		NewGasExcludingSetUpContextDecorator(pdv.MsgDistributeRewards{},
 			profile.MsgSetPrivate{}, profile.MsgSetPublic{},
 			community.MsgCreatePost{}, community.MsgDeletePost{}, community.MsgSetLike{},
 			community.MsgFollow{}, community.MsgUnfollow{}),

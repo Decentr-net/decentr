@@ -15,12 +15,11 @@ const (
 
 var (
 	NewKeeper     = keeper.NewKeeper
-	NewQuerier    = keeper.NewQuerier
 	ModuleCdc     = types.ModuleCdc
 	RegisterCodec = types.RegisterCodec
 )
 
 type (
-	Keeper       = keeper.Keeper
-	MsgCreatePDV = types.MsgCreatePDV
+	Keeper               = keeper.Keeper
+	MsgDistributeRewards = types.MsgDistributeRewards
 )

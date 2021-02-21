@@ -5,45 +5,65 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgCreatePDV defines a CreatePDV message
-type MsgCreatePDV struct {
-	Owner sdk.AccAddress `json:"owner"`
-	ID    uint64         `json:"id"`
+type Reward struct {
+	Receiver sdk.AccAddress `json:"receiver"`
+	ID       uint64         `json:"id"`
+	Reward   uint64         `json:"reward"`
 }
 
-// NewMsgCreatePDV is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(owner sdk.AccAddress, id uint64) MsgCreatePDV {
-	return MsgCreatePDV{
-		Owner: owner,
-		ID:    id,
+// MsgDistributeRewards defines a CreatePDV message
+type MsgDistributeRewards struct {
+	Owner   sdk.AccAddress `json:"owner"`
+	Rewards []Reward       `json:"rewards"`
+}
+
+// NewMsgDistributeRewards is a constructor function for MsgDistributeRewards
+func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistributeRewards {
+	return MsgDistributeRewards{
+		Owner:   owner,
+		Rewards: rewards,
 	}
 }
 
 // Route should return the name of the module
-func (msg MsgCreatePDV) Route() string { return RouterKey }
+func (msg MsgDistributeRewards) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgCreatePDV) Type() string { return "create_pdv" }
+func (msg MsgDistributeRewards) Type() string { return "distribute_rewards" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgCreatePDV) ValidateBasic() error {
+func (msg MsgDistributeRewards) ValidateBasic() error {
 	if msg.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
 	}
 
-	if msg.ID == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "id can't be zero")
+	if len(msg.Rewards) > 1000 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Number of reward can't be greater than 1000")
+	}
+
+	for _, reward := range msg.Rewards {
+		if reward.Receiver.Empty() {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Receiver is empty")
+		}
+
+		if reward.Reward == 0 {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Reward can't be zero")
+		}
+
+		if reward.ID == 0 {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "ID can't be zero")
+		}
 	}
 
 	return nil
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgCreatePDV) GetSignBytes() []byte {
+func (msg MsgDistributeRewards) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgCreatePDV) GetSigners() []sdk.AccAddress {
+func (msg MsgDistributeRewards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
