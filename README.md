@@ -1,6 +1,6 @@
 # decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![network version](https://img.shields.io/badge/network%20version-v1.0.4-blue.svg)](https://shields.io/) 
+[![network version](https://img.shields.io/badge/network%20version-v1.1.0-blue.svg)](https://shields.io/) 
 ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
@@ -26,7 +26,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release found here: https://github.com/Decentr-net/decentr/releases
-# Replace <latest_release> with the latest Decentr version. Looks like v1.0.4 
+# Replace <latest_release> with the latest Decentr version. Looks like v1.1.0 
 git clone -b <latest_release> https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
@@ -46,14 +46,14 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "30e2a771fea301dda483ac1f90abd826f90765ef@ares.testnet.decentr.xyz:26656,8fe44130287ed4172cad801f89b0dc65603e0755@hera.testnet.decentr.xyz:26656,3ce39f8227dc76a184dd0bacf297cef05f6d9331@hermes.testnet.decentr.xyz:26656,c437ded6d6c67b4fb660a12ae153e885abab5f66@poseidon.testnet.decentr.xyz:26656,bbf1b11e99bcb46de8a839738e814deb1bcec104@zeus.testnet.decentr.xyz:26656"
+seeds = "77c8bddfa5715c9f1dba62e586ecf775490ec83b@ares.testnet.decentr.xyz:26656,c550b6692b9122037a2e55dd4194e328033b3836@hera.testnet.decentr.xyz:26656,6945cdeeeddf7f7cd3ae58cce9ee5dfa6811130f@hermes.testnet.decentr.xyz:26656,a224755914665558c20a6cbd6eceeefc8e0bbe79@poseidon.testnet.decentr.xyz:26656,4b63a3430e3a8f5824983ec4f8b3f136c215aed0@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.0.4/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.1.0/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
