@@ -270,15 +270,6 @@ decentrcli query community user-posts <account> [--from-uuid uuid] [--limit int]
 # Get a single post
 decentrcli query community post <owner> <uuid>
 
-# Get the recent posts
-decentrcli query community posts [--from-owner account --from-uuid uuid] [--category int] [--limit int]
-
-# Get the most popular posts
-decentrcli query community popular-posts [--from-owner account --from-uuid uuid] [--category int] [--limit int] [--interval day/week/month]
-
-# Get user's likes
-decentrcli query community user-liked-posts [owner]
-
 # Follow
 decentrcli tx community follow [whom account] --from [who account]
 
@@ -309,23 +300,8 @@ curl -XPOST -s http://localhost:1317/community/posts/{postOwner}/{postUUID}/like
 # Get a single post
 curl -s "http://localhost:1317/community/post/{owner}/{uuid}"
 
-# Get the latest posts
-curl -s "http://localhost:1317/community/posts?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
-
-# Get the most popular posts by day
-curl -s "http://localhost:1317/community/posts/popular/byDay?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
-
-# Get the most popular posts by week
-curl -s "http://localhost:1317/community/posts/popular/byWeek?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
-
-# Get the most popular posts by month
-curl -s "http://localhost:1317/community/posts/popular/byMonth?category={category}&limit={limit}&fromOwner={account}&fromUUID={post's uuid}"
-
 # Get user's posts
 curl -s "http://localhost:1317/community/posts/{account}?from={postUUID}&limit={limit}"
-
-# Get user's likes
-curl -s "http://localhost:1317/community/likedPosts/{account}"
 
 
 # Follow
