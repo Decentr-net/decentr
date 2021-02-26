@@ -99,7 +99,35 @@ curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack 
   
 unsignedTx.json will contain
 ```json
-{"type":"cosmos-sdk/StdTx","value":{"msg":[{"type":"profile/SetPublic","value":{"owner":"decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw","public":{ "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }}],"fee":{"amount":[],"gas":"200000"},"signatures":null,"memo":""}}
+{
+  "type": "cosmos-sdk/StdTx",
+  "value": {
+    "msg": [
+      {
+        "type": "profile/SetPublic",
+        "value": {
+          "owner": "decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw",
+          "public": {
+            "firstName": "foo",
+            "lastName": "bar",
+            "bio": "Golang programmer, NY",
+            "avatar": "https://avatars3.githubusercontent.com/u/1526177",
+            "gender": "female",
+            "birthday": "2001-02-01"
+          }
+        }
+      }
+    ],
+    "fee": {
+      "amount": [
+
+      ],
+      "gas": "200000"
+    },
+    "signatures": null,
+    "memo": ""
+  }
+}
 ```
   
 Then sign this transaction
@@ -136,7 +164,7 @@ curl -s http://localhost:1317/token/stats/{address}
 
 ### Profile
 User profile consists of two parts: private and public. Private data is encrypted with user's private key.
-Public one includes first name, last name, avatar, gender and birthday.
+Public one includes first name, last name, bio, avatar, gender and birthday.
 
 #### CLI
 ```bash
@@ -151,7 +179,7 @@ decentrcli tx profile set-private [data] --from [account]
 
 # Set public profile data that you own. Public profile are attributes: gender, birth date.
 # Birthday date format is yyyy-mm-dd. Gender: male, female
-decentrcli tx profile set-public '{ "firstName": "foo", "lastName": "bar", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01"}' --from [account]
+decentrcli tx profile set-public '{ "firstName": "foo", "lastName": "bar", "bio": "Golang programmer, NY", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01"}' --from [account]
 ```
 
 #### REST
@@ -168,15 +196,18 @@ curl -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a)
 
 # Query public profile.
 curl -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a)
-# > { "height": "0", "result": { "firstName": "foo", "lastName": "bar", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01", "registeredAt:"1607972947"}}
+# > { "height": "0", "result": { "firstName": "foo", "lastName": "bar", "bio": "Golang programmer, NY", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01", "registeredAt:"1607972947"}}
 
 # Set private profile
 curl -XPOST -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a) \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"private": "YldWbllXaGxjbm9L"}' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},
+     "private": "YldWbllXaGxjbm9L"}' > unsignedTx.json
 
 # Set public profile
 curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": { "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},
+     "public": { "firstName": "foo","lastName": "bar", "bio": "Golang programmer, NY", 
+     "avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
 ```
 ## Bank
 

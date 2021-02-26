@@ -56,6 +56,7 @@ func (msg MsgSetPrivate) GetSigners() []sdk.AccAddress {
 const (
 	maxFirstNameLength = 64
 	maxLastNameLength  = 64
+	maxBioLength       = 70
 )
 
 // MsgSetPrivate defines a SetPrivate message
@@ -91,6 +92,9 @@ func (msg MsgSetPublic) ValidateBasic() error {
 	}
 	if len(msg.Public.LastName) > maxLastNameLength {
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "LastName can not be greater than %d", maxFirstNameLength)
+	}
+	if len(msg.Public.Bio) > maxBioLength {
+		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Bio can not be greater than %d", maxBioLength)
 	}
 	if !IsValidAvatar(msg.Public.Avatar) {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Avatar is not valid")
