@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/Decentr-net/decentr/app"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -18,10 +17,15 @@ import (
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradecmd "github.com/cosmos/cosmos-sdk/x/upgrade/client/cli"
+	upgraderest "github.com/cosmos/cosmos-sdk/x/upgrade/client/rest"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
+
+	"github.com/Decentr-net/decentr/app"
 )
 
 func main() {
@@ -86,8 +90,10 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 		flags.LineBreak,
 		rpc.ValidatorCommand(cdc),
 		rpc.BlockCommand(),
+		upgradecmd.GetPlanCmd(upgrade.StoreKey, cdc),
 		authcmd.QueryTxsByEventsCmd(cdc),
 		authcmd.QueryTxCmd(cdc),
+
 		flags.LineBreak,
 	)
 
@@ -138,6 +144,7 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	upgraderest.RegisterRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 
