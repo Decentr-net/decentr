@@ -86,6 +86,7 @@ var (
 		stakingAppModuleDecorator{},
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(paramsclient.ProposalHandler, upgradeclient.ProposalHandler),
+		upgrade.AppModuleBasic{},
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
@@ -171,8 +172,8 @@ func NewDecentrApp(
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		gov.StoreKey, upgrade.StoreKey,
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey,
+		gov.StoreKey, upgrade.StoreKey, params.StoreKey,
 		pdv.StoreKey, profile.StoreKey, token.StoreKey, community.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
@@ -195,7 +196,7 @@ func NewDecentrApp(
 	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
-	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace)
+	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
 	app.subspaces[pdv.ModuleName] = app.paramsKeeper.Subspace(pdv.DefaultParamspace)
 	app.subspaces[community.ModuleName] = app.paramsKeeper.Subspace(community.DefaultParamspace)
 
@@ -309,8 +310,8 @@ func NewDecentrApp(
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
+		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
@@ -322,7 +323,7 @@ func NewDecentrApp(
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 
-	app.mm.SetOrderBeginBlockers(upgrade.ModuleName, distr.ModuleName, slashing.ModuleName)
+	app.mm.SetOrderBeginBlockers(upgrade.ModuleName, distr.ModuleName, slashing.ModuleName, gov.ModuleName)
 	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
