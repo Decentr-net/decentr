@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"bytes"
-	"fmt"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -69,18 +68,6 @@ func (k Keeper) CreatePost(ctx sdk.Context, p types.Post) {
 
 	key := getPostKeeperKeyFromPost(p)
 	store.Set(key, k.cdc.MustMarshalBinaryBare(p))
-
-	createdAtIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexCreatedAtPrefix)
-	indexKey := getCreateAtIndexKey(p)
-	for _, p := range getCreatedAtIndexPrefixes(p.Category) {
-		createdAtIndex.Set(append(p, indexKey...), key)
-	}
-
-	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
-	indexKey = getPopularityIndexKey(p)
-	for _, p := range getPopularityIndexPrefixes(p.Category, p.CreatedAt, uint64(ctx.BlockTime().Unix())) {
-		popularityIndex.Set(append(p, indexKey...), key)
-	}
 }
 
 // DeletePost deletes the post from keeper.
@@ -89,26 +76,12 @@ func (k Keeper) DeletePost(ctx sdk.Context, owner sdk.AccAddress, id uuid.UUID) 
 
 	key := append(owner.Bytes(), id.Bytes()...)
 
-	p := k.GetPostByKey(ctx, key)
-
 	likesStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.LikePrefix)
 	it := sdk.KVStorePrefixIterator(likesStore, key)
 	for ; it.Valid(); it.Next() {
 		likesStore.Delete(it.Key())
 	}
 	it.Close()
-
-	createdAtIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexCreatedAtPrefix)
-	indexKey := getCreateAtIndexKey(p)
-	for _, p := range getCreatedAtIndexPrefixes(p.Category) {
-		createdAtIndex.Delete(append(p, indexKey...))
-	}
-
-	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
-	indexKey = getPopularityIndexKey(p)
-	for _, p := range getPopularityIndexPrefixes(p.Category, 0, uint64(ctx.BlockTime().Unix())) {
-		popularityIndex.Delete(append(p, indexKey...))
-	}
 
 	store.Delete(key)
 }
@@ -196,35 +169,6 @@ func (k Keeper) SetLike(ctx sdk.Context, newLike types.Like) {
 
 	postsStore.Set(postKey, k.cdc.MustMarshalBinaryBare(newPost))
 	likesStore.Set(getLikeKeeperKey(newLike), k.cdc.MustMarshalBinaryBare(newLike))
-
-	// update popularity index
-	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
-	indexKey := getPopularityIndexKey(oldPost)
-	for _, p := range getPopularityIndexPrefixes(oldPost.Category, 0, uint64(ctx.BlockTime().Unix())) {
-		popularityIndex.Delete(append(p, indexKey...))
-	}
-
-	indexKey = getPopularityIndexKey(newPost)
-	for _, p := range getPopularityIndexPrefixes(newPost.Category, newPost.CreatedAt, uint64(ctx.BlockTime().Unix())) {
-		popularityIndex.Set(append(p, indexKey...), postKey)
-	}
-
-	// update user likes index
-	post := fmt.Sprintf("%s/%s", newLike.PostOwner, newLike.PostUUID)
-	likes := make(map[string]types.LikeWeight)
-
-	userLikesIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexUserLikesPrefix)
-	if v := userLikesIndex.Get(newLike.Owner); v != nil {
-		k.cdc.MustUnmarshalJSON(v, &likes)
-	}
-
-	if newLike.Weight == types.LikeWeightZero {
-		delete(likes, post)
-	} else {
-		likes[post] = newLike.Weight
-	}
-
-	userLikesIndex.Set(newLike.Owner, sdk.MustSortJSON(k.cdc.MustMarshalJSON(likes)))
 }
 
 func (k Keeper) updatePostPDV(ctx sdk.Context, post *types.Post, description []byte) {
@@ -301,51 +245,6 @@ func getPostKeeperKeyFromLike(p types.Like) []byte {
 	return append(p.PostOwner.Bytes(), p.PostUUID[:]...)
 }
 
-func (k Keeper) SyncIndex(ctx sdk.Context) {
-	popularityIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexPopularPrefix)
-
-	flush := func(c types.Category, interval Interval, limit time.Duration) {
-		l := uint64(ctx.BlockTime().Unix()) - uint64(limit/time.Second)
-
-		index := prefix.NewStore(popularityIndex, []byte{byte(c), byte(interval)})
-
-		it := sdk.KVStorePrefixIterator(index, nil)
-		defer it.Close()
-
-		for ; it.Valid(); it.Next() {
-			if k.GetPostByKey(ctx, it.Value()).CreatedAt < l {
-				index.Delete(it.Key())
-			}
-		}
-	}
-
-	for i := types.UndefinedCategory; i <= types.SportsCategory; i++ {
-		for b, d := range intervals {
-			flush(i, b, d)
-		}
-	}
-}
-
-func (k Keeper) GetUserLikedPosts(ctx sdk.Context, owner sdk.AccAddress) map[string]types.LikeWeight {
-	out := make(map[string]types.LikeWeight)
-
-	userLikesIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.IndexUserLikesPrefix)
-
-	if userLikesIndex.Has(owner) {
-		k.cdc.MustUnmarshalJSON(userLikesIndex.Get(owner), &out)
-	}
-
-	return out
-}
-
-func (k Keeper) GetRecentPosts(ctx sdk.Context, c types.Category, from []byte, limit uint32) []types.Post {
-	return k.getPosts(ctx, append(types.IndexCreatedAtPrefix, byte(c)), from, limit)
-}
-
-func (k Keeper) GetPopularPosts(ctx sdk.Context, interval Interval, c types.Category, from []byte, limit uint32) []types.Post {
-	return k.getPosts(ctx, append(types.IndexPopularPrefix, byte(c), byte(interval)), from, limit)
-}
-
 func (k Keeper) getPosts(ctx sdk.Context, p []byte, from []byte, limit uint32) []types.Post {
 	index := prefix.NewStore(ctx.KVStore(k.storeKey), p)
 
@@ -408,39 +307,4 @@ func (k Keeper) IterateFollowers(ctx sdk.Context, cb func(who, whom sdk.Address)
 		}
 	}
 
-}
-
-func getCreatedAtIndexPrefixes(c types.Category) [][]byte {
-	return [][]byte{
-		{byte(types.UndefinedCategory)},
-		{byte(c)},
-	}
-}
-
-func getPopularityIndexPrefixes(c types.Category, createdAt uint64, timestamp uint64) [][]byte {
-	catPrefixes := [][]byte{
-		{byte(types.UndefinedCategory)},
-		{byte(c)},
-	}
-
-	out := make([][]byte, 0, len(intervals)*len(catPrefixes))
-
-	for _, p := range catPrefixes {
-		for i, v := range intervals {
-			if createdAt == 0 ||
-				createdAt+uint64(v/time.Second) > timestamp {
-				out = append(out, append(p, byte(i)))
-			}
-		}
-	}
-
-	return out
-}
-
-func getCreateAtIndexKey(p types.Post) []byte {
-	return append(utils.Uint64ToBytes(p.CreatedAt), p.UUID.Bytes()...)
-}
-
-func getPopularityIndexKey(p types.Post) []byte {
-	return append(utils.Uint64ToBytes(uint64(p.LikesCount)), p.UUID.Bytes()...)
 }
