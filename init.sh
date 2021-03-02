@@ -19,9 +19,6 @@ decentrd add-genesis-pdv-cerberuses $(decentrcli keys show jack -a)
 
 decentrd gentx --name jack --keyring-backend test --amount 1000000udec
 
-# change genesis gov denom
-sed -i json 's/"denom": "stake"/"denom": "udec"/g' ~/.decentrd/config/genesis.json
-
 echo "Collecting genesis txs..."
 decentrd collect-gentxs
 
