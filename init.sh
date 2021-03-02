@@ -12,12 +12,15 @@ decentrcli config keyring-backend test
 decentrcli keys add jack
 decentrcli keys add alice
 
-decentrd add-genesis-account $(decentrcli keys show jack -a) 1000000udec
-decentrd add-genesis-account $(decentrcli keys show alice -a) 1000000udec
+decentrd add-genesis-account $(decentrcli keys show jack -a) 1000000000udec
+decentrd add-genesis-account $(decentrcli keys show alice -a) 1000000000udec
 decentrd add-genesis-community-moderators $(decentrcli keys show jack -a)
 decentrd add-genesis-pdv-cerberuses $(decentrcli keys show jack -a)
 
 decentrd gentx --name jack --keyring-backend test --amount 1000000udec
+
+# change genesis gov denom
+sed -i json 's/"denom": "stake"/"denom": "udec"/g' ~/.decentrd/config/genesis.json
 
 echo "Collecting genesis txs..."
 decentrd collect-gentxs
