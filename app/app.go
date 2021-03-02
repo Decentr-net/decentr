@@ -17,6 +17,7 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
@@ -311,7 +312,7 @@ func NewDecentrApp(
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
-		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
+		NewGovAppModuleDecorator(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
@@ -447,4 +448,23 @@ func (a stakingAppModuleDecorator) DefaultGenesis() json.RawMessage {
 	return staking.ModuleCdc.MustMarshalJSON(staking.GenesisState{
 		Params: params,
 	})
+}
+
+// govAppModuleDecorator is gov app module decorator to replace the default min deposit denom
+// "stake" with "dec".
+type govAppModuleDecorator struct {
+	gov.AppModule
+}
+
+func NewGovAppModuleDecorator(keeper gov.Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper) *govAppModuleDecorator {
+	return &govAppModuleDecorator{gov.NewAppModule(keeper, accountKeeper, supplyKeeper)}
+}
+
+func (a govAppModuleDecorator) DefaultGenesis() json.RawMessage {
+	state := gov.DefaultGenesisState()
+	state.DepositParams = gov.NewDepositParams(
+		sdk.NewCoins(sdk.NewCoin(DefaultBondDenom, govtypes.DefaultMinDepositTokens)),
+		govtypes.DefaultPeriod,
+	)
+	return gov.ModuleCdc.MustMarshalJSON(state)
 }
