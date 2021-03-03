@@ -1,7 +1,7 @@
 package types
 
 const (
-	Denominator int64 = 1 * 10e6
+	Denominator int64 = 1e6
 )
 
 const (
