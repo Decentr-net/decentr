@@ -39,13 +39,12 @@ func IsValidAvatar(str string) bool {
 
 // Public profile data
 type Public struct {
-	FirstName    string `json:"firstName"`
-	LastName     string `json:"lastName"`
-	Avatar       string `json:"avatar"`
-	Bio          string `json:"bio"`
-	Gender       Gender `json:"gender"`
-	Birthday     string `json:"birthday"`
-	RegisteredAt int64  `json:"registeredAt"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Avatar    string `json:"avatar"`
+	Bio       string `json:"bio"`
+	Gender    Gender `json:"gender"`
+	Birthday  string `json:"birthday"`
 }
 
 // Profile represent an account settings storage

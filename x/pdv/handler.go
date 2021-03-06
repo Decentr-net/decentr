@@ -2,11 +2,11 @@ package pdv
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Decentr-net/decentr/x/token"
-	"github.com/Decentr-net/decentr/x/utils"
 )
 
 // NewHandler creates an sdk.Handler for all the pdv type messages
@@ -31,7 +31,7 @@ func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper tok
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
 			for _, reward := range msg.Rewards {
-				tokensKeeper.AddTokens(ctx, reward.Receiver, sdk.NewIntFromUint64(reward.Reward), utils.GetHash(msg))
+				tokensKeeper.AddTokens(ctx, reward.Receiver, sdk.NewIntFromUint64(reward.Reward))
 			}
 			return &sdk.Result{}, nil
 		}

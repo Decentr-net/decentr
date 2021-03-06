@@ -3,12 +3,13 @@ package keeper
 import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 
-	"github.com/Decentr-net/decentr/x/token/types"
-	"github.com/Decentr-net/decentr/x/utils"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/decentr/x/token/types"
 )
+
+var initialTokenBalance = sdk.NewInt(1 * types.Denominator)
 
 var totalSupplyKey = []byte("totalSupply")
 
@@ -28,16 +29,11 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 
 // AddTokens adds token to the given owner
 // Description is needed to merge records in the index.
-func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int, description []byte) {
+func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
 	balance = balance.Add(amount)
 
 	k.SetBalance(ctx, owner, balance)
-
-	stats := prefix.NewStore(ctx.KVStore(k.storeKey), types.StatsPrefix)
-	timestamp := uint64(ctx.BlockTime().Unix())
-	statsKey := append(append(owner, utils.Uint64ToBytes(timestamp)...), description...)
-	stats.Set(statsKey, k.cdc.MustMarshalBinaryBare(amount))
 }
 
 // addTotalSupply increase or decrease total supply with the given amount of tokens
@@ -56,7 +52,7 @@ func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
 		k.cdc.MustUnmarshalBinaryBare(balance, &amount)
 		return amount
 	}
-	return sdk.ZeroInt()
+	return initialTokenBalance
 }
 
 // SetBalance set balance to the given user
@@ -82,38 +78,4 @@ func (k Keeper) GetTotalSupply(ctx sdk.Context) sdk.Int {
 	var amount sdk.Int
 	k.cdc.MustUnmarshalBinaryBare(totalSupply, &amount)
 	return amount
-}
-
-func (k Keeper) GetStats(ctx sdk.Context, owner sdk.AccAddress) map[uint64]float64 {
-	stats := prefix.NewStore(ctx.KVStore(k.storeKey), types.StatsPrefix)
-
-	it := sdk.KVStorePrefixIterator(prefix.NewStore(stats, owner), nil)
-	defer it.Close()
-
-	t := uint64(0)
-	a := sdk.NewInt(0)
-
-	out := make(map[uint64]float64, 365)
-	for ; it.Valid(); it.Next() {
-		timestamp := utils.BytesToUint64(it.Key()[:8]) // first part of key is timestamp, second - random uuid
-		truncated := timestamp - timestamp%86400       // truncate to day
-
-		if t == 0 {
-			t = truncated
-		}
-
-		if t != truncated {
-			out[t] = utils.TokenToFloat64(a)
-			t = truncated
-		}
-
-		var amount sdk.Int
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &amount)
-
-		a = a.Add(amount)
-	}
-
-	out[t] = utils.TokenToFloat64(a)
-
-	return out
 }
