@@ -33,16 +33,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sdk.Result, error) {
 	id, _ := uuid.FromString(msg.UUID)
 	keeper.CreatePost(ctx, Post{
-		UUID:          id,
-		Owner:         msg.Owner,
-		Title:         msg.Title,
-		Category:      msg.Category,
-		PreviewImage:  msg.PreviewImage,
-		Text:          msg.Text,
-		LikesCount:    0,
-		DislikesCount: 0,
-		PDV:           sdk.NewInt(0),
-		CreatedAt:     uint64(ctx.BlockTime().Unix()),
+		UUID:         id,
+		Owner:        msg.Owner,
+		Title:        msg.Title,
+		Category:     msg.Category,
+		PreviewImage: msg.PreviewImage,
+		Text:         msg.Text,
 	})
 
 	return &sdk.Result{}, nil

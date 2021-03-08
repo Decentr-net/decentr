@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	"github.com/gofrs/uuid"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -11,7 +12,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/Decentr-net/decentr/x/community/types"
-	"github.com/Decentr-net/decentr/x/utils"
 )
 
 const (
@@ -22,19 +22,6 @@ const (
 )
 
 const defaultLimit = 20
-
-type Post struct {
-	UUID          string         `json:"uuid"`
-	Owner         sdk.AccAddress `json:"owner"`
-	Title         string         `json:"title"`
-	PreviewImage  string         `json:"previewImage"`
-	Category      types.Category `json:"category"`
-	Text          string         `json:"text"`
-	LikesCount    uint32         `json:"likesCount"`
-	DislikesCount uint32         `json:"dislikesCount"`
-	CreatedAt     uint64         `json:"createdAt"`
-	PDV           float64        `json:"pdv" amino:"unsafe"`
-}
 
 // NewQuerier creates a new querier for community clients.
 func NewQuerier(keeper Keeper) sdk.Querier {
@@ -55,16 +42,54 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 }
 
 // nolint: unparam
-// queryPopular returns posts.
+// queryUserPosts returns posts for user.
 func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
-	owner, from, limit, err := extractCommonGetParameters(path)
-	if err != nil {
-		return nil, err
+	limit := defaultLimit
+	from := uuid.UUID{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+
+	var err error
+
+	if path[0] != "" {
+		from, err = uuid.FromString(path[0])
+		if err != nil {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
+		}
 	}
 
-	p := keeper.ListUserPosts(ctx, owner, from, limit)
+	if path[1] != "" {
+		var v int
+		v, err = strconv.Atoi(path[1])
+		if err != nil {
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid limit")
+		}
+		limit = v
+	}
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
+	if from == uuid.Nil {
+		// use max range
+
+	}
+
+	owner, err := sdk.AccAddressFromBech32(path[2])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+	}
+
+	store := prefix.NewStore(ctx.KVStore(keeper.storeKey), types.PostPrefix)
+
+	it := store.ReverseIterator(getPostKeeperKey(owner, uuid.Nil), getPostKeeperKey(owner, from))
+	defer it.Close()
+
+	out := make([]types.Post, 0)
+	for i := 0; i < limit && it.Valid(); it.Next() {
+		var post types.Post
+		keeper.cdc.MustUnmarshalBinaryBare(it.Value(), &post)
+		out = append(out, post)
+
+		i++
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, out)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -85,80 +110,12 @@ func getPost(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keepe
 
 	p := keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id))
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, Post{
-		UUID:          p.UUID.String(),
-		Owner:         p.Owner,
-		Title:         p.Title,
-		PreviewImage:  p.PreviewImage,
-		Category:      p.Category,
-		Text:          p.Text,
-		LikesCount:    p.LikesCount,
-		DislikesCount: p.DislikesCount,
-		CreatedAt:     p.CreatedAt,
-		PDV:           utils.TokenToFloat64(p.PDV),
-	})
+	res, err := codec.MarshalJSONIndent(keeper.cdc, p)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
 
 	return res, nil
-}
-
-func postsToQuerierPosts(pp []types.Post) []Post {
-	out := make([]Post, 0, len(pp))
-
-	for _, v := range pp {
-		if v.UUID == uuid.Nil {
-			continue
-		}
-
-		out = append(out, Post{
-			UUID:          v.UUID.String(),
-			Owner:         v.Owner,
-			Title:         v.Title,
-			PreviewImage:  v.PreviewImage,
-			Category:      v.Category,
-			Text:          v.Text,
-			LikesCount:    v.LikesCount,
-			DislikesCount: v.DislikesCount,
-			CreatedAt:     v.CreatedAt,
-			PDV:           utils.TokenToFloat64(v.PDV),
-		})
-	}
-
-	return out
-}
-
-func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UUID, limit uint32, err error) {
-	limit = defaultLimit
-
-	if path[0] != "" {
-		owner, err = sdk.AccAddressFromBech32(path[0])
-		if err != nil {
-			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
-			return
-		}
-	}
-
-	if path[1] != "" {
-		id, err = uuid.FromString(path[1])
-		if err != nil {
-			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
-			return
-		}
-	}
-
-	if path[2] != "" {
-		var v int
-		v, err = strconv.Atoi(path[2])
-		if err != nil {
-			err = sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid limit")
-			return
-		}
-		limit = uint32(v)
-	}
-
-	return
 }
 
 func queryModerators(ctx sdk.Context, keeper Keeper) ([]byte, error) {

@@ -29,16 +29,12 @@ const (
 )
 
 type Post struct {
-	UUID          uuid.UUID      `json:"uuid"`
-	Owner         sdk.AccAddress `json:"owner"`
-	Title         string         `json:"title"`
-	PreviewImage  string         `json:"previewImage"`
-	Category      Category       `json:"category"`
-	Text          string         `json:"text"`
-	LikesCount    uint32         `json:"likesCount"`
-	DislikesCount uint32         `json:"dislikesCount"`
-	PDV           sdk.Int        `json:"pdv"`
-	CreatedAt     uint64         `json:"createdAt"`
+	UUID         uuid.UUID      `json:"uuid"`
+	Owner        sdk.AccAddress `json:"owner"`
+	Title        string         `json:"title"`
+	PreviewImage string         `json:"previewImage"`
+	Category     Category       `json:"category"`
+	Text         string         `json:"text"`
 }
 
 type Like struct {
