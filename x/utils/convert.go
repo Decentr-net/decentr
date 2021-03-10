@@ -8,6 +8,10 @@ import (
 	"github.com/Decentr-net/decentr/x/token/types"
 )
 
+func InitialTokenBalance() sdk.Int {
+	return sdk.NewInt(types.Denominator)
+}
+
 // Uint64ToBytes converts uint64 to bytes using BigEndian endianness
 func Uint64ToBytes(i uint64) []byte {
 	b := make([]byte, binary.Size(i))
