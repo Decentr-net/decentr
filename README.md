@@ -1,6 +1,6 @@
 # decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![network version](https://img.shields.io/badge/network%20version-v1.1.0-blue.svg)](https://shields.io/) 
+[![network version](https://img.shields.io/badge/network%20version-v1.2.3-blue.svg)](https://shields.io/) 
 ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
@@ -45,14 +45,14 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "77c8bddfa5715c9f1dba62e586ecf775490ec83b@ares.testnet.decentr.xyz:26656,c550b6692b9122037a2e55dd4194e328033b3836@hera.testnet.decentr.xyz:26656,6945cdeeeddf7f7cd3ae58cce9ee5dfa6811130f@hermes.testnet.decentr.xyz:26656,a224755914665558c20a6cbd6eceeefc8e0bbe79@poseidon.testnet.decentr.xyz:26656,4b63a3430e3a8f5824983ec4f8b3f136c215aed0@zeus.testnet.decentr.xyz:26656"
+seeds = "6a49a59da7e8bd72180289bad8d163fd4f2b322b@ares.testnet.decentr.xyz:26656,91003d0ada2b4417d017acbf6f0e9de1537abc71@hera.testnet.decentr.xyz:26656,0495c33637ce715003caf2046dc6c35067d06882@hermes.testnet.decentr.xyz:26656,659782753d8021db528890246ef6e1ce25c13fbb@poseidon.testnet.decentr.xyz:26656,38f1ce35163bedfde85d9b422912ad39d4f472d1@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.1.1/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.2.3/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
