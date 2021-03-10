@@ -292,6 +292,7 @@ func NewDecentrApp(
 	app.profilesKeeper = profile.NewKeeper(
 		app.cdc,
 		keys[profile.StoreKey],
+		app.tokensKeeper,
 	)
 
 	app.communityKeeper = community.NewKeeper(
