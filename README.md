@@ -1,6 +1,6 @@
 # decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![network version](https://img.shields.io/badge/network%20version-v1.2.3-blue.svg)](https://shields.io/) 
+[![network version](https://img.shields.io/badge/network%20version-v1.2.5-blue.svg)](https://shields.io/) 
 ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
@@ -26,7 +26,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
-git clone -b v1.2.3 https://github.com/Decentr-net/decentr
+git clone -b v1.2.5 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
@@ -45,14 +45,14 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "6a49a59da7e8bd72180289bad8d163fd4f2b322b@ares.testnet.decentr.xyz:26656,91003d0ada2b4417d017acbf6f0e9de1537abc71@hera.testnet.decentr.xyz:26656,0495c33637ce715003caf2046dc6c35067d06882@hermes.testnet.decentr.xyz:26656,659782753d8021db528890246ef6e1ce25c13fbb@poseidon.testnet.decentr.xyz:26656,38f1ce35163bedfde85d9b422912ad39d4f472d1@zeus.testnet.decentr.xyz:26656"
+seeds = "95a70f0119af52e54697fa7feb8b09b4e7c7ec21@ares.testnet.decentr.xyz:26656,b6d499b2b0146627b9bf6f33a9a7e4013312c6d1@hera.testnet.decentr.xyz:26656,576d044b24cc449366850a95f7616f03ab8d14b3@hermes.testnet.decentr.xyz:26656,c98511455134b4450ebb20fce57308a9fb300b89@poseidon.testnet.decentr.xyz:26656,acc5524b4ff34591357a28d5fccf4efb5ad883c5@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.2.3/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.2.5/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
