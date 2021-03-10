@@ -30,8 +30,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, tokens keeper.TokenKeepe
 func (k Keeper) SetProfile(ctx sdk.Context, owner sdk.AccAddress, p types.Profile) {
 	store := ctx.KVStore(k.storeKey)
 
-	old := k.GetProfile(ctx, owner)
-	if (old.Public == types.Public{}) {
+	if k.tokens.GetBalance(ctx, owner).IsZero() {
 		k.tokens.AddTokens(ctx, owner, utils.InitialTokenBalance())
 	}
 

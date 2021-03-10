@@ -6,4 +6,5 @@ import (
 
 type TokenKeeper interface {
 	AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
+	GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int
 }
