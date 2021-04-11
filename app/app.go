@@ -360,6 +360,8 @@ func NewDecentrApp(
 	app.MountKVStores(keys)
 	app.MountTransientStores(tKeys)
 
+	app.setUpgrades()
+
 	if loadLatest {
 		err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 		if err != nil {
@@ -420,6 +422,10 @@ func (app *decentrApp) Codec() *codec.Codec {
 // SimulationManager implements the SimulationApp interface
 func (app *decentrApp) SimulationManager() *module.SimulationManager {
 	return app.sm
+}
+
+func (app *decentrApp) setUpgrades() {
+	app.upgradeKeeper.SetUpgradeHandler("v1.2.6", func(_ sdk.Context, _ upgrade.Plan) {})
 }
 
 // GetMaccPerms returns a mapping of the application's module account permissions.
