@@ -36,7 +36,7 @@ type MsgDeletePost struct {
 // MsgSetLike defines a SetLike message
 type MsgSetLike struct {
 	PostOwner sdk.AccAddress `json:"postOwner"`
-	PostUUID  string         `json:"postUuid"`
+	PostUUID  string         `json:"postUUID"`
 	Owner     sdk.AccAddress `json:"owner"`
 	Weight    LikeWeight     `json:"weight"`
 }
@@ -77,7 +77,7 @@ func (msg MsgCreatePost) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
 
-	if len(msg.Title) > maxTitleLength || len(msg.Title) == 0 {
+	if utf8.RuneCountInString(msg.Title) > maxTitleLength || len(msg.Title) == 0 {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title should be shorter then %d and not empty", maxTitleLength)
 	}
 
