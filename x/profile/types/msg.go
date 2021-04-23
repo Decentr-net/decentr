@@ -1,6 +1,8 @@
 package types
 
 import (
+	"unicode/utf8"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -87,13 +89,13 @@ func (msg MsgSetPublic) ValidateBasic() error {
 	if msg.Public.Gender == "" {
 		return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "Gender cannot be empty")
 	}
-	if len(msg.Public.FirstName) > maxFirstNameLength {
+	if utf8.RuneCountInString(msg.Public.FirstName) > maxFirstNameLength {
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "FirstName can not be greater than %d", maxFirstNameLength)
 	}
-	if len(msg.Public.LastName) > maxLastNameLength {
+	if utf8.RuneCountInString(msg.Public.LastName) > maxLastNameLength {
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "LastName can not be greater than %d", maxFirstNameLength)
 	}
-	if len(msg.Public.Bio) > maxBioLength {
+	if utf8.RuneCountInString(msg.Public.Bio) > maxBioLength {
 		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "Bio can not be greater than %d", maxBioLength)
 	}
 	if !IsValidAvatar(msg.Public.Avatar) {
