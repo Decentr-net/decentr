@@ -32,7 +32,6 @@ import (
 
 	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
-	"github.com/Decentr-net/decentr/x/profile"
 	"github.com/Decentr-net/decentr/x/token"
 )
 
@@ -53,7 +52,7 @@ const (
 	// PrefixOperator is the prefix for operator keys
 	PrefixOperator = "oper"
 
-	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
+	// Bech32MainPrefix defines the Bech32 prefix of an account's address
 	Bech32MainPrefix = "decentr"
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
@@ -93,7 +92,6 @@ var (
 		supply.AppModuleBasic{},
 
 		pdv.AppModule{},
-		profile.AppModule{},
 		token.AppModule{},
 		community.AppModule{},
 	)
@@ -146,7 +144,6 @@ type decentrApp struct {
 	govKeeper       gov.Keeper
 	upgradeKeeper   upgrade.Keeper
 	pdvKeeper       pdv.Keeper
-	profilesKeeper  profile.Keeper
 	tokensKeeper    token.Keeper
 	communityKeeper community.Keeper
 
@@ -175,7 +172,7 @@ func NewDecentrApp(
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, upgrade.StoreKey, params.StoreKey,
-		pdv.StoreKey, profile.StoreKey, token.StoreKey, community.StoreKey)
+		pdv.StoreKey, token.StoreKey, community.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -289,12 +286,6 @@ func NewDecentrApp(
 		app.subspaces[pdv.ModuleName],
 	)
 
-	app.profilesKeeper = profile.NewKeeper(
-		app.cdc,
-		keys[profile.StoreKey],
-		app.tokensKeeper,
-	)
-
 	app.communityKeeper = community.NewKeeper(
 		app.cdc,
 		keys[community.StoreKey],
@@ -315,7 +306,6 @@ func NewDecentrApp(
 		NewGovAppModuleDecorator(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
-		profile.NewAppModule(app.profilesKeeper),
 		community.NewAppModule(app.communityKeeper),
 		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
@@ -338,7 +328,6 @@ func NewDecentrApp(
 		slashing.ModuleName,
 		gov.ModuleName,
 		pdv.ModuleName,
-		profile.ModuleName,
 		community.ModuleName,
 		token.ModuleName,
 		supply.ModuleName,

@@ -9,8 +9,6 @@ import (
 	"github.com/Decentr-net/decentr/x/token/types"
 )
 
-var initialTokenBalance = sdk.NewInt(1 * types.Denominator)
-
 var totalSupplyKey = []byte("totalSupply")
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -52,7 +50,16 @@ func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
 		k.cdc.MustUnmarshalBinaryBare(balance, &amount)
 		return amount
 	}
-	return initialTokenBalance
+	return sdk.ZeroInt()
+}
+
+func (k Keeper) InitialTokenBalance() sdk.Int {
+	return sdk.NewInt(1 * types.Denominator)
+}
+
+func (k Keeper) IsInitialBalanceSet(ctx sdk.Context, owner sdk.AccAddress) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
+	return store.Has(owner)
 }
 
 // SetBalance set balance to the given user
@@ -62,7 +69,7 @@ func (k Keeper) SetBalance(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int
 	k.addTotalSupply(ctx, amount)
 }
 
-// Get an iterator over all balances in which the keys are the accounts and the values are their balance
+// GetBalanceIterator gets an iterator over all balances in which the keys are the accounts and the values are their balance
 func (k Keeper) GetBalanceIterator(ctx sdk.Context) sdk.Iterator {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
 	return sdk.KVStorePrefixIterator(store, nil)

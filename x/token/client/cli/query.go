@@ -32,7 +32,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return profileQueryCmd
 }
 
-// GetCmdPrivate queries information about a private profile
+// GetCmdBalance queries information about a private profile
 func GetCmdBalance(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "balance",
@@ -45,7 +45,7 @@ func GetCmdBalance(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/private/%s", queryRoute, key), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", queryRoute, key), nil)
 			if err != nil {
 				fmt.Printf("could not find private profile - %s \n", key)
 				return nil

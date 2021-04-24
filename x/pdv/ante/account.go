@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+
 	"github.com/Decentr-net/decentr/x/token"
 	"github.com/Decentr-net/decentr/x/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,13 +22,16 @@ func NewCreateAccountDecorator(ak auth.AccountKeeper, tokenKeeper token.Keeper) 
 }
 
 func (cad CreateAccountDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	if !ctx.IsCheckTx() {
+		return next(ctx, tx, simulate)
+	}
+
 	for _, msg := range tx.GetMsgs() {
 		sendTx, ok := msg.(bank.MsgSend)
 		if ok {
 			acc := cad.accountKeeper.GetAccount(ctx, sendTx.ToAddress)
-			if acc == nil {
-				// new account created
-				cad.tokenKeeper.AddTokens(ctx, sendTx.ToAddress, utils.InitialTokenBalance())
+			if acc != nil && !cad.tokenKeeper.IsInitialBalanceSet(ctx, sendTx.ToAddress) {
+				cad.tokenKeeper.SetBalance(ctx, sendTx.ToAddress, utils.InitialTokenBalance())
 				ctx.Logger().Info(fmt.Sprintf("account %s created", sendTx.ToAddress))
 			}
 		}
