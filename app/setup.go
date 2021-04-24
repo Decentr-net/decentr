@@ -1,20 +1,20 @@
 package app
 
 import (
-	"reflect"
-
+	pdvante "github.com/Decentr-net/decentr/x/pdv/ante"
 	"github.com/Decentr-net/decentr/x/profile"
-
+	"github.com/Decentr-net/decentr/x/token"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"reflect"
 
 	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
 )
 
-func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper) sdk.AnteHandler {
+func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper, tk token.Keeper) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		NewGasExcludingSetUpContextDecorator(pdv.MsgDistributeRewards{},
 			profile.MsgSetPrivate{}, profile.MsgSetPublic{},
@@ -29,6 +29,7 @@ func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper) sdk.AnteHandler {
 		ante.NewDeductFeeDecorator(ak, sk),
 		ante.NewSigGasConsumeDecorator(ak, auth.DefaultSigVerificationGasConsumer),
 		ante.NewSigVerificationDecorator(ak),
+		pdvante.NewCreateAccountDecorator(ak, tk),
 		ante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
 	)
 }
