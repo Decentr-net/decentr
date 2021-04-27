@@ -68,30 +68,41 @@ func (msg MsgDistributeRewards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
 
-type MsgDeleteAccount struct {
-	Owner sdk.AccAddress `json:"owner"`
+type MsgResetAccount struct {
+	Owner        sdk.AccAddress `json:"owner"`
+	AccountOwner sdk.AccAddress `json:"accountOwner"`
+}
+
+func NewMsgResetAccount(owner, accountOwner sdk.AccAddress) MsgResetAccount {
+	return MsgResetAccount{
+		Owner:        owner,
+		AccountOwner: accountOwner,
+	}
 }
 
 // Route should return the name of the module
-func (msg MsgDeleteAccount) Route() string { return RouterKey }
+func (msg MsgResetAccount) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgDeleteAccount) Type() string { return "delete_account" }
+func (msg MsgResetAccount) Type() string { return "delete_account" }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgDeleteAccount) GetSignBytes() []byte {
+func (msg MsgResetAccount) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgDeleteAccount) GetSigners() []sdk.AccAddress {
+func (msg MsgResetAccount) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgDeleteAccount) ValidateBasic() error {
+func (msg MsgResetAccount) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+	}
+	if msg.AccountOwner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "AccountOwner is empty")
 	}
 	return nil
 }

@@ -13,23 +13,23 @@ const (
 )
 
 var (
-	DefaultCerberusOwners = []string{}
+	DefaultSupervisors = make([]string, 0)
 )
 
 var (
-	CerberusOwnersParamsKey = []byte("CerberusOwnersParams")
-	FixedGasParamsKey       = []byte("FixedGasParams")
+	ParamSupervisors = []byte("supervisorsparams")
+	ParamFixedGas    = []byte("fixedgasparams")
 )
 
 // ParamKeyTable type declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable(
-		params.NewParamSetPair(CerberusOwnersParamsKey, &DefaultCerberusOwners, validateCerberusOwners),
-		params.NewParamSetPair(FixedGasParamsKey, FixedGasParams{}, validateFixedGasParams),
+		params.NewParamSetPair(ParamSupervisors, &DefaultSupervisors, validateSupervisors),
+		params.NewParamSetPair(ParamFixedGas, FixedGasParams{}, validateFixedGasParams),
 	)
 }
 
-func validateCerberusOwners(i interface{}) error {
+func validateSupervisors(i interface{}) error {
 	owners, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
@@ -37,20 +37,20 @@ func validateCerberusOwners(i interface{}) error {
 
 	for _, owner := range owners {
 		if _, err := sdk.AccAddressFromBech32(owner); err != nil {
-			return fmt.Errorf("%s is an invalid cerberus address, err=%w", owner, err)
+			return fmt.Errorf("%s is an invalid supervisor address, err=%w", owner, err)
 		}
 	}
 	return nil
 }
 
 type FixedGasParams struct {
-	DeleteAccount     sdk.Gas `json:"delete_account" yaml:"delete_account"`
+	ResetAccount      sdk.Gas `json:"delete_account" yaml:"delete_account"`
 	DistributeRewards sdk.Gas `json:"distribute_rewards" yaml:"distribute_rewards"`
 }
 
-func NewFixedGasParams(deleteAccount, distributeReward sdk.Gas) FixedGasParams {
+func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
 	return FixedGasParams{
-		DeleteAccount:     deleteAccount,
+		ResetAccount:      resetAccount,
 		DistributeRewards: distributeReward,
 	}
 }
@@ -65,8 +65,8 @@ func validateFixedGasParams(i interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if v.DeleteAccount <= 0 {
-		return fmt.Errorf("delete account be positive: %d", v.DeleteAccount)
+	if v.ResetAccount <= 0 {
+		return fmt.Errorf("reset account be positive: %d", v.ResetAccount)
 	}
 
 	if v.DistributeRewards <= 0 {

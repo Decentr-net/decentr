@@ -13,19 +13,20 @@ const (
 )
 
 var (
-	DefaultModerators = []string{}
+	DefaultModerators = make([]string, 0)
+	DefaultFollowers  = make(map[string][]string)
 )
 
 var (
-	ParamModeratorsKey = []byte("ParamModerators")
-	FixedGasParamsKey  = []byte("FixedGasParams")
+	ParamModerators = []byte("moderatorsparams")
+	ParamsFixedGas  = []byte("fixedgasparams")
 )
 
 // ParamKeyTable type declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable(
-		params.NewParamSetPair(ParamModeratorsKey, &DefaultModerators, validateModerators),
-		params.NewParamSetPair(FixedGasParamsKey, FixedGasParams{}, validateFixedGasParams),
+		params.NewParamSetPair(ParamModerators, &DefaultModerators, validateModerators),
+		params.NewParamSetPair(ParamsFixedGas, FixedGasParams{}, validateFixedGasParams),
 	)
 }
 
@@ -53,8 +54,8 @@ type FixedGasParams struct {
 
 func DefaultFixedGasParams() FixedGasParams {
 	return FixedGasParams{
-		CreatePost: 100,
-		DeletePost: 100,
+		CreatePost: 1000,
+		DeletePost: 1000,
 		SetLike:    100,
 		Follow:     100,
 		Unfollow:   100,

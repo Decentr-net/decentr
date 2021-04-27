@@ -11,7 +11,7 @@ import (
 )
 
 type GenesisState struct {
-	CerberusOwners []string       `json:"cerberus_owners"`
+	Supervisors    []string       `json:"supervisors"`
 	FixedGasParams FixedGasParams `json:"fixed_gas"`
 }
 
@@ -29,7 +29,7 @@ func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawM
 // DefaultGenesisState returns a default genesis state
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		CerberusOwners: types.DefaultCerberusOwners,
+		Supervisors:    types.DefaultSupervisors,
 		FixedGasParams: types.DefaultFixedGasParams(),
 	}
 }
@@ -37,22 +37,22 @@ func DefaultGenesisState() GenesisState {
 // ValidateGenesis performs basic validation of PDV genesis data returning an
 // error for any failed validation criteria.
 func ValidateGenesis(data GenesisState) error {
-	if len(data.CerberusOwners) == 0 {
-		return fmt.Errorf("at least one cerberus has to be specified")
+	if len(data.Supervisors) == 0 {
+		return fmt.Errorf("at least one supervisor has to be specified")
 	}
 	return nil
 }
 
 // InitGenesis sets distribution information for genesis.
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
-	keeper.SetCerberusOwners(ctx, data.CerberusOwners)
+	keeper.SetSupervisors(ctx, data.Supervisors)
 	keeper.SetFixedGasParams(ctx, data.FixedGasParams)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
 	return GenesisState{
-		CerberusOwners: keeper.GetCerberusOwners(ctx),
+		Supervisors:    keeper.GetSupervisors(ctx),
 		FixedGasParams: keeper.GetFixedGasParams(ctx),
 	}
 }

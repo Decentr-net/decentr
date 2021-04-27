@@ -12,8 +12,8 @@ type FixedGasTxDecorator struct {
 
 func NewFixedGasTxDecorator(pk pdv.Keeper, ck community.Keeper) FixedGasTxDecorator {
 	config := map[string]func(ctx sdk.Context) sdk.Gas{
-		pdv.MsgDeleteAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return pk.GetFixedGasParams(ctx).DeleteAccount
+		pdv.MsgResetAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
+			return pk.GetFixedGasParams(ctx).ResetAccount
 		},
 		pdv.MsgDistributeRewards{}.Type(): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetFixedGasParams(ctx).DistributeRewards
@@ -40,9 +40,9 @@ func NewFixedGasTxDecorator(pk pdv.Keeper, ck community.Keeper) FixedGasTxDecora
 	}
 }
 
-func (ftd FixedGasTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	for _, tx := range tx.GetMsgs() {
-		if fixedGas, ok := ftd.config[tx.Type()]; ok {
+func (fgm FixedGasTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	for _, msg := range tx.GetMsgs() {
+		if fixedGas, ok := fgm.config[msg.Type()]; ok {
 			limit := ctx.GasMeter().Limit()
 			consumed := fixedGas(ctx)
 			return ctx.WithGasMeter(NewFixedGasMeter(consumed, limit)), nil

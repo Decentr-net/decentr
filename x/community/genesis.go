@@ -92,7 +92,7 @@ func DefaultGenesisState() GenesisState {
 		Posts:          []Post{},
 		Likes:          []Like{},
 		Moderators:     types.DefaultModerators,
-		Followers:      make(map[string][]string),
+		Followers:      types.DefaultFollowers,
 		FixedGasParams: types.DefaultFixedGasParams(),
 	}
 }

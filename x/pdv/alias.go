@@ -27,7 +27,7 @@ var (
 type (
 	Keeper                 = keeper.Keeper
 	MsgDistributeRewards   = types.MsgDistributeRewards
-	MsgDeleteAccount       = types.MsgDeleteAccount
+	MsgResetAccount        = types.MsgResetAccount
 	CreateAccountDecorator = ante.CreateAccountDecorator
 	FixedGasParams         = types.FixedGasParams
 )
