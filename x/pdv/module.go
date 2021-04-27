@@ -2,6 +2,7 @@ package pdv
 
 import (
 	"encoding/json"
+
 	"github.com/Decentr-net/decentr/x/pdv/client/cli"
 	"github.com/Decentr-net/decentr/x/token"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -19,7 +20,6 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-// app module Basics object
 type AppModuleBasic struct{}
 
 func (AppModuleBasic) Name() string {
@@ -34,7 +34,7 @@ func (AppModuleBasic) DefaultGenesis() json.RawMessage {
 	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
 }
 
-// Validation check of the Genesis
+// ValidateGenesis checks of the Genesis
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	var data GenesisState
 	err := ModuleCdc.UnmarshalJSON(bz, &data)

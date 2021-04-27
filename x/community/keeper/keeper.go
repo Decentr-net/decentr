@@ -40,3 +40,13 @@ func (k *Keeper) GetModerators(ctx sdk.Context) []string {
 func (k *Keeper) SetModerators(ctx sdk.Context, moderators []string) {
 	k.paramSpace.Set(ctx, types.ParamModeratorsKey, &moderators)
 }
+
+func (k *Keeper) GetFixedGasParams(ctx sdk.Context) types.FixedGasParams {
+	var out types.FixedGasParams
+	k.paramSpace.GetIfExists(ctx, types.FixedGasParamsKey, &out)
+	return out
+}
+
+func (k *Keeper) SetFixedGasParams(ctx sdk.Context, out types.FixedGasParams) {
+	k.paramSpace.Set(ctx, types.FixedGasParamsKey, &out)
+}

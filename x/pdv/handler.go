@@ -3,10 +3,10 @@ package pdv
 import (
 	"fmt"
 
+	"github.com/Decentr-net/decentr/x/token"
+	"github.com/Decentr-net/decentr/x/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/Decentr-net/decentr/x/token"
 )
 
 // NewHandler creates an sdk.Handler for all the pdv type messages
@@ -17,6 +17,8 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case MsgDistributeRewards:
 			return handleMsgDistributeRewards(ctx, keeper, tokensKeeper, msg)
+		case MsgDeleteAccount:
+			return handleMsgAccountRemove(ctx, keeper, tokensKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -38,4 +40,19 @@ func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper tok
 	}
 
 	return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Owner is not a Cerberus owner")
+}
+
+func handleMsgAccountRemove(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgDeleteAccount) (*sdk.Result, error) {
+	tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())
+
+	for _, v := range keeper.GetCerberusOwners(ctx) {
+		addr, _ := sdk.AccAddressFromBech32(v)
+		if msg.Owner.Equals(addr) && !addr.Empty() {
+			ctx.Logger().Info("account %s removed by %s", msg.Owner, addr)
+			return &sdk.Result{}, nil
+		}
+	}
+
+	ctx.Logger().Info("account %s removed by themself", msg.Owner)
+	return &sdk.Result{}, nil
 }

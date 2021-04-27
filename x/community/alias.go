@@ -21,12 +21,13 @@ var (
 )
 
 type (
-	Keeper        = keeper.Keeper
-	Post          = types.Post
-	Like          = types.Like
-	MsgCreatePost = types.MsgCreatePost
-	MsgDeletePost = types.MsgDeletePost
-	MsgFollow     = types.MsgFollow
-	MsgUnfollow   = types.MsgUnfollow
-	MsgSetLike    = types.MsgSetLike
+	Keeper         = keeper.Keeper
+	Post           = types.Post
+	Like           = types.Like
+	MsgCreatePost  = types.MsgCreatePost
+	MsgDeletePost  = types.MsgDeletePost
+	MsgFollow      = types.MsgFollow
+	MsgUnfollow    = types.MsgUnfollow
+	MsgSetLike     = types.MsgSetLike
+	FixedGasParams = types.FixedGasParams
 )

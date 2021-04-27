@@ -3,6 +3,7 @@ package pdv
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/Decentr-net/decentr/x/pdv/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -10,7 +11,8 @@ import (
 )
 
 type GenesisState struct {
-	CerberusOwners []string `json:"cerberus_owners"`
+	CerberusOwners []string       `json:"cerberus_owners"`
+	FixedGasParams FixedGasParams `json:"fixed_gas"`
 }
 
 // GetGenesisStateFromAppState returns community GenesisState given raw application
@@ -28,6 +30,7 @@ func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawM
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		CerberusOwners: types.DefaultCerberusOwners,
+		FixedGasParams: types.DefaultFixedGasParams(),
 	}
 }
 
@@ -43,11 +46,13 @@ func ValidateGenesis(data GenesisState) error {
 // InitGenesis sets distribution information for genesis.
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	keeper.SetCerberusOwners(ctx, data.CerberusOwners)
+	keeper.SetFixedGasParams(ctx, data.FixedGasParams)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
 func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
 	return GenesisState{
 		CerberusOwners: keeper.GetCerberusOwners(ctx),
+		FixedGasParams: keeper.GetFixedGasParams(ctx),
 	}
 }

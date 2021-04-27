@@ -67,3 +67,31 @@ func (msg MsgDistributeRewards) GetSignBytes() []byte {
 func (msg MsgDistributeRewards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
+
+type MsgDeleteAccount struct {
+	Owner sdk.AccAddress `json:"owner"`
+}
+
+// Route should return the name of the module
+func (msg MsgDeleteAccount) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgDeleteAccount) Type() string { return "delete_account" }
+
+// GetSignBytes encodes the message for signing
+func (msg MsgDeleteAccount) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgDeleteAccount) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgDeleteAccount) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+	}
+	return nil
+}
