@@ -86,59 +86,6 @@ decentrcli keys add megaherz
 #  }
 ```
 
-### REST transactions
-If you want to use REST to create tx, you should get it from rest service, then sign and broadcast it.
-
-#### Example
-Get tx body
-```bash
-curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},"public": { "firstName": "foo","lastName": "bar","avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
-```
-  
-unsignedTx.json will contain
-```json
-{
-  "type": "cosmos-sdk/StdTx",
-  "value": {
-    "msg": [
-      {
-        "type": "profile/SetPublic",
-        "value": {
-          "owner": "decentr1z4z94y4lf33tdk4qvwh237ly8ngyjv5my6xqrw",
-          "public": {
-            "firstName": "foo",
-            "lastName": "bar",
-            "bio": "Golang programmer, NY",
-            "avatar": "https://avatars3.githubusercontent.com/u/1526177",
-            "gender": "female",
-            "birthday": "2001-02-01"
-          }
-        }
-      }
-    ],
-    "fee": {
-      "amount": [
-
-      ],
-      "gas": "200000"
-    },
-    "signatures": null,
-    "memo": ""
-  }
-}
-```
-  
-Then sign this transaction
-```bash
-decentrcli tx sign unsignedTx.json --from jack --chain-id testnet > signedTx.json
-```
-  
-And finally broadcast the signed transaction
-```bash
-decentrcli tx broadcast signedTx.json
-```
-
 ## PDV Token
 PDV tokens are assigned to the user as soon as they reveal their personal data. 
 There are no transactions, only query to get PDV token balance of the specific user.
@@ -161,53 +108,6 @@ curl -s http://localhost:1317/token/balance/{address}
 curl -s http://localhost:1317/token/stats/{address}
 ```
 
-### Profile
-User profile consists of two parts: private and public. Private data is encrypted with user's private key.
-Public one includes first name, last name, bio, avatar, gender and birthday.
-
-#### CLI
-```bash
-# Query private profile. Returns base64 encode string.
-decentrcli query profile private [address]
-
-# Query public profile
-decentrcli query profile public [address] 
-
-# Set private profile data that you own. The data should be encrypted with your private key beforehead.
-decentrcli tx profile set-private [data] --from [account]
-
-# Set public profile data that you own. Public profile are attributes: gender, birth date.
-# Birthday date format is yyyy-mm-dd. Gender: male, female
-decentrcli tx profile set-public '{ "firstName": "foo", "lastName": "bar", "bio": "Golang programmer, NY", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01"}' --from [account]
-```
-
-#### REST
-To execute REST command decentrcli has to be run as a REST server `decentrcli rest-server` 
-
-```bash
-### Get account info
-curl -s http://localhost:1317/auth/accounts/$(decentrcli keys show jack -a)
-# > {"value": { "address": "decentr1d7narytgsy5lj2agt0t8sntaq3p8ucjhermqjj","coins": [], "public_key": "decentrpub1addwnpepq2jqxxu853rh0pa0agnkaxwaz6qdz6kpd4esqpw33sz3mp3a6mwh5eejl8q", "account_number": 3,"sequence": 6 }}
-
-# Query private profile. Returns base64 encode string.
-curl -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a)
-# > {"height": "0", "result": "YldWbllXaGxjbm9L"}
-
-# Query public profile.
-curl -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a)
-# > { "height": "0", "result": { "firstName": "foo", "lastName": "bar", "bio": "Golang programmer, NY", "avatar": "https://avatars3.githubusercontent.com/u/1526177", "gender": "female", "birthday": "2001-02-01", "registeredAt:"1607972947"}}
-
-# Set private profile
-curl -XPOST -s http://localhost:1317/profile/private/$(decentrcli keys show jack -a) \ 
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},
-     "private": "YldWbllXaGxjbm9L"}' > unsignedTx.json
-
-# Set public profile
-curl -XPOST -s http://localhost:1317/profile/public/$(decentrcli keys show jack -a) \
-     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"},
-     "public": { "firstName": "foo","lastName": "bar", "bio": "Golang programmer, NY", 
-     "avatar": "https://avatars3.githubusercontent.com/u/1526177","gender": "female","birthday": "2001-02-01"} }' > unsignedTx.json
-```
 ## Bank
 
 #### CLI

@@ -19,7 +19,7 @@ func Uint64ToBytes(i uint64) []byte {
 	return b
 }
 
-// BytesToTime convert BigEndian unix time from bytes to time.Time
+// BytesToUint64 convert BigEndian unix time from bytes to time.Time
 func BytesToUint64(b []byte) uint64 {
 	return binary.BigEndian.Uint64(b)
 }
