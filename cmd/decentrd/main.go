@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Decentr-net/decentr/x/pdv"
 	"io"
 	"strings"
+
+	"github.com/Decentr-net/decentr/x/pdv"
 
 	"github.com/Decentr-net/decentr/x/community"
 
@@ -67,7 +68,7 @@ func main() {
 	rootCmd.AddCommand(genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(AddGenesisCommunityModeratorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(AddGenesisPDVCerberusesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(AddGenesisPDVSupervisorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(flags.NewCompletionCmd(rootCmd, true))
 	rootCmd.AddCommand(debug.Cmd(cdc))
 
@@ -173,23 +174,23 @@ func AddGenesisCommunityModeratorsCmd(
 	return cmd
 }
 
-// AddGenesisPDVCerberusesCmd returns add-genesis-pdv-cerberuses cobra Command.
-func AddGenesisPDVCerberusesCmd(
+// AddGenesisPDVSupervisorsCmd returns add-genesis-pdv-supervisors cobra Command.
+func AddGenesisPDVSupervisorsCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "add-genesis-pdv-cerberuses [cerberus][,[cerberus]]",
-		Short: "Add a genesis PDV cerberuses to genesis.json",
+		Use:   "add-genesis-pdv-supervisors [supervisor][,[supervisor]]",
+		Short: "Add a genesis PDV supervisors to genesis.json",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
-			cerberuses := strings.Split(args[0], ",")
-			for _, cerberus := range cerberuses {
-				if _, err := sdk.AccAddressFromBech32(cerberus); err != nil {
-					return fmt.Errorf("failed to parse cerberuses: %w", err)
+			supervisors := strings.Split(args[0], ",")
+			for _, supervisor := range supervisors {
+				if _, err := sdk.AccAddressFromBech32(supervisor); err != nil {
+					return fmt.Errorf("failed to parse supervisors: %w", err)
 				}
 			}
 
@@ -200,7 +201,7 @@ func AddGenesisPDVCerberusesCmd(
 			}
 
 			pdvGenState := pdv.GetGenesisStateFromAppState(cdc, appState)
-			pdvGenState.CerberusOwners = cerberuses
+			pdvGenState.Supervisors = supervisors
 
 			communityGenStateBz, err := cdc.MarshalJSON(pdvGenState)
 			if err != nil {

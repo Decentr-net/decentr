@@ -1,6 +1,7 @@
 package pdv
 
 import (
+	"github.com/Decentr-net/decentr/x/pdv/ante"
 	"github.com/Decentr-net/decentr/x/pdv/keeper"
 	"github.com/Decentr-net/decentr/x/pdv/types"
 )
@@ -19,7 +20,14 @@ var (
 	RegisterCodec = types.RegisterCodec
 )
 
+var (
+	NewCreateAccountDecorator = ante.NewCreateAccountDecorator
+)
+
 type (
-	Keeper               = keeper.Keeper
-	MsgDistributeRewards = types.MsgDistributeRewards
+	Keeper                 = keeper.Keeper
+	MsgDistributeRewards   = types.MsgDistributeRewards
+	MsgResetAccount        = types.MsgResetAccount
+	CreateAccountDecorator = ante.CreateAccountDecorator
+	FixedGasParams         = types.FixedGasParams
 )

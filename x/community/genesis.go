@@ -14,10 +14,11 @@ import (
 )
 
 type GenesisState struct {
-	Posts      []Post              `json:"posts"`
-	Likes      []Like              `json:"likes"`
-	Moderators []string            `json:"moderators"`
-	Followers  map[string][]string `json:"followers"`
+	Posts          []Post              `json:"posts"`
+	Likes          []Like              `json:"likes"`
+	Moderators     []string            `json:"moderators"`
+	FixedGasParams FixedGasParams      `json:"fixed_gas"`
+	Followers      map[string][]string `json:"followers"`
 }
 
 // GetGenesisStateFromAppState returns community GenesisState given raw application
@@ -88,10 +89,11 @@ func ValidateGenesis(data GenesisState) error {
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Posts:      []Post{},
-		Likes:      []Like{},
-		Moderators: types.DefaultModerators,
-		Followers:  make(map[string][]string),
+		Posts:          []Post{},
+		Likes:          []Like{},
+		Moderators:     types.DefaultModerators,
+		Followers:      types.DefaultFollowers,
+		FixedGasParams: types.DefaultFixedGasParams(),
 	}
 }
 
@@ -113,6 +115,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	}
 
 	keeper.SetModerators(ctx, data.Moderators)
+	keeper.SetFixedGasParams(ctx, data.FixedGasParams)
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
@@ -137,9 +140,10 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	})
 
 	return GenesisState{
-		Posts:      posts,
-		Likes:      likes,
-		Followers:  followers,
-		Moderators: k.GetModerators(ctx),
+		Posts:          posts,
+		Likes:          likes,
+		Followers:      followers,
+		Moderators:     k.GetModerators(ctx),
+		FixedGasParams: k.GetFixedGasParams(ctx),
 	}
 }

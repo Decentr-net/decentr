@@ -22,10 +22,6 @@ func NewCreateAccountDecorator(ak auth.AccountKeeper, tokenKeeper token.Keeper) 
 }
 
 func (cad CreateAccountDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if !ctx.IsCheckTx() {
-		return next(ctx, tx, simulate)
-	}
-
 	for _, msg := range tx.GetMsgs() {
 		sendTx, ok := msg.(bank.MsgSend)
 		if ok {

@@ -86,6 +86,21 @@ decentrcli keys add megaherz
 #  }
 ```
 
+## PDV 
+Personal Data Value.
+
+#### CLI
+```shell
+# Reset account
+decentrcli tx pdv reset-account [account] 
+```
+#### REST
+```shell
+# Reset account
+curl -XPOST -s http://localhost:1317/pdv/{account}/reset \
+     -d '{"base_req":{"chain_id":"testnet", "from": "'$(decentrcli keys show jack -a)'"}}' > unsignedTx.json
+```
+
 ## PDV Token
 PDV tokens are assigned to the user as soon as they reveal their personal data. 
 There are no transactions, only query to get PDV token balance of the specific user.

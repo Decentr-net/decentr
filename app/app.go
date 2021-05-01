@@ -343,7 +343,8 @@ func NewDecentrApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.supplyKeeper, app.tokensKeeper))
+	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.supplyKeeper, app.tokensKeeper,
+		app.pdvKeeper, app.communityKeeper))
 
 	// initialize stores
 	app.MountKVStores(keys)
