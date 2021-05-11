@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
@@ -84,6 +85,7 @@ var (
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		stakingAppModuleDecorator{},
+		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(paramsclient.ProposalHandler, upgradeclient.ProposalHandler),
 		upgrade.AppModuleBasic{},
@@ -100,6 +102,7 @@ var (
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
 		distr.ModuleName:          nil,
+		mint.ModuleName:           {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
@@ -138,6 +141,7 @@ type decentrApp struct {
 	bankKeeper      bank.Keeper
 	stakingKeeper   staking.Keeper
 	slashingKeeper  slashing.Keeper
+	mintKeeper      mint.Keeper
 	distrKeeper     distr.Keeper
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
@@ -170,7 +174,7 @@ func NewDecentrApp(
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey,
+		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, upgrade.StoreKey, params.StoreKey,
 		pdv.StoreKey, token.StoreKey, community.StoreKey)
 
@@ -192,6 +196,7 @@ func NewDecentrApp(
 	app.subspaces[auth.ModuleName] = app.paramsKeeper.Subspace(auth.DefaultParamspace)
 	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
 	app.subspaces[staking.ModuleName] = app.paramsKeeper.Subspace(staking.DefaultParamspace)
+	app.subspaces[mint.ModuleName] = app.paramsKeeper.Subspace(mint.DefaultParamspace)
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
@@ -228,6 +233,15 @@ func NewDecentrApp(
 		keys[staking.StoreKey],
 		app.supplyKeeper,
 		app.subspaces[staking.ModuleName],
+	)
+
+	app.mintKeeper = mint.NewKeeper(
+		app.cdc,
+		keys[mint.StoreKey],
+		app.subspaces[mint.ModuleName],
+		&stakingKeeper,
+		app.supplyKeeper,
+		auth.FeeCollectorName,
 	)
 
 	app.distrKeeper = distr.NewKeeper(
@@ -304,6 +318,7 @@ func NewDecentrApp(
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
 		NewGovAppModuleDecorator(app.govKeeper, app.accountKeeper, app.supplyKeeper),
+		mint.NewAppModule(app.mintKeeper),
 		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		community.NewAppModule(app.communityKeeper),
@@ -314,7 +329,7 @@ func NewDecentrApp(
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 
-	app.mm.SetOrderBeginBlockers(upgrade.ModuleName, distr.ModuleName, slashing.ModuleName, gov.ModuleName)
+	app.mm.SetOrderBeginBlockers(upgrade.ModuleName, mint.ModuleName, distr.ModuleName, slashing.ModuleName, gov.ModuleName)
 	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
@@ -327,6 +342,7 @@ func NewDecentrApp(
 		bank.ModuleName,
 		slashing.ModuleName,
 		gov.ModuleName,
+		mint.ModuleName,
 		pdv.ModuleName,
 		community.ModuleName,
 		token.ModuleName,
@@ -428,7 +444,7 @@ func GetMaccPerms() map[string][]string {
 }
 
 // stakingAppModuleDecorator is staking app module decorator to replace the default bond denom
-// "stake" with "dec".
+// "stake" with "udec".
 type stakingAppModuleDecorator struct {
 	staking.AppModule
 }
@@ -447,7 +463,7 @@ func (a stakingAppModuleDecorator) DefaultGenesis() json.RawMessage {
 }
 
 // govAppModuleDecorator is gov app module decorator to replace the default min deposit denom
-// "stake" with "dec".
+// "stake" with "udec".
 type govAppModuleDecorator struct {
 	gov.AppModule
 }
