@@ -18,15 +18,15 @@ var (
 )
 
 var (
-	ParamModerators = []byte("moderatorsparams")
-	ParamsFixedGas  = []byte("fixedgasparams")
+	KeyModerators = []byte("Moderators")
+	KeyFixedGas   = []byte("FixedGas")
 )
 
 // ParamKeyTable type declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable(
-		params.NewParamSetPair(ParamModerators, &DefaultModerators, validateModerators),
-		params.NewParamSetPair(ParamsFixedGas, FixedGasParams{}, validateFixedGasParams),
+		params.NewParamSetPair(KeyModerators, &DefaultModerators, validateModerators),
+		params.NewParamSetPair(KeyFixedGas, FixedGasParams{}, validateFixedGasParams),
 	)
 }
 

@@ -13,9 +13,11 @@ import (
 
 func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper, tk token.Keeper,
 	pk pdv.Keeper, ck community.Keeper) sdk.AnteHandler {
+
 	return sdk.ChainAnteDecorators(
 		ante.NewSetUpContextDecorator(),
 		appante.NewFixedGasTxDecorator(pk, ck),
+		pdv.NewMinGasPriceDecorator(pk),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewValidateMemoDecorator(ak),

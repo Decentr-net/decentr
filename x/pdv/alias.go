@@ -22,6 +22,7 @@ var (
 
 var (
 	NewCreateAccountDecorator = ante.NewCreateAccountDecorator
+	NewMinGasPriceDecorator   = ante.NewMinGasPriceDecorator
 )
 
 type (

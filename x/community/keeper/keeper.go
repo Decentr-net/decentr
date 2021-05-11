@@ -32,21 +32,21 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspa
 // GetModerators returns the current moderators
 func (k *Keeper) GetModerators(ctx sdk.Context) []string {
 	var moderators []string
-	k.paramSpace.GetIfExists(ctx, types.ParamModerators, &moderators)
+	k.paramSpace.GetIfExists(ctx, types.KeyModerators, &moderators)
 	return moderators
 }
 
 // SetModerators sets the moderators
 func (k *Keeper) SetModerators(ctx sdk.Context, moderators []string) {
-	k.paramSpace.Set(ctx, types.ParamModerators, &moderators)
+	k.paramSpace.Set(ctx, types.KeyModerators, &moderators)
 }
 
 func (k *Keeper) GetFixedGasParams(ctx sdk.Context) types.FixedGasParams {
 	var out types.FixedGasParams
-	k.paramSpace.GetIfExists(ctx, types.ParamsFixedGas, &out)
+	k.paramSpace.GetIfExists(ctx, types.KeyFixedGas, &out)
 	return out
 }
 
 func (k *Keeper) SetFixedGasParams(ctx sdk.Context, out types.FixedGasParams) {
-	k.paramSpace.Set(ctx, types.ParamsFixedGas, &out)
+	k.paramSpace.Set(ctx, types.KeyFixedGas, &out)
 }

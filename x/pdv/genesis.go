@@ -13,6 +13,7 @@ import (
 type GenesisState struct {
 	Supervisors    []string       `json:"supervisors"`
 	FixedGasParams FixedGasParams `json:"fixed_gas"`
+	MinGasPrice    sdk.DecCoin    `json:"min_gas_price"`
 }
 
 // GetGenesisStateFromAppState returns community GenesisState given raw application
@@ -31,6 +32,7 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Supervisors:    types.DefaultSupervisors,
 		FixedGasParams: types.DefaultFixedGasParams(),
+		MinGasPrice:    types.DefaultMinGasPrice,
 	}
 }
 
@@ -47,6 +49,7 @@ func ValidateGenesis(data GenesisState) error {
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	keeper.SetSupervisors(ctx, data.Supervisors)
 	keeper.SetFixedGasParams(ctx, data.FixedGasParams)
+	keeper.SetMinGasPrice(ctx, data.MinGasPrice)
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
@@ -54,5 +57,6 @@ func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
 	return GenesisState{
 		Supervisors:    keeper.GetSupervisors(ctx),
 		FixedGasParams: keeper.GetFixedGasParams(ctx),
+		MinGasPrice:    keeper.GetMinGasPrice(ctx),
 	}
 }
