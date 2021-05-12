@@ -16,6 +16,7 @@ const (
 
 var (
 	NewKeeper     = keeper.NewKeeper
+	NewQuerier    = keeper.NewQuerier
 	ModuleCdc     = types.ModuleCdc
 	RegisterCodec = types.RegisterCodec
 )

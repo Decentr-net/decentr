@@ -63,8 +63,8 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router
 	rest.RegisterRoutes(ctx, rtr, StoreKey)
 }
 
-func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
-	return nil
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return cli.GetQueryCmd(StoreKey, cdc)
 }
 
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
@@ -103,7 +103,9 @@ func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
 }
 
-func (am AppModule) NewQuerierHandler() sdk.Querier { return nil }
+func (am AppModule) NewQuerierHandler() sdk.Querier {
+	return NewQuerier(am.keeper)
+}
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 

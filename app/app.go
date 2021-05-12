@@ -17,7 +17,6 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
@@ -84,7 +83,7 @@ var (
 		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
-		stakingAppModuleDecorator{},
+		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(paramsclient.ProposalHandler, upgradeclient.ProposalHandler),
@@ -317,12 +316,12 @@ func NewDecentrApp(
 		distr.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
-		NewGovAppModuleDecorator(app.govKeeper, app.accountKeeper, app.supplyKeeper),
+		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
 		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		community.NewAppModule(app.communityKeeper),
-		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -432,51 +431,4 @@ func (app *decentrApp) SimulationManager() *module.SimulationManager {
 
 func (app *decentrApp) setUpgrades() {
 	app.upgradeKeeper.SetUpgradeHandler("v1.2.6", func(_ sdk.Context, _ upgrade.Plan) {})
-}
-
-// GetMaccPerms returns a mapping of the application's module account permissions.
-func GetMaccPerms() map[string][]string {
-	modAccPerms := make(map[string][]string)
-	for k, v := range maccPerms {
-		modAccPerms[k] = v
-	}
-	return modAccPerms
-}
-
-// stakingAppModuleDecorator is staking app module decorator to replace the default bond denom
-// "stake" with "udec".
-type stakingAppModuleDecorator struct {
-	staking.AppModule
-}
-
-func NewStakingAppModuleDecorator(keeper staking.Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper) *stakingAppModuleDecorator {
-	return &stakingAppModuleDecorator{staking.NewAppModule(keeper, accountKeeper, supplyKeeper)}
-}
-
-func (a stakingAppModuleDecorator) DefaultGenesis() json.RawMessage {
-	params := staking.DefaultParams()
-	params.BondDenom = DefaultBondDenom
-
-	return staking.ModuleCdc.MustMarshalJSON(staking.GenesisState{
-		Params: params,
-	})
-}
-
-// govAppModuleDecorator is gov app module decorator to replace the default min deposit denom
-// "stake" with "udec".
-type govAppModuleDecorator struct {
-	gov.AppModule
-}
-
-func NewGovAppModuleDecorator(keeper gov.Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper) *govAppModuleDecorator {
-	return &govAppModuleDecorator{gov.NewAppModule(keeper, accountKeeper, supplyKeeper)}
-}
-
-func (a govAppModuleDecorator) DefaultGenesis() json.RawMessage {
-	state := gov.DefaultGenesisState()
-	state.DepositParams = gov.NewDepositParams(
-		sdk.NewCoins(sdk.NewCoin(DefaultBondDenom, govtypes.DefaultMinDepositTokens)),
-		govtypes.DefaultPeriod,
-	)
-	return gov.ModuleCdc.MustMarshalJSON(state)
 }
