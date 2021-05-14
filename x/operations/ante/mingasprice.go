@@ -1,7 +1,7 @@
 package ante
 
 import (
-	"github.com/Decentr-net/decentr/x/pdv/keeper"
+	"github.com/Decentr-net/decentr/x/operations/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 

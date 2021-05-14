@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"

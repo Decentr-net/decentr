@@ -1,11 +1,10 @@
-package pdv
+package operations
 
 import (
 	"encoding/json"
 
-	"github.com/Decentr-net/decentr/x/pdv/client/rest"
-
-	"github.com/Decentr-net/decentr/x/pdv/client/cli"
+	"github.com/Decentr-net/decentr/x/operations/client/cli"
+	"github.com/Decentr-net/decentr/x/operations/client/rest"
 	"github.com/Decentr-net/decentr/x/token"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

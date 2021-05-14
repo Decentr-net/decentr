@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"

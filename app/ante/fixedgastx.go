@@ -2,7 +2,7 @@ package ante
 
 import (
 	"github.com/Decentr-net/decentr/x/community"
-	"github.com/Decentr-net/decentr/x/pdv"
+	"github.com/Decentr-net/decentr/x/operations"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -10,12 +10,12 @@ type FixedGasTxDecorator struct {
 	config map[string]func(ctx sdk.Context) sdk.Gas
 }
 
-func NewFixedGasTxDecorator(pk pdv.Keeper, ck community.Keeper) FixedGasTxDecorator {
+func NewFixedGasTxDecorator(pk operations.Keeper, ck community.Keeper) FixedGasTxDecorator {
 	config := map[string]func(ctx sdk.Context) sdk.Gas{
-		pdv.MsgResetAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		operations.MsgResetAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetFixedGasParams(ctx).ResetAccount
 		},
-		pdv.MsgDistributeRewards{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		operations.MsgDistributeRewards{}.Type(): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetFixedGasParams(ctx).DistributeRewards
 		},
 		community.MsgCreatePost{}.Type(): func(ctx sdk.Context) sdk.Gas {

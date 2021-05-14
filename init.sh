@@ -15,7 +15,7 @@ decentrcli keys add alice
 decentrd add-genesis-account "$(decentrcli keys show jack -a)" 1000000000udec
 decentrd add-genesis-account "$(decentrcli keys show alice -a)" 1000000000udec
 decentrd add-genesis-community-moderators "$(decentrcli keys show jack -a)"
-decentrd add-genesis-pdv-supervisors "$(decentrcli keys show jack -a)"
+decentrd add-genesis-supervisors "$(decentrcli keys show jack -a)"
 
 decentrd gentx --name jack --keyring-backend test --amount 1000000udec
 

@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	// DefaultParamspace for params keeper
 	DefaultParamspace = ModuleName
+	DefaultDenom      = "udec"
 )
 
 var (
 	DefaultSupervisors = make([]string, 0)
-	DefaultMinGasPrice = sdk.NewDecCoinFromDec("stake", sdk.MustNewDecFromStr("0.025"))
+	DefaultMinGasPrice = sdk.NewDecCoinFromDec(DefaultDenom, sdk.MustNewDecFromStr("0.025"))
 )
 
 var (

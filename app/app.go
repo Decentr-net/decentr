@@ -31,7 +31,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/Decentr-net/decentr/x/community"
-	"github.com/Decentr-net/decentr/x/pdv"
+	"github.com/Decentr-net/decentr/x/operations"
 	"github.com/Decentr-net/decentr/x/token"
 )
 
@@ -91,8 +91,7 @@ var (
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
-
-		pdv.AppModule{},
+		operations.AppModule{},
 		token.AppModule{},
 		community.AppModule{},
 	)
@@ -136,19 +135,19 @@ type decentrApp struct {
 	subspaces map[string]params.Subspace
 
 	// keepers
-	accountKeeper   auth.AccountKeeper
-	bankKeeper      bank.Keeper
-	stakingKeeper   staking.Keeper
-	slashingKeeper  slashing.Keeper
-	mintKeeper      mint.Keeper
-	distrKeeper     distr.Keeper
-	supplyKeeper    supply.Keeper
-	paramsKeeper    params.Keeper
-	govKeeper       gov.Keeper
-	upgradeKeeper   upgrade.Keeper
-	pdvKeeper       pdv.Keeper
-	tokensKeeper    token.Keeper
-	communityKeeper community.Keeper
+	accountKeeper    auth.AccountKeeper
+	bankKeeper       bank.Keeper
+	stakingKeeper    staking.Keeper
+	slashingKeeper   slashing.Keeper
+	mintKeeper       mint.Keeper
+	distrKeeper      distr.Keeper
+	supplyKeeper     supply.Keeper
+	paramsKeeper     params.Keeper
+	govKeeper        gov.Keeper
+	upgradeKeeper    upgrade.Keeper
+	operationsKeeper operations.Keeper
+	tokensKeeper     token.Keeper
+	communityKeeper  community.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -175,7 +174,7 @@ func NewDecentrApp(
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, upgrade.StoreKey, params.StoreKey,
-		pdv.StoreKey, token.StoreKey, community.StoreKey)
+		operations.StoreKey, token.StoreKey, community.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -199,7 +198,7 @@ func NewDecentrApp(
 	app.subspaces[distr.ModuleName] = app.paramsKeeper.Subspace(distr.DefaultParamspace)
 	app.subspaces[slashing.ModuleName] = app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
-	app.subspaces[pdv.ModuleName] = app.paramsKeeper.Subspace(pdv.DefaultParamspace)
+	app.subspaces[operations.ModuleName] = app.paramsKeeper.Subspace(operations.DefaultParamspace)
 	app.subspaces[community.ModuleName] = app.paramsKeeper.Subspace(community.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
@@ -291,12 +290,13 @@ func NewDecentrApp(
 	app.tokensKeeper = token.NewKeeper(
 		app.cdc,
 		keys[token.StoreKey],
+		app.accountKeeper,
 	)
 
-	app.pdvKeeper = pdv.NewKeeper(
+	app.operationsKeeper = operations.NewKeeper(
 		app.cdc,
-		keys[pdv.StoreKey],
-		app.subspaces[pdv.ModuleName],
+		keys[operations.StoreKey],
+		app.subspaces[operations.ModuleName],
 	)
 
 	app.communityKeeper = community.NewKeeper(
@@ -318,7 +318,7 @@ func NewDecentrApp(
 		upgrade.NewAppModule(app.upgradeKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
-		pdv.NewAppModule(app.pdvKeeper, app.tokensKeeper),
+		operations.NewAppModule(app.operationsKeeper, app.tokensKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		community.NewAppModule(app.communityKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
@@ -342,7 +342,7 @@ func NewDecentrApp(
 		slashing.ModuleName,
 		gov.ModuleName,
 		mint.ModuleName,
-		pdv.ModuleName,
+		operations.ModuleName,
 		community.ModuleName,
 		token.ModuleName,
 		supply.ModuleName,
@@ -358,8 +358,7 @@ func NewDecentrApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.supplyKeeper, app.tokensKeeper,
-		app.pdvKeeper, app.communityKeeper))
+	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.supplyKeeper, app.operationsKeeper, app.communityKeeper))
 
 	// initialize stores
 	app.MountKVStores(keys)

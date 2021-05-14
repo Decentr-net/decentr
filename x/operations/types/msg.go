@@ -38,7 +38,7 @@ func (msg MsgDistributeRewards) ValidateBasic() error {
 	}
 
 	if len(msg.Rewards) > 1000 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Number of reward can't be greater than 1000")
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Number of rewards can't be greater than 1000")
 	}
 
 	for _, reward := range msg.Rewards {
@@ -84,7 +84,7 @@ func NewMsgResetAccount(owner, accountOwner sdk.AccAddress) MsgResetAccount {
 func (msg MsgResetAccount) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgResetAccount) Type() string { return "delete_account" }
+func (msg MsgResetAccount) Type() string { return "reset_account" }
 
 // GetSignBytes encodes the message for signing
 func (msg MsgResetAccount) GetSignBytes() []byte {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -24,6 +24,7 @@ import (
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	pdvTxCmd := &cobra.Command{
 		Use:                        types.ModuleName,
+		Aliases:                    []string{"op"},
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,

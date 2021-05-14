@@ -6,20 +6,15 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Decentr-net/decentr/x/pdv"
-
-	"github.com/Decentr-net/decentr/x/community"
-
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/spf13/cobra"
@@ -31,6 +26,8 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/decentr/x/community"
+	"github.com/Decentr-net/decentr/x/operations"
 )
 
 const (
@@ -68,7 +65,7 @@ func main() {
 	rootCmd.AddCommand(genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(AddGenesisCommunityModeratorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
-	rootCmd.AddCommand(AddGenesisPDVSupervisorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
+	rootCmd.AddCommand(AddGenesisSupervisorsCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome))
 	rootCmd.AddCommand(flags.NewCompletionCmd(rootCmd, true))
 	rootCmd.AddCommand(debug.Cmd(cdc))
 
@@ -173,14 +170,14 @@ func AddGenesisCommunityModeratorsCmd(
 	return cmd
 }
 
-// AddGenesisPDVSupervisorsCmd returns add-genesis-pdv-supervisors cobra Command.
-func AddGenesisPDVSupervisorsCmd(
+// AddGenesisSupervisorsCmd returns add-genesis-supervisors cobra Command.
+func AddGenesisSupervisorsCmd(
 	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
 ) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "add-genesis-pdv-supervisors [supervisor][,[supervisor]]",
-		Short: "Add a genesis PDV supervisors to genesis.json",
+		Use:   "add-genesis-supervisors [supervisor][,[supervisor]]",
+		Short: "Add supervisors to genesis.json",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
@@ -199,7 +196,7 @@ func AddGenesisPDVSupervisorsCmd(
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 
-			pdvGenState := pdv.GetGenesisStateFromAppState(cdc, appState)
+			pdvGenState := operations.GetGenesisStateFromAppState(cdc, appState)
 			pdvGenState.Supervisors = supervisors
 
 			communityGenStateBz, err := cdc.MarshalJSON(pdvGenState)
@@ -207,7 +204,7 @@ func AddGenesisPDVSupervisorsCmd(
 				return fmt.Errorf("failed to marshal pdv genesis state: %w", err)
 			}
 
-			appState[pdv.ModuleName] = communityGenStateBz
+			appState[operations.ModuleName] = communityGenStateBz
 
 			appStateJSON, err := cdc.MarshalJSON(appState)
 			if err != nil {

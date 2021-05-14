@@ -50,6 +50,7 @@ func GetCmdBalance(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				fmt.Printf("could not find private profile - %s \n", key)
 				return nil
 			}
+
 			return cliCtx.PrintOutput(string(res))
 		},
 	}
