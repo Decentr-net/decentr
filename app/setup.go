@@ -3,19 +3,20 @@ package app
 import (
 	appante "github.com/Decentr-net/decentr/app/ante"
 	"github.com/Decentr-net/decentr/x/community"
-	"github.com/Decentr-net/decentr/x/pdv"
-	"github.com/Decentr-net/decentr/x/token"
+	"github.com/Decentr-net/decentr/x/operations"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 )
 
-func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper, tk token.Keeper,
-	pk pdv.Keeper, ck community.Keeper) sdk.AnteHandler {
+func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper,
+	pk operations.Keeper, ck community.Keeper) sdk.AnteHandler {
+
 	return sdk.ChainAnteDecorators(
 		ante.NewSetUpContextDecorator(),
 		appante.NewFixedGasTxDecorator(pk, ck),
+		operations.NewMinGasPriceDecorator(pk),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewValidateMemoDecorator(ak),
@@ -25,7 +26,6 @@ func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper, tk token.Keeper,
 		ante.NewDeductFeeDecorator(ak, sk),
 		ante.NewSigGasConsumeDecorator(ak, auth.DefaultSigVerificationGasConsumer),
 		ante.NewSigVerificationDecorator(ak),
-		pdv.NewCreateAccountDecorator(ak, tk),
 		ante.NewIncrementSequenceDecorator(ak), // innermost AnteDecorator
 	)
 }

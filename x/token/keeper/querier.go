@@ -14,6 +14,10 @@ const (
 	QueryBalance = "balance"
 )
 
+type Balance struct {
+	Balance float64 `json:"balance" amino:"unsafe"`
+}
+
 // NewQuerier creates a new querier for token clients.
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
@@ -33,18 +37,10 @@ func queryBalance(ctx sdk.Context, path []string, _ abci.RequestQuery, keeper Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
 	}
 
-	var balance sdk.Int
-	if !keeper.IsInitialBalanceSet(ctx, owner) {
-		// account not found, return default value
-		balance = keeper.InitialTokenBalance()
-	} else {
-		balance = keeper.GetBalance(ctx, owner)
-	}
+	balance := utils.TokenToFloat64(keeper.GetBalance(ctx, owner))
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, struct {
-		Balance float64 `json:"balance" amino:"unsafe"`
-	}{
-		Balance: utils.TokenToFloat64(balance),
+	res, err := codec.MarshalJSONIndent(keeper.cdc, Balance{
+		Balance: balance,
 	})
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())

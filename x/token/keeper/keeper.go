@@ -1,35 +1,51 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"fmt"
 
 	"github.com/Decentr-net/decentr/x/token/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 var totalSupplyKey = []byte("totalSupply")
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
+	storeKey      sdk.StoreKey // Unexposed key to access store from sdk.Context
+	cdc           *codec.Codec // The wire codec for binary encoding/decoding.
+	accountKeeper keeper.AccountKeeper
 }
 
 // NewKeeper creates new instances of the token Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, accountKeeper keeper.AccountKeeper) Keeper {
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
+		cdc:           cdc,
+		storeKey:      storeKey,
+		accountKeeper: accountKeeper,
 	}
 }
 
+// Logger returns a module-specific logger.
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
 // AddTokens adds token to the given owner
-// Description is needed to merge records in the index.
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
-	balance := k.GetBalance(ctx, owner)
-	balance = balance.Add(amount)
+	var balance sdk.Int
+
+	if k.IsInitialBalanceSet(ctx, owner) {
+		balance = k.GetBalance(ctx, owner).Add(amount)
+	} else {
+		k.Logger(ctx).Info(
+			"account initialized with init balance",
+			"account", owner.String())
+		balance = initialTokenBalance().Add(amount)
+	}
 
 	k.SetBalance(ctx, owner, balance)
 }
@@ -41,19 +57,25 @@ func (k Keeper) addTotalSupply(ctx sdk.Context, amount sdk.Int) {
 	ctx.KVStore(k.storeKey).Set(totalSupplyKey, k.cdc.MustMarshalBinaryBare(balance))
 }
 
-// GetBalance returns token balance for the given owner
-func (k Keeper) GetBalance(ctx sdk.Context, owner sdk.AccAddress) sdk.Int {
+// GetBalance returns token balance for the given address
+func (k Keeper) GetBalance(ctx sdk.Context, address sdk.AccAddress) sdk.Int {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.StorePrefix)
-	if store.Has(owner) {
-		balance := store.Get(owner)
+	if store.Has(address) {
+		balance := store.Get(address)
 		var amount sdk.Int
 		k.cdc.MustUnmarshalBinaryBare(balance, &amount)
 		return amount
 	}
+
+	// if account exists, but initial token is not set
+	if k.accountKeeper.GetAccount(ctx, address) != nil {
+		return initialTokenBalance()
+	}
+
 	return sdk.ZeroInt()
 }
 
-func (k Keeper) InitialTokenBalance() sdk.Int {
+func initialTokenBalance() sdk.Int {
 	return sdk.NewInt(1 * types.Denominator)
 }
 

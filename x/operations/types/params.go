@@ -8,25 +8,41 @@ import (
 )
 
 const (
-	// DefaultParamspace for params keeper
 	DefaultParamspace = ModuleName
+	DefaultDenom      = "udec"
 )
 
 var (
 	DefaultSupervisors = make([]string, 0)
+	DefaultMinGasPrice = sdk.NewDecCoinFromDec(DefaultDenom, sdk.MustNewDecFromStr("0.025"))
 )
 
 var (
-	ParamSupervisors = []byte("supervisorsparams")
-	ParamFixedGas    = []byte("fixedgasparams")
+	KeySupervisors = []byte("Supervisors")
+	KeyFixedGas    = []byte("FixedGas")
+	KeyMinGasPrice = []byte("MinGasPrice")
 )
 
 // ParamKeyTable type declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable(
-		params.NewParamSetPair(ParamSupervisors, &DefaultSupervisors, validateSupervisors),
-		params.NewParamSetPair(ParamFixedGas, FixedGasParams{}, validateFixedGasParams),
+		params.NewParamSetPair(KeySupervisors, &DefaultSupervisors, validateSupervisors),
+		params.NewParamSetPair(KeyFixedGas, FixedGasParams{}, validateFixedGasParams),
+		params.NewParamSetPair(KeyMinGasPrice, &DefaultMinGasPrice, validateMinGasPrice),
 	)
+}
+
+func validateMinGasPrice(i interface{}) error {
+	coin, ok := i.(sdk.DecCoin)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if coin.Amount.IsZero() {
+		return fmt.Errorf("amount cannot be zero")
+	}
+
+	return nil
 }
 
 func validateSupervisors(i interface{}) error {

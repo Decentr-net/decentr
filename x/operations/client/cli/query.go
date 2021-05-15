@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Decentr-net/decentr/x/token/types"
+	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -25,33 +25,33 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 	profileQueryCmd.AddCommand(
 		flags.GetCommands(
-			GetCmdBalance(queryRoute, cdc),
+			GetCmdMinGasPrice(cdc),
 		)...,
 	)
 
 	return profileQueryCmd
 }
 
-// GetCmdBalance queries information about an account balance
-func GetCmdBalance(queryRoute string, cdc *codec.Codec) *cobra.Command {
+func GetCmdMinGasPrice(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "balance",
-		Short: "Query account token balance",
-		Args:  cobra.ExactArgs(1),
+		Use:   "min-gas-price",
+		Short: "Query the current min gas price value",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			key, err := sdk.AccAddressFromBech32(args[0])
+
+			route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryMinGasPrice)
+			res, _, err := cliCtx.QueryWithData(route, nil)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/balance/%s", queryRoute, key), nil)
-			if err != nil {
-				fmt.Printf("could not find private profile - %s \n", key)
-				return nil
+			var mgp sdk.DecCoin
+			if err := cdc.UnmarshalJSON(res, &mgp); err != nil {
+				return err
 			}
 
-			return cliCtx.PrintOutput(string(res))
+			return cliCtx.PrintOutput(mgp)
 		},
 	}
 }

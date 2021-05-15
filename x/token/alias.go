@@ -20,5 +20,6 @@ var (
 )
 
 type (
-	Keeper = keeper.Keeper
+	Keeper  = keeper.Keeper
+	Balance keeper.Balance
 )

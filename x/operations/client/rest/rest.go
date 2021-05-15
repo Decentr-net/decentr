@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
@@ -15,6 +15,7 @@ import (
 // RegisterRoutes registers community-related REST handlers to a router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/accounts/{account}/reset", storeName), resetAccountHandler(cliCtx)).Methods(http.MethodPost)
+	r.HandleFunc(fmt.Sprintf("/%s/min-gas-price", storeName), queryMinGasPriceHandler(cliCtx)).Methods(http.MethodGet)
 }
 
 type resetAccountReq struct {
