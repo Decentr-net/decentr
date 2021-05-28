@@ -85,9 +85,5 @@ func validateFixedGasParams(i interface{}) error {
 		return fmt.Errorf("reset account be positive: %d", v.ResetAccount)
 	}
 
-	if v.DistributeRewards <= 0 {
-		return fmt.Errorf("distribute rewards be positive: %d", v.DistributeRewards)
-	}
-
 	return nil
 }
