@@ -14,8 +14,8 @@ import (
 
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	// Group profile queries under a subcommand
-	profileQueryCmd := &cobra.Command{
+	// Group token queries under a subcommand
+	tokenQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -23,13 +23,13 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	profileQueryCmd.AddCommand(
+	tokenQueryCmd.AddCommand(
 		flags.GetCommands(
 			GetCmdBalance(queryRoute, cdc),
 		)...,
 	)
 
-	return profileQueryCmd
+	return tokenQueryCmd
 }
 
 // GetCmdBalance queries information about an account balance
