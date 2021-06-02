@@ -72,7 +72,7 @@ func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(100, 100)
+	return NewFixedGasParams(1000, 0)
 }
 
 func validateFixedGasParams(i interface{}) error {
