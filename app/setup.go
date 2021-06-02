@@ -15,8 +15,8 @@ func NewAnteHandler(ak auth.AccountKeeper, sk supply.Keeper,
 
 	return sdk.ChainAnteDecorators(
 		ante.NewSetUpContextDecorator(),
-		appante.NewFixedGasTxDecorator(pk, ck),
 		operations.NewMinGasPriceDecorator(pk),
+		appante.NewFixedGasTxDecorator(pk, ck),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
 		ante.NewValidateMemoDecorator(ak),

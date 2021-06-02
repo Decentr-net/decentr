@@ -14,6 +14,7 @@ func NewMinGasPriceDecorator(keeper keeper.Keeper) *MinGasPriceDecorator {
 }
 
 func (mgp MinGasPriceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	ctx = ctx.WithMinGasPrices(sdk.NewDecCoins(mgp.keeper.GetMinGasPrice(ctx)))
+	price := mgp.keeper.GetMinGasPrice(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
+	ctx = ctx.WithMinGasPrices(sdk.NewDecCoins(price))
 	return next(ctx, tx, simulate)
 }

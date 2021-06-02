@@ -50,14 +50,16 @@ func (fgm FixedGasTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			consumed := fixedGas(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
 
 			// prepare new context
-			ctx = ctx.WithGasMeter(NewFixedGasMeter(consumed, limit))
+			ctx := ctx.WithGasMeter(NewFixedGasMeter(consumed, limit))
 
 			if consumed == 0 {
 				// special case: consumed gas is zero, what could be for DistributeRewards trx
 				// set min gas price to zero, otherwise sdkerrors.ErrInsufficientFee occurs
-				return ctx.WithMinGasPrices(nil), nil
+				zeroDecCoins := sdk.NewDecCoins()
+				return next(ctx.WithMinGasPrices(zeroDecCoins), tx, simulate)
 			}
-			return ctx, nil
+
+			return next(ctx, tx, simulate)
 		}
 	}
 
