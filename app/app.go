@@ -318,7 +318,7 @@ func NewDecentrApp(
 		upgrade.NewAppModule(app.upgradeKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
-		operations.NewAppModule(app.operationsKeeper, app.tokensKeeper),
+		operations.NewAppModule(app.operationsKeeper, app.tokensKeeper, app.communityKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		community.NewAppModule(app.communityKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),

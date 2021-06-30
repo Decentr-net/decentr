@@ -3,6 +3,7 @@ package operations
 import (
 	"fmt"
 
+	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/token"
 	"github.com/Decentr-net/decentr/x/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,7 +11,7 @@ import (
 )
 
 // NewHandler creates an sdk.Handler for all the pdv type messages
-func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
+func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
@@ -18,7 +19,7 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper) sdk.Handler {
 		case MsgDistributeRewards:
 			return handleMsgDistributeRewards(ctx, keeper, tokensKeeper, msg)
 		case MsgResetAccount:
-			return handleMsgResetAccount(ctx, keeper, tokensKeeper, msg)
+			return handleMsgResetAccount(ctx, keeper, tokensKeeper, communityKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -42,7 +43,7 @@ func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper tok
 	return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Owner is not a Cerberus owner")
 }
 
-func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgResetAccount) (*sdk.Result, error) {
+func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper, msg MsgResetAccount) (*sdk.Result, error) {
 	for _, v := range keeper.GetSupervisors(ctx) {
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
@@ -56,6 +57,8 @@ func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Ke
 		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
 			fmt.Sprintf("%s can not delete %s", msg.Owner, msg.AccountOwner))
 	}
+
+	communityKeeper.ResetAccount(ctx, msg.Owner)
 
 	tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())
 	ctx.Logger().Info("account %s reset by themself", msg.Owner)

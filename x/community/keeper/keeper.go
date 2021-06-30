@@ -50,3 +50,31 @@ func (k *Keeper) GetFixedGasParams(ctx sdk.Context) types.FixedGasParams {
 func (k *Keeper) SetFixedGasParams(ctx sdk.Context, out types.FixedGasParams) {
 	k.paramSpace.Set(ctx, types.KeyFixedGas, &out)
 }
+
+func (k *Keeper) ResetAccount(ctx sdk.Context, owner sdk.AccAddress) {
+	k.IterateFollowers(ctx, func(who, whom sdk.Address) (stop bool) {
+		if who.Equals(owner) || whom.Equals(owner) {
+			k.Unfollow(ctx, who, whom)
+		}
+
+		return false
+	})
+
+	it := k.GetPostsIterator(ctx)
+	for ; it.Valid(); it.Next() {
+		if p := k.GetPostByKey(ctx, it.Key()); p.Owner.Equals(owner) {
+			k.DeletePost(ctx, owner, p.UUID)
+			p.Owner = sdk.AccAddress{}
+			k.CreatePost(ctx, p)
+		}
+	}
+	it.Close()
+
+	it = k.GetLikesIterator(ctx)
+	for ; it.Valid(); it.Next() {
+		if l := k.GetLikeByKey(ctx, it.Key()); l.Owner.Equals(owner) {
+			l.Weight = types.LikeWeightZero
+			k.SetLike(ctx, l)
+		}
+	}
+}
