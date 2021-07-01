@@ -3,6 +3,7 @@ package operations
 import (
 	"encoding/json"
 
+	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/operations/client/cli"
 	"github.com/Decentr-net/decentr/x/operations/client/rest"
 	"github.com/Decentr-net/decentr/x/token"
@@ -72,16 +73,18 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper       Keeper
-	tokensKeeper token.Keeper
+	keeper          Keeper
+	tokensKeeper    token.Keeper
+	communityKeeper community.Keeper
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper, tk token.Keeper) AppModule {
+func NewAppModule(k Keeper, tk token.Keeper, ck community.Keeper) AppModule {
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		tokensKeeper:   tk,
+		AppModuleBasic:  AppModuleBasic{},
+		keeper:          k,
+		tokensKeeper:    tk,
+		communityKeeper: ck,
 	}
 }
 
@@ -96,7 +99,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.tokensKeeper)
+	return NewHandler(am.keeper, am.tokensKeeper, am.communityKeeper)
 }
 func (am AppModule) QuerierRoute() string {
 	return QuerierRoute
