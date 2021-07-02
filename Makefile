@@ -17,12 +17,12 @@ BUILD_FLAGS := -ldflags '$(ldflags)'
 all: install
 
 build:
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/$(SERVER)
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/$(CLIENT)
+		go build -mod=vendor $(BUILD_FLAGS) -o build/$(SERVER) ./cmd/$(SERVER)
+		go build -mod=vendor $(BUILD_FLAGS) -o build/$(CLIENT) ./cmd/$(CLIENT)
 
 install: go.sum
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/$(SERVER)
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/$(CLIENT)
+		go install -mod=vendor $(BUILD_FLAGS) ./cmd/$(SERVER)
+		go install -mod=vendor $(BUILD_FLAGS) ./cmd/$(CLIENT)
 
 go.sum:
 		@echo "--> Ensure dependencies have not been modified"
