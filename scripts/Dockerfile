@@ -3,6 +3,8 @@ ARG GOLANG_VERSION=1.15.5
 
 FROM golang:${GOLANG_VERSION} AS build-env
 WORKDIR /go/src/github.com/Decentr-net/decentr/
+ENV GOOS linux
+ENV GOARCH amd64
 COPY . .
 RUN make build
 
