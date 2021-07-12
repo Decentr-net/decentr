@@ -16,13 +16,20 @@ BUILD_FLAGS := -ldflags '$(ldflags)'
 
 all: install
 
-build:
+build: go.sum
 		go build -mod=vendor $(BUILD_FLAGS) -o build/$(SERVER) ./cmd/$(SERVER)
 		go build -mod=vendor $(BUILD_FLAGS) -o build/$(CLIENT) ./cmd/$(CLIENT)
 
 install: go.sum
 		go install -mod=vendor $(BUILD_FLAGS) ./cmd/$(SERVER)
 		go install -mod=vendor $(BUILD_FLAGS) ./cmd/$(CLIENT)
+
+.PHONY: linux
+linux: export GOOS := linux
+linux: export GOARCH := amd64
+linux:
+		GOOS=linux GOARCH=amd64 go build -mod=vendor $(BUILD_FLAGS) -o build/$(SERVER)-$(GOOS)-$(GOARCH) ./cmd/$(SERVER)
+		GOOS=linux GOARCH=amd64 go build -mod=vendor $(BUILD_FLAGS) -o build/$(CLIENT)-$(GOOS)-$(GOARCH) ./cmd/$(CLIENT)
 
 go.sum:
 		@echo "--> Ensure dependencies have not been modified"
