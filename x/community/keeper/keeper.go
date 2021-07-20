@@ -64,17 +64,16 @@ func (k *Keeper) ResetAccount(ctx sdk.Context, owner sdk.AccAddress) {
 	for ; it.Valid(); it.Next() {
 		if p := k.GetPostByKey(ctx, it.Key()); p.Owner.Equals(owner) {
 			k.DeletePost(ctx, owner, p.UUID)
-			p.Owner = sdk.AccAddress{}
-			k.CreatePost(ctx, p)
 		}
 	}
 	it.Close()
 
 	it = k.GetLikesIterator(ctx)
 	for ; it.Valid(); it.Next() {
-		if l := k.GetLikeByKey(ctx, it.Key()); l.Owner.Equals(owner) {
-			l.Weight = types.LikeWeightZero
-			k.SetLike(ctx, l)
+		l := k.GetLikeByKey(ctx, it.Key())
+
+		if l.PostOwner.Equals(owner) || l.Owner.Equals(owner) {
+			k.DeleteLike(ctx, l)
 		}
 	}
 }
