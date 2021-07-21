@@ -26,7 +26,19 @@ func (k Keeper) SetLike(ctx sdk.Context, l types.Like) {
 
 	k.tokens.AddTokens(ctx, l.PostOwner, sdk.NewInt(int64(l.Weight)-int64(old.Weight)))
 
-	likesStore.Set(key, k.cdc.MustMarshalBinaryBare(l))
+	if l.Weight == 0 {
+		likesStore.Delete(key)
+	} else {
+		likesStore.Set(key, k.cdc.MustMarshalBinaryBare(l))
+	}
+}
+
+func (k Keeper) DeleteLike(ctx sdk.Context, l types.Like) {
+	likesStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.LikePrefix)
+
+	key := getLikeKeeperKey(l)
+
+	likesStore.Delete(key)
 }
 
 // GetLikeByKey returns entire like by keeper's key.
