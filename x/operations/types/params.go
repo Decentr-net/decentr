@@ -60,7 +60,7 @@ func validateSupervisors(i interface{}) error {
 }
 
 type FixedGasParams struct {
-	ResetAccount      sdk.Gas `json:"delete_account" yaml:"delete_account"`
+	ResetAccount      sdk.Gas `json:"reset_account" yaml:"reset_account"`
 	DistributeRewards sdk.Gas `json:"distribute_rewards" yaml:"distribute_rewards"`
 }
 
@@ -72,17 +72,13 @@ func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(1000, 0)
+	return NewFixedGasParams(0, 0)
 }
 
 func validateFixedGasParams(i interface{}) error {
-	v, ok := i.(FixedGasParams)
+	_, ok := i.(FixedGasParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.ResetAccount <= 0 {
-		return fmt.Errorf("reset account be positive: %d", v.ResetAccount)
 	}
 
 	return nil

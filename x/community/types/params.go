@@ -55,7 +55,7 @@ type FixedGasParams struct {
 func DefaultFixedGasParams() FixedGasParams {
 	return FixedGasParams{
 		CreatePost: 1000,
-		DeletePost: 1000,
+		DeletePost: 100,
 		SetLike:    100,
 		Follow:     100,
 		Unfollow:   100,
@@ -63,29 +63,9 @@ func DefaultFixedGasParams() FixedGasParams {
 }
 
 func validateFixedGasParams(i interface{}) error {
-	v, ok := i.(FixedGasParams)
+	_, ok := i.(FixedGasParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.CreatePost <= 0 {
-		return fmt.Errorf("create post must be positive: %d", v.CreatePost)
-	}
-
-	if v.DeletePost <= 0 {
-		return fmt.Errorf("delete post must be positive: %d", v.DeletePost)
-	}
-
-	if v.SetLike <= 0 {
-		return fmt.Errorf("set like must be positive: %d", v.SetLike)
-	}
-
-	if v.Follow <= 0 {
-		return fmt.Errorf("follow must be positive: %d", v.Follow)
-	}
-
-	if v.Unfollow <= 0 {
-		return fmt.Errorf("unfollow must be positive: %d", v.Unfollow)
 	}
 
 	return nil
