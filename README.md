@@ -1,6 +1,6 @@
 # decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![network version](https://img.shields.io/badge/network%20version-v1.2.5-blue.svg)](https://shields.io/) 
+[![network version](https://img.shields.io/badge/network%20version-v1.3.8-blue.svg)](https://shields.io/) 
 ![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
 
 Decentr blockchain
@@ -26,7 +26,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
-git clone -b v1.2.5 https://github.com/Decentr-net/decentr
+git clone -b v1.3.8 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
@@ -52,7 +52,7 @@ Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.2.5/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.3.8/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
