@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -11,14 +12,17 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	authvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+
+	"github.com/Decentr-net/decentr/x/community"
+	"github.com/Decentr-net/decentr/x/operations"
 )
 
 const (
@@ -148,6 +152,108 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 	cmd.Flags().String(flagVestingAmt, "", "amount of coins for vesting accounts")
 	cmd.Flags().Uint64(flagVestingStart, 0, "schedule start time (unix epoch) for vesting accounts")
 	cmd.Flags().Uint64(flagVestingEnd, 0, "schedule end time (unix epoch) for vesting accounts")
+
+	return cmd
+}
+
+// AddGenesisCommunityModeratorsCmd returns add-genesis-community-moderators cobra Command.
+func AddGenesisCommunityModeratorsCmd(
+	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
+) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "add-genesis-community-moderators [moderator][,[moderator]]",
+		Short: "Add a genesis community moderators to genesis.json",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
+
+			moderators := strings.Split(args[0], ",")
+			for _, moderator := range moderators {
+				if _, err := sdk.AccAddressFromBech32(moderator); err != nil {
+					return fmt.Errorf("failed to parse moderators: %w", err)
+				}
+			}
+
+			genFile := config.GenesisFile()
+			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
+			communityGenState := community.GetGenesisStateFromAppState(cdc, appState)
+			communityGenState.Params.Moderators = moderators
+
+			communityGenStateBz, err := cdc.MarshalJSON(communityGenState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal community genesis state: %w", err)
+			}
+
+			appState[community.ModuleName] = communityGenStateBz
+
+			appStateJSON, err := cdc.MarshalJSON(appState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal application genesis state: %w", err)
+			}
+
+			genDoc.AppState = appStateJSON
+			return genutil.ExportGenesisFile(genDoc, genFile)
+		},
+	}
+
+	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
+
+	return cmd
+}
+
+// AddGenesisSupervisorsCmd returns add-genesis-supervisors cobra Command.
+func AddGenesisSupervisorsCmd(
+	ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string,
+) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "add-genesis-supervisors [supervisor][,[supervisor]]",
+		Short: "Add supervisors to genesis.json",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
+
+			supervisors := strings.Split(args[0], ",")
+			for _, supervisor := range supervisors {
+				if _, err := sdk.AccAddressFromBech32(supervisor); err != nil {
+					return fmt.Errorf("failed to parse supervisors: %w", err)
+				}
+			}
+
+			genFile := config.GenesisFile()
+			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
+			}
+
+			pdvGenState := operations.GetGenesisStateFromAppState(cdc, appState)
+			pdvGenState.Params.Supervisors = supervisors
+
+			communityGenStateBz, err := cdc.MarshalJSON(pdvGenState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal pdv genesis state: %w", err)
+			}
+
+			appState[operations.ModuleName] = communityGenStateBz
+
+			appStateJSON, err := cdc.MarshalJSON(appState)
+			if err != nil {
+				return fmt.Errorf("failed to marshal application genesis state: %w", err)
+			}
+
+			genDoc.AppState = appStateJSON
+			return genutil.ExportGenesisFile(genDoc, genFile)
+		},
+	}
+
+	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 
 	return cmd
 }

@@ -28,7 +28,7 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper commun
 }
 
 func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgDistributeRewards) (*sdk.Result, error) {
-	owners := keeper.GetSupervisors(ctx)
+	owners := keeper.GetParams(ctx).Supervisors
 
 	for _, v := range owners {
 		addr, _ := sdk.AccAddressFromBech32(v)
@@ -44,7 +44,7 @@ func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper tok
 }
 
 func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper, msg MsgResetAccount) (*sdk.Result, error) {
-	for _, v := range keeper.GetSupervisors(ctx) {
+	for _, v := range keeper.GetParams(ctx).Supervisors {
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
 			tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())

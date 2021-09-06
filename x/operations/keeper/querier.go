@@ -22,7 +22,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 
 // nolint: unparam
 func queryMinGasPrice(ctx sdk.Context, _ []string, _ abci.RequestQuery, keeper Keeper) ([]byte, error) {
-	mgp := keeper.GetMinGasPrice(ctx)
+	mgp := keeper.GetParams(ctx).MinGasPrice
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, mgp)
 	if err != nil {

@@ -45,7 +45,7 @@ func handleMsgCreatePost(ctx sdk.Context, keeper Keeper, msg MsgCreatePost) (*sd
 }
 
 func handleMsgDeletePost(ctx sdk.Context, keeper Keeper, msg MsgDeletePost) (*sdk.Result, error) {
-	moderators := keeper.GetModerators(ctx)
+	moderators := keeper.GetParams(ctx).Moderators
 	var isModerator bool
 	for _, moderator := range moderators {
 		addr, _ := sdk.AccAddressFromBech32(moderator)

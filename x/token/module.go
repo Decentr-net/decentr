@@ -98,7 +98,11 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 	return NewQuerier(am.keeper)
 }
 
-func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, b abci.RequestBeginBlock) {
+	if b.Header.Height%am.keeper.GetParams(ctx).RewardsBlockInterval == 0 {
+		am.keeper.DistributeRewards(ctx)
+	}
+}
 
 func (am AppModule) EndBlock(sdk.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}

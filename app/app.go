@@ -200,6 +200,7 @@ func NewDecentrApp(
 	app.subspaces[gov.ModuleName] = app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable())
 	app.subspaces[operations.ModuleName] = app.paramsKeeper.Subspace(operations.DefaultParamspace)
 	app.subspaces[community.ModuleName] = app.paramsKeeper.Subspace(community.DefaultParamspace)
+	app.subspaces[token.ModuleName] = app.paramsKeeper.Subspace(token.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -290,7 +291,9 @@ func NewDecentrApp(
 	app.tokensKeeper = token.NewKeeper(
 		app.cdc,
 		keys[token.StoreKey],
+		app.subspaces[token.ModuleName],
 		app.accountKeeper,
+		app.distrKeeper,
 	)
 
 	app.operationsKeeper = operations.NewKeeper(
@@ -328,7 +331,14 @@ func NewDecentrApp(
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 
-	app.mm.SetOrderBeginBlockers(upgrade.ModuleName, mint.ModuleName, distr.ModuleName, slashing.ModuleName, gov.ModuleName)
+	app.mm.SetOrderBeginBlockers(
+		upgrade.ModuleName,
+		mint.ModuleName,
+		distr.ModuleName,
+		slashing.ModuleName,
+		gov.ModuleName,
+		token.ModuleName,
+	)
 	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
@@ -380,13 +390,13 @@ func NewDecentrApp(
 type GenesisState map[string]json.RawMessage
 
 // NewDefaultGenesisState generates the default state for the application.
-func NewDefaultGenesisState() GenesisState {
+func NewDefaultGenesisState() simapp.GenesisState {
 	return ModuleBasics.DefaultGenesis()
 }
 
 // InitChainer application update at chain initialization
 func (app *decentrApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
-	var genesisState simapp.GenesisState
+	genesisState := NewDefaultGenesisState()
 
 	app.cdc.MustUnmarshalJSON(req.AppStateBytes, &genesisState)
 
