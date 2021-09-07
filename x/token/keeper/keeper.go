@@ -53,6 +53,10 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // AddTokens adds token to the given owner
 func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
+	if k.IsBanned(ctx, owner) {
+		return
+	}
+
 	var balance sdk.Int
 
 	if k.IsInitialBalanceSet(ctx, owner) {
@@ -224,4 +228,22 @@ func (k *Keeper) GetRewardsDistributionHistory(ctx sdk.Context, address sdk.AccA
 	}
 
 	return nil
+}
+
+// SetBan bans/unbans address
+func (k Keeper) SetBan(ctx sdk.Context, address sdk.AccAddress, ban bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.BanListPrefix)
+	if ban {
+		k.IncBalanceDelta(ctx, address, k.GetBalanceDelta(ctx, address).MulRaw(-1))
+		store.Set(address, []byte{0x00})
+	} else {
+		store.Delete(address)
+	}
+}
+
+// IsBanned returns is address banned
+func (k Keeper) IsBanned(ctx sdk.Context, address sdk.AccAddress) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.BanListPrefix)
+
+	return store.Has(address)
 }

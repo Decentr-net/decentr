@@ -8,6 +8,7 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgDistributeRewards{}, "operations/DistributeRewards", nil)
 	cdc.RegisterConcrete(MsgResetAccount{}, "operations/MsgResetAccount", nil)
+	cdc.RegisterConcrete(MsgBanAccount{}, "operations/MsgBanAccount", nil)
 }
 
 // ModuleCdc is the codec for the module

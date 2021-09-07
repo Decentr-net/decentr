@@ -25,6 +25,7 @@ var (
 	StorePrefix   = []byte{0x00} // prefix for keys that store balance
 	DeltaPrefix   = []byte{0x01} // prefix for keys that store pdv delta between accruals
 	RewardsPrefix = []byte{0x02} // prefix for keys for rewards history
+	BanListPrefix = []byte{0x03} // prefix for keys that store bans
 )
 
 var (
