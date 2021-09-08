@@ -119,7 +119,7 @@ func getPost(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keepe
 }
 
 func queryModerators(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	moderators := keeper.GetModerators(ctx)
+	moderators := keeper.GetParams(ctx).Moderators
 	res, err := codec.MarshalJSONIndent(keeper.cdc, moderators)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())

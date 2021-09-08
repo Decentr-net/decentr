@@ -13,25 +13,25 @@ type FixedGasTxDecorator struct {
 func NewFixedGasTxDecorator(pk operations.Keeper, ck community.Keeper) FixedGasTxDecorator {
 	config := map[string]func(ctx sdk.Context) sdk.Gas{
 		operations.MsgResetAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return pk.GetFixedGasParams(ctx).ResetAccount
+			return pk.GetParams(ctx).FixedGas.ResetAccount
 		},
 		operations.MsgDistributeRewards{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return pk.GetFixedGasParams(ctx).DistributeRewards
+			return pk.GetParams(ctx).FixedGas.DistributeRewards
 		},
 		community.MsgCreatePost{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).CreatePost
+			return ck.GetParams(ctx).FixedGas.CreatePost
 		},
 		community.MsgDeletePost{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).DeletePost
+			return ck.GetParams(ctx).FixedGas.DeletePost
 		},
 		community.MsgSetLike{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).SetLike
+			return ck.GetParams(ctx).FixedGas.SetLike
 		},
 		community.MsgFollow{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).Follow
+			return ck.GetParams(ctx).FixedGas.Follow
 		},
 		community.MsgUnfollow{}.Type(): func(ctx sdk.Context) sdk.Gas {
-			return ck.GetFixedGasParams(ctx).Unfollow
+			return ck.GetParams(ctx).FixedGas.Unfollow
 		},
 	}
 

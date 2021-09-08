@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
 const (
@@ -22,18 +23,39 @@ var (
 	KeyFixedGas   = []byte("FixedGas")
 )
 
-// ParamKeyTable type declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable(
-		params.NewParamSetPair(KeyModerators, &DefaultModerators, validateModerators),
-		params.NewParamSetPair(KeyFixedGas, FixedGasParams{}, validateFixedGasParams),
-	)
+type Params struct {
+	Moderators []string       `json:"moderators" yaml:"moderators"`
+	FixedGas   FixedGasParams `json:"fixed_gas" yaml:"fixed_gas"`
+}
+
+// ParamKeyTable for community module
+func ParamKeyTable() subspace.KeyTable {
+	return subspace.NewKeyTable().RegisterParamSet(&Params{})
+}
+
+func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
+	return subspace.ParamSetPairs{
+		params.NewParamSetPair(KeyModerators, &p.Moderators, validateModerators),
+		params.NewParamSetPair(KeyFixedGas, &p.FixedGas, validateFixedGasParams),
+	}
+}
+
+// DefaultParams returns a default set of parameters.
+func DefaultParams() Params {
+	return Params{
+		Moderators: DefaultModerators,
+		FixedGas:   DefaultFixedGasParams(),
+	}
 }
 
 func validateModerators(i interface{}) error {
 	moderators, ok := i.([]string)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if len(moderators) == 0 {
+		return fmt.Errorf("can not be empty")
 	}
 
 	for _, moderator := range moderators {
@@ -66,6 +88,18 @@ func validateFixedGasParams(i interface{}) error {
 	_, ok := i.(FixedGasParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	return nil
+}
+
+func (p Params) Validate() error {
+	if err := validateModerators(p.Moderators); err != nil {
+		return fmt.Errorf("invalid moderators: %w", err)
+	}
+
+	if err := validateFixedGasParams(p.FixedGas); err != nil {
+		return fmt.Errorf("invalid fixed_gas: %w", err)
 	}
 
 	return nil

@@ -14,11 +14,10 @@ import (
 )
 
 type GenesisState struct {
-	Posts          []Post              `json:"posts"`
-	Likes          []Like              `json:"likes"`
-	Moderators     []string            `json:"moderators"`
-	FixedGasParams FixedGasParams      `json:"fixed_gas"`
-	Followers      map[string][]string `json:"followers"`
+	Params    types.Params        `json:"params"`
+	Posts     []Post              `json:"posts"`
+	Likes     []Like              `json:"likes"`
+	Followers map[string][]string `json:"followers"`
 }
 
 // GetGenesisStateFromAppState returns community GenesisState given raw application
@@ -33,6 +32,10 @@ func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawM
 }
 
 func ValidateGenesis(data GenesisState) error {
+	if err := data.Params.Validate(); err != nil {
+		return err
+	}
+
 	for _, record := range data.Posts {
 		if record.Owner == nil {
 			return fmt.Errorf("invalid PostRecord: UUID: %s. Error: Missing Owner", record.UUID)
@@ -69,10 +72,6 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
-	if len(data.Moderators) == 0 {
-		return fmt.Errorf("at least one moderator should be specified")
-	}
-
 	for who, whom := range data.Followers {
 		if _, err := sdk.AccAddressFromBech32(who); err != nil {
 			return err
@@ -89,15 +88,16 @@ func ValidateGenesis(data GenesisState) error {
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Posts:          []Post{},
-		Likes:          []Like{},
-		Moderators:     types.DefaultModerators,
-		Followers:      types.DefaultFollowers,
-		FixedGasParams: types.DefaultFixedGasParams(),
+		Params:    types.DefaultParams(),
+		Posts:     []Post{},
+		Likes:     []Like{},
+		Followers: types.DefaultFollowers,
 	}
 }
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
+	keeper.SetParams(ctx, data.Params)
+
 	for _, post := range data.Posts {
 		keeper.CreatePost(ctx, post)
 	}
@@ -113,9 +113,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 			keeper.Follow(ctx, whoAddr, whomAddr)
 		}
 	}
-
-	keeper.SetModerators(ctx, data.Moderators)
-	keeper.SetFixedGasParams(ctx, data.FixedGasParams)
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
@@ -140,10 +137,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	})
 
 	return GenesisState{
-		Posts:          posts,
-		Likes:          likes,
-		Followers:      followers,
-		Moderators:     k.GetModerators(ctx),
-		FixedGasParams: k.GetFixedGasParams(ctx),
+		Params:    k.GetParams(ctx),
+		Posts:     posts,
+		Likes:     likes,
+		Followers: followers,
 	}
 }
