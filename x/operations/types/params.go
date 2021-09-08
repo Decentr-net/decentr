@@ -85,18 +85,20 @@ func validateSupervisors(i interface{}) error {
 
 type FixedGasParams struct {
 	ResetAccount      sdk.Gas `json:"reset_account" yaml:"reset_account"`
+	BanAccount        sdk.Gas `json:"ban_account" yaml:"ban_account"`
 	DistributeRewards sdk.Gas `json:"distribute_rewards" yaml:"distribute_rewards"`
 }
 
-func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
+func NewFixedGasParams(resetAccount, distributeReward, banAccount sdk.Gas) FixedGasParams {
 	return FixedGasParams{
 		ResetAccount:      resetAccount,
 		DistributeRewards: distributeReward,
+		BanAccount:        banAccount,
 	}
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(0, 0)
+	return NewFixedGasParams(0, 0, 0)
 }
 
 func validateFixedGasParams(i interface{}) error {

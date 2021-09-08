@@ -17,6 +17,7 @@ const (
 type Balance struct {
 	Balance      sdk.Dec `json:"balance"`
 	BalanceDelta sdk.Dec `json:"balanceDelta"`
+	IsBanned     bool    `json:"isBanned,omitempty"`
 }
 
 type Pool struct {
@@ -51,6 +52,7 @@ func queryBalance(ctx sdk.Context, path []string, _ abci.RequestQuery, keeper Ke
 	bz, err := keeper.cdc.MarshalBinaryBare(Balance{
 		Balance:      keeper.GetBalance(ctx, owner).ToDec().QuoInt64(types.Denominator),
 		BalanceDelta: keeper.GetBalanceDelta(ctx, owner).ToDec().QuoInt64(types.Denominator),
+		IsBanned:     keeper.IsBanned(ctx, owner),
 	})
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())

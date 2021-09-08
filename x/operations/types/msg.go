@@ -106,3 +106,44 @@ func (msg MsgResetAccount) ValidateBasic() error {
 	}
 	return nil
 }
+
+type MsgBanAccount struct {
+	Owner   sdk.AccAddress `json:"owner"`
+	Address sdk.AccAddress `json:"address"`
+	Ban     bool           `json:"ban"`
+}
+
+func NewMsgBanAccount(owner, address sdk.AccAddress, ban bool) MsgBanAccount {
+	return MsgBanAccount{
+		Owner:   owner,
+		Address: address,
+		Ban:     ban,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgBanAccount) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgBanAccount) Type() string { return "ban_account" }
+
+// GetSignBytes encodes the message for signing
+func (msg MsgBanAccount) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgBanAccount) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgBanAccount) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+	}
+	if msg.Address.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "AccountOwner is empty")
+	}
+	return nil
+}

@@ -3,6 +3,8 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"strconv"
+
 	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -12,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
-	"strconv"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -29,6 +30,8 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	operationsTxCmd.AddCommand(flags.PostCommands(
 		GetCmdResetAccount(cdc),
 		GetCmdDistributeReward(cdc),
+		GetCmdBanAccount(cdc),
+		GetCmdUnBanAccount(cdc),
 	)...)
 
 	return operationsTxCmd
@@ -36,10 +39,10 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 
 func GetCmdDistributeReward(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "distribute-reward <receiver> <id> <reward>",
-		Short: "distribute-reward",
+		Use:     "distribute-reward <receiver> <id> <reward>",
+		Short:   "distribute-reward",
 		Aliases: []string{"dr"},
-		Args:  cobra.ExactArgs(3),
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -91,6 +94,58 @@ func GetCmdResetAccount(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgResetAccount(cliCtx.GetFromAddress(), accountOwner)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdBanAccount is the CLI command for sending a BanAccount transaction
+func GetCmdBanAccount(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "ban-account <address>",
+		Short: "ban account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			address, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse address: %w", err)
+			}
+
+			msg := types.NewMsgBanAccount(cliCtx.GetFromAddress(), address, true)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdUnBanAccount is the CLI command for sending a BanAccount transaction
+func GetCmdUnBanAccount(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "unban-account <address>",
+		Short: "unban account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			address, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse address: %w", err)
+			}
+
+			msg := types.NewMsgBanAccount(cliCtx.GetFromAddress(), address, false)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

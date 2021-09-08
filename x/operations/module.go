@@ -106,7 +106,7 @@ func (am AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
+	return NewQuerier(am.keeper, am.tokensKeeper)
 }
 
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}

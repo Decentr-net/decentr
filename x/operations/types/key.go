@@ -12,6 +12,4 @@ const (
 
 	// QuerierRoute to be used for querierer msgs
 	QuerierRoute = ModuleName
-
-	QueryMinGasPrice = "min-gas-price"
 )

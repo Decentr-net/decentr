@@ -3,11 +3,12 @@ package operations
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/token"
 	"github.com/Decentr-net/decentr/x/utils"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewHandler creates an sdk.Handler for all the pdv type messages
@@ -20,6 +21,8 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper commun
 			return handleMsgDistributeRewards(ctx, keeper, tokensKeeper, msg)
 		case MsgResetAccount:
 			return handleMsgResetAccount(ctx, keeper, tokensKeeper, communityKeeper, msg)
+		case MsgBanAccount:
+			return handleMsgBanAccount(ctx, keeper, tokensKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -48,7 +51,7 @@ func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Ke
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
 			tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())
-			ctx.Logger().Info("account %s reset by %s", msg.Owner, addr)
+			ctx.Logger().Info(fmt.Sprintf("account %s reset by %s", msg.Owner, addr))
 			return &sdk.Result{}, nil
 		}
 	}
@@ -61,6 +64,32 @@ func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Ke
 	communityKeeper.ResetAccount(ctx, msg.Owner)
 
 	tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())
-	ctx.Logger().Info("account %s reset by themself", msg.Owner)
+	ctx.Logger().Info(fmt.Sprintf("account %s reset by themself", msg.Owner))
+	return &sdk.Result{}, nil
+}
+
+func handleMsgBanAccount(ctx sdk.Context, keeper Keeper, tokenKeeper token.Keeper, msg MsgBanAccount) (*sdk.Result, error) {
+	found := false
+	for _, v := range keeper.GetParams(ctx).Supervisors {
+		addr, _ := sdk.AccAddressFromBech32(v)
+		if msg.Owner.Equals(addr) && !addr.Empty() {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
+			fmt.Sprintf("%s can not ban %s", msg.Owner, msg.Address))
+	}
+
+	tokenKeeper.SetBan(ctx, msg.Address, msg.Ban)
+
+	if msg.Ban {
+		ctx.Logger().Info(fmt.Sprintf("account %s banned by %s", msg.Address, msg.Owner))
+	} else {
+		ctx.Logger().Info(fmt.Sprintf("account %s unbanned by %s", msg.Address, msg.Owner))
+	}
+
 	return &sdk.Result{}, nil
 }

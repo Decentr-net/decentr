@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/Decentr-net/decentr/x/operations/keeper"
 	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -26,6 +27,7 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	profileQueryCmd.AddCommand(
 		flags.GetCommands(
 			GetCmdMinGasPrice(cdc),
+			GetCmdIsAccountBanned(cdc),
 		)...,
 	)
 
@@ -40,18 +42,43 @@ func GetCmdMinGasPrice(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryMinGasPrice)
-			res, _, err := cliCtx.QueryWithData(route, nil)
+			route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, keeper.QueryMinGasPrice)
+			bz, _, err := cliCtx.QueryWithData(route, nil)
 			if err != nil {
 				return err
 			}
 
 			var mgp sdk.DecCoin
-			if err := cdc.UnmarshalJSON(res, &mgp); err != nil {
+			cdc.MustUnmarshalBinaryBare(bz, &mgp)
+
+			return cliCtx.PrintOutput(mgp)
+		},
+	}
+}
+
+func GetCmdIsAccountBanned(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "is-account-banned <address>",
+		Short: "Query if the account banned",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			address, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse address: %w", err)
+			}
+
+			route := fmt.Sprintf("custom/%s/%s/%s", types.QuerierRoute, keeper.QueryIsAccountBanned, address)
+			bz, _, err := cliCtx.QueryWithData(route, nil)
+			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(mgp)
+			var ban bool
+			cdc.MustUnmarshalBinaryBare(bz, &ban)
+
+			return cliCtx.PrintOutput(ban)
 		},
 	}
 }

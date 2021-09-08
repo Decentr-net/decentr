@@ -288,18 +288,18 @@ func NewDecentrApp(
 		app.stakingKeeper,
 		govRouter)
 
+	app.operationsKeeper = operations.NewKeeper(
+		app.cdc,
+		keys[operations.StoreKey],
+		app.subspaces[operations.ModuleName],
+	)
+
 	app.tokensKeeper = token.NewKeeper(
 		app.cdc,
 		keys[token.StoreKey],
 		app.subspaces[token.ModuleName],
 		app.accountKeeper,
 		app.distrKeeper,
-	)
-
-	app.operationsKeeper = operations.NewKeeper(
-		app.cdc,
-		keys[operations.StoreKey],
-		app.subspaces[operations.ModuleName],
 	)
 
 	app.communityKeeper = community.NewKeeper(
