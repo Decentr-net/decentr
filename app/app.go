@@ -104,6 +104,7 @@ var (
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
+		operations.ModuleName:     {supply.Minter},
 	}
 )
 
@@ -292,6 +293,7 @@ func NewDecentrApp(
 		app.cdc,
 		keys[operations.StoreKey],
 		app.subspaces[operations.ModuleName],
+		app.supplyKeeper,
 	)
 
 	app.tokensKeeper = token.NewKeeper(
@@ -321,7 +323,7 @@ func NewDecentrApp(
 		upgrade.NewAppModule(app.upgradeKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
-		operations.NewAppModule(app.operationsKeeper, app.tokensKeeper, app.communityKeeper),
+		operations.NewAppModule(app.operationsKeeper, app.tokensKeeper, app.communityKeeper, app.supplyKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		community.NewAppModule(app.communityKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),

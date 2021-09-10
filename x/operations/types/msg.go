@@ -147,3 +147,47 @@ func (msg MsgBanAccount) ValidateBasic() error {
 	}
 	return nil
 }
+
+type MsgMint struct {
+	Owner    sdk.AccAddress `json:"owner"`
+	Receiver sdk.AccAddress `json:"receiver"`
+	Coin     sdk.Coin       `json:"coin"`
+}
+
+func NewMsgMint(owner, receiver sdk.AccAddress, coin sdk.Coin) MsgMint {
+	return MsgMint{
+		Owner:    owner,
+		Receiver: receiver,
+		Coin:     coin,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgMint) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgMint) Type() string { return "mint" }
+
+// GetSignBytes encodes the message for signing
+func (msg MsgMint) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgMint) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgMint) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+	}
+	if msg.Receiver.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Receiver is empty")
+	}
+	if msg.Coin.IsZero() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Coin is zero")
+	}
+	return nil
+}
