@@ -8,7 +8,6 @@ import (
 
 	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/token"
-	"github.com/Decentr-net/decentr/x/utils"
 )
 
 // NewHandler creates an sdk.Handler for all the pdv type messages
@@ -47,11 +46,16 @@ func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper tok
 }
 
 func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper, msg MsgResetAccount) (*sdk.Result, error) {
+	reset := func(resetBy sdk.AccAddress) {
+		tokensKeeper.ResetAccount(ctx, msg.Owner)
+		communityKeeper.ResetAccount(ctx, msg.Owner)
+		ctx.Logger().Info(fmt.Sprintf("account %s reset by %s", msg.Owner, resetBy))
+	}
+
 	for _, v := range keeper.GetParams(ctx).Supervisors {
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
-			tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())
-			ctx.Logger().Info(fmt.Sprintf("account %s reset by %s", msg.Owner, addr))
+			reset(addr)
 			return &sdk.Result{}, nil
 		}
 	}
@@ -61,10 +65,7 @@ func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Ke
 			fmt.Sprintf("%s can not delete %s", msg.Owner, msg.AccountOwner))
 	}
 
-	communityKeeper.ResetAccount(ctx, msg.Owner)
-
-	tokensKeeper.SetBalance(ctx, msg.Owner, utils.InitialTokenBalance())
-	ctx.Logger().Info(fmt.Sprintf("account %s reset by themself", msg.Owner))
+	reset(msg.AccountOwner)
 	return &sdk.Result{}, nil
 }
 

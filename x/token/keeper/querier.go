@@ -50,8 +50,8 @@ func queryBalance(ctx sdk.Context, path []string, _ abci.RequestQuery, keeper Ke
 	}
 
 	bz, err := keeper.cdc.MarshalBinaryBare(Balance{
-		Balance:      keeper.GetBalance(ctx, owner).ToDec().QuoInt64(types.Denominator),
-		BalanceDelta: keeper.GetBalanceDelta(ctx, owner).ToDec().QuoInt64(types.Denominator),
+		Balance:      keeper.GetBalance(ctx, owner).ToDec().QuoInt(types.Denominator),
+		BalanceDelta: keeper.GetBalanceDelta(ctx, owner).ToDec().QuoInt(types.Denominator),
 		IsBanned:     keeper.IsBanned(ctx, owner),
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func queryPool(ctx sdk.Context, _ []string, _ abci.RequestQuery, keeper Keeper) 
 
 	bz, err := keeper.cdc.MarshalBinaryBare(Pool{
 		Size:                   keeper.distributionKeeper.GetFeePoolCommunityCoins(ctx),
-		TotalDelta:             keeper.GetBalanceDelta(ctx, types.AccumulatedDelta).ToDec().QuoInt64(types.Denominator),
+		TotalDelta:             keeper.GetBalanceDelta(ctx, types.AccumulatedDelta).ToDec().QuoInt(types.Denominator),
 		NextDistributionHeight: interval * (ctx.BlockHeight()/interval + 1),
 	})
 	if err != nil {

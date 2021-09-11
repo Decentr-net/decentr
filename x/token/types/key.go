@@ -3,10 +3,6 @@ package types
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
 const (
-	Denominator int64 = 1e6
-)
-
-const (
 	// ModuleName is the name of the module
 	ModuleName = "token"
 
@@ -19,6 +15,8 @@ const (
 	// QuerierRoute to be used for querierer msgs
 	QuerierRoute = ModuleName
 )
+
+var Denominator = sdk.NewInt(1e6)
 
 // Key prefixes
 var (

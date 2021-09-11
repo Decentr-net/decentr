@@ -3,7 +3,6 @@ package keeper
 import (
 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	"github.com/gofrs/uuid"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -65,11 +64,6 @@ func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 		limit = v
 	}
 
-	if from == uuid.Nil {
-		// use max range
-
-	}
-
 	owner, err := sdk.AccAddressFromBech32(path[2])
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
@@ -89,12 +83,7 @@ func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 		i++
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, out)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return res, nil
+	return keeper.cdc.MustMarshalBinaryBare(out), nil
 }
 
 func getPost(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
@@ -110,21 +99,11 @@ func getPost(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keepe
 
 	p := keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id))
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, p)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return res, nil
+	return keeper.cdc.MustMarshalBinaryBare(p), nil
 }
 
 func queryModerators(ctx sdk.Context, keeper Keeper) ([]byte, error) {
-	moderators := keeper.GetParams(ctx).Moderators
-	res, err := codec.MarshalJSONIndent(keeper.cdc, moderators)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-	return res, nil
+	return keeper.cdc.MustMarshalBinaryBare(keeper.GetParams(ctx).Moderators), nil
 }
 
 func queryFollowees(ctx sdk.Context, path []string, _ abci.RequestQuery, keeper Keeper) ([]byte, error) {
@@ -133,16 +112,5 @@ func queryFollowees(ctx sdk.Context, path []string, _ abci.RequestQuery, keeper 
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
 	}
 
-	followees := keeper.GetFollowees(ctx, owner)
-	out := make([]string, len(followees))
-	for idx, followee := range followees {
-		out[idx] = followee.String()
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, out)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
-	}
-
-	return res, nil
+	return keeper.cdc.MustMarshalBinaryBare(keeper.GetFollowees(ctx, owner)), nil
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
 	"github.com/Decentr-net/decentr/x/community/types"
@@ -44,13 +45,15 @@ func GetCmdPost(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", queryRoute, args[0], args[1]), nil)
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", queryRoute, args[0], args[1]), nil)
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(string(res))
-			return nil
+			var out types.Post
+			cdc.MustUnmarshalBinaryBare(bz, &out)
+
+			return cliCtx.PrintOutput(out)
 		},
 	}
 }
@@ -64,13 +67,15 @@ func GetCmdFollowee(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", queryRoute, args[0]), nil)
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", queryRoute, args[0]), nil)
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(string(res))
-			return nil
+			var out []sdk.Address
+			cdc.MustUnmarshalBinaryBare(bz, &out)
+
+			return cliCtx.PrintOutput(out)
 		},
 	}
 }
@@ -100,13 +105,15 @@ func GetCmdUsersPosts(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/user/%s/%s/%d", queryRoute, args[0], from, limit), nil)
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/user/%s/%s/%d", queryRoute, args[0], from, limit), nil)
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(string(res))
-			return nil
+			var out []types.Post
+			cdc.MustUnmarshalBinaryBare(bz, &out)
+
+			return cliCtx.PrintOutput(out)
 		},
 	}
 
@@ -125,12 +132,15 @@ func GetCmdModerators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", queryRoute), nil)
+			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", queryRoute), nil)
 			if err != nil {
-				fmt.Printf("failed to get moderators - %s \n", err.Error())
-				return nil
+				return err
 			}
-			return cliCtx.PrintOutput(string(res))
+
+			var out []string
+			cdc.MustUnmarshalBinaryBare(bz, &out)
+
+			return cliCtx.PrintOutput(out)
 		},
 	}
 }
