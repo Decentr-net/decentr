@@ -13,6 +13,7 @@ import (
 
 	operations "github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/Decentr-net/decentr/x/token/types"
+	"github.com/Decentr-net/decentr/x/utils"
 )
 
 var totalSupplyKey = []byte("totalSupply")
@@ -65,7 +66,7 @@ func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int)
 		k.Logger(ctx).Info(
 			"account initialized with init balance",
 			"account", owner.String())
-		balance = initialTokenBalance().Add(amount)
+		balance = utils.InitialTokenBalance().Add(amount)
 	}
 
 	k.SetBalance(ctx, owner, balance)
@@ -91,14 +92,10 @@ func (k Keeper) GetBalance(ctx sdk.Context, address sdk.AccAddress) sdk.Int {
 
 	// if account exists, but initial token is not set
 	if k.accountKeeper.GetAccount(ctx, address) != nil {
-		return initialTokenBalance()
+		return utils.InitialTokenBalance()
 	}
 
 	return sdk.ZeroInt()
-}
-
-func initialTokenBalance() sdk.Int {
-	return sdk.NewInt(1 * types.Denominator)
 }
 
 func (k Keeper) IsInitialBalanceSet(ctx sdk.Context, owner sdk.AccAddress) bool {
@@ -246,4 +243,9 @@ func (k Keeper) IsBanned(ctx sdk.Context, address sdk.AccAddress) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.BanListPrefix)
 
 	return store.Has(address)
+}
+
+func (k Keeper) ResetAccount(ctx sdk.Context, addr sdk.AccAddress) {
+	k.SetBalance(ctx, addr, utils.InitialTokenBalance())
+	k.IncBalanceDelta(ctx, addr, k.GetBalanceDelta(ctx, addr).MulRaw(-1))
 }

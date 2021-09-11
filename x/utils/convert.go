@@ -9,7 +9,7 @@ import (
 )
 
 func InitialTokenBalance() sdk.Int {
-	return sdk.NewInt(types.Denominator)
+	return types.Denominator
 }
 
 // Uint64ToBytes converts uint64 to bytes using BigEndian endianness
@@ -24,11 +24,10 @@ func BytesToUint64(b []byte) uint64 {
 	return binary.BigEndian.Uint64(b)
 }
 
-// TokenToFloat64 converts token to its float64 representation
-func TokenToFloat64(token sdk.Int) float64 {
-	if token.IsNil() {
-		return 0
+func UDecToDec(amount sdk.Dec) sdk.Dec {
+	if amount.IsNil() || amount.IsZero() {
+		return amount
 	}
 
-	return float64(token.Int64()) / float64(types.Denominator)
+	return amount.QuoInt(types.Denominator)
 }

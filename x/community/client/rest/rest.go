@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
@@ -33,7 +34,7 @@ func getPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		paramOwner := mux.Vars(r)["postOwner"]
 		paramUUID := mux.Vars(r)["postUUID"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", types.QuerierRoute, paramOwner, paramUUID), nil)
+		bz, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", types.QuerierRoute, paramOwner, paramUUID), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -45,7 +46,10 @@ func getPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+		var out types.Post
+		cliCtx.Codec.MustUnmarshalBinaryBare(bz, &out)
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), out)
 	}
 }
 
@@ -54,7 +58,7 @@ func queryListUserPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		paramOwner := mux.Vars(r)["owner"]
 		q := r.URL.Query()
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/user/%s/%s/%s", types.QuerierRoute, paramOwner, q.Get("from"), q.Get("limit")), nil)
+		bz, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/user/%s/%s/%s", types.QuerierRoute, paramOwner, q.Get("from"), q.Get("limit")), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -66,7 +70,10 @@ func queryListUserPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+		var out []types.Post
+		cliCtx.Codec.MustUnmarshalBinaryBare(bz, &out)
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), out)
 	}
 }
 
@@ -74,7 +81,7 @@ func queryFolloweesHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		paramOwner := mux.Vars(r)["owner"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", types.QuerierRoute, paramOwner), nil)
+		bz, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", types.QuerierRoute, paramOwner), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -86,18 +93,24 @@ func queryFolloweesHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+		var out []sdk.Address
+		cliCtx.Codec.MustUnmarshalBinaryBare(bz, &out)
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), out)
 	}
 }
 
 func moderatorsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", types.QuerierRoute), nil)
+		bz, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", types.QuerierRoute), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+		var out []string
+		cliCtx.Codec.MustUnmarshalBinaryBare(bz, &out)
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), out)
 	}
 }
