@@ -11,7 +11,7 @@ import (
 )
 
 // NewHandler creates an sdk.Handler for all the pdv type messages
-func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper) sdk.Handler {
+func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper, supplyKeeper SupplyKeeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
@@ -22,6 +22,8 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper commun
 			return handleMsgResetAccount(ctx, keeper, tokensKeeper, communityKeeper, msg)
 		case MsgBanAccount:
 			return handleMsgBanAccount(ctx, keeper, tokensKeeper, msg)
+		case MsgMint:
+			return handleMsgMint(ctx, keeper, supplyKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -30,19 +32,55 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper commun
 }
 
 func handleMsgDistributeRewards(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, msg MsgDistributeRewards) (*sdk.Result, error) {
-	owners := keeper.GetParams(ctx).Supervisors
-
-	for _, v := range owners {
+	found := false
+	for _, v := range keeper.GetParams(ctx).Supervisors {
 		addr, _ := sdk.AccAddressFromBech32(v)
 		if msg.Owner.Equals(addr) && !addr.Empty() {
-			for _, reward := range msg.Rewards {
-				tokensKeeper.AddTokens(ctx, reward.Receiver, sdk.NewIntFromUint64(reward.Reward))
-			}
-			return &sdk.Result{}, nil
+			found = true
+			break
 		}
 	}
 
-	return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Owner is not a Cerberus owner")
+	if !found {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
+			fmt.Sprintf("%s can not distribute rewards", msg.Owner))
+	}
+
+	for _, reward := range msg.Rewards {
+		tokensKeeper.AddTokens(ctx, reward.Receiver, sdk.NewIntFromUint64(reward.Reward))
+	}
+
+	return &sdk.Result{}, nil
+}
+
+func handleMsgMint(ctx sdk.Context, keeper Keeper, supplyKeeper SupplyKeeper, msg MsgMint) (*sdk.Result, error) {
+	found := false
+	for _, v := range keeper.GetParams(ctx).Supervisors {
+		addr, _ := sdk.AccAddressFromBech32(v)
+		if msg.Owner.Equals(addr) && !addr.Empty() {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
+			fmt.Sprintf("%s can not mint coins", msg.Owner))
+	}
+
+	// mint new tokens
+	if err := supplyKeeper.MintCoins(ctx, ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
+		return nil, err
+	}
+
+	// send to receiver
+	if err := supplyKeeper.SendCoinsFromModuleToAccount(
+		ctx, ModuleName, msg.Receiver, sdk.NewCoins(msg.Coin)); err != nil {
+		return nil, err
+	}
+
+	ctx.Logger().Info(fmt.Sprintf("mint %s to %s", msg.Coin, msg.Owner))
+	return &sdk.Result{}, nil
 }
 
 func handleMsgResetAccount(ctx sdk.Context, keeper Keeper, tokensKeeper token.Keeper, communityKeeper community.Keeper, msg MsgResetAccount) (*sdk.Result, error) {

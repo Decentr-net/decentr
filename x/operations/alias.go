@@ -30,5 +30,7 @@ type (
 	MsgDistributeRewards = types.MsgDistributeRewards
 	MsgResetAccount      = types.MsgResetAccount
 	MsgBanAccount        = types.MsgBanAccount
+	MsgMint              = types.MsgMint
 	FixedGasParams       = types.FixedGasParams
+	SupplyKeeper         = types.SupplyKeeper
 )

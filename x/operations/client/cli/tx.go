@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Decentr-net/decentr/x/operations/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -14,6 +13,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
+
+	"github.com/Decentr-net/decentr/x/operations/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -32,6 +33,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdDistributeReward(cdc),
 		GetCmdBanAccount(cdc),
 		GetCmdUnBanAccount(cdc),
+		GetCmdMint(cdc),
 	)...)
 
 	return operationsTxCmd
@@ -146,6 +148,37 @@ func GetCmdUnBanAccount(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgBanAccount(cliCtx.GetFromAddress(), address, false)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdMint is the CLI command for sending a Mint transaction
+func GetCmdMint(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "mint <receiver> <coin>",
+		Short: "mint coin to the given account",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			receiver, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse receiver: %w", err)
+			}
+
+			coin, err := sdk.ParseCoin(args[1])
+			if err != nil {
+				return fmt.Errorf("failed to parse coin: %w", err)
+			}
+
+			msg := types.NewMsgMint(cliCtx.GetFromAddress(), receiver, coin)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
