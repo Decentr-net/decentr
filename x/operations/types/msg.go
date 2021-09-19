@@ -149,16 +149,14 @@ func (msg MsgBanAccount) ValidateBasic() error {
 }
 
 type MsgMint struct {
-	Owner    sdk.AccAddress `json:"owner"`
-	Receiver sdk.AccAddress `json:"receiver"`
-	Coin     sdk.Coin       `json:"coin"`
+	Owner sdk.AccAddress `json:"owner"`
+	Coin  sdk.Coin       `json:"coin"`
 }
 
-func NewMsgMint(owner, receiver sdk.AccAddress, coin sdk.Coin) MsgMint {
+func NewMsgMint(owner sdk.AccAddress, coin sdk.Coin) MsgMint {
 	return MsgMint{
-		Owner:    owner,
-		Receiver: receiver,
-		Coin:     coin,
+		Owner: owner,
+		Coin:  coin,
 	}
 }
 
@@ -183,8 +181,44 @@ func (msg MsgMint) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
 	}
-	if msg.Receiver.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Receiver is empty")
+	if msg.Coin.IsZero() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Coin is zero")
+	}
+	return nil
+}
+
+type MsgBurn struct {
+	Owner sdk.AccAddress `json:"owner"`
+	Coin  sdk.Coin       `json:"coin"`
+}
+
+func NewMsgBurn(owner sdk.AccAddress, coin sdk.Coin) MsgBurn {
+	return MsgBurn{
+		Owner: owner,
+		Coin:  coin,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgBurn) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgBurn) Type() string { return "burn" }
+
+// GetSignBytes encodes the message for signing
+func (msg MsgBurn) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgBurn) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgBurn) ValidateBasic() error {
+	if msg.Owner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
 	}
 	if msg.Coin.IsZero() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Coin is zero")

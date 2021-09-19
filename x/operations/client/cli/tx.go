@@ -34,6 +34,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdBanAccount(cdc),
 		GetCmdUnBanAccount(cdc),
 		GetCmdMint(cdc),
+		GetCmdBurn(cdc),
 	)...)
 
 	return operationsTxCmd
@@ -160,25 +161,46 @@ func GetCmdUnBanAccount(cdc *codec.Codec) *cobra.Command {
 // GetCmdMint is the CLI command for sending a Mint transaction
 func GetCmdMint(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "mint <receiver> <coin>",
+		Use:   "mint <coin>",
 		Short: "mint coin to the given account",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			receiver, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse receiver: %w", err)
-			}
-
-			coin, err := sdk.ParseCoin(args[1])
+			coin, err := sdk.ParseCoin(args[0])
 			if err != nil {
 				return fmt.Errorf("failed to parse coin: %w", err)
 			}
 
-			msg := types.NewMsgMint(cliCtx.GetFromAddress(), receiver, coin)
+			msg := types.NewMsgMint(cliCtx.GetFromAddress(), coin)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdBurn is the CLI command for sending a Burn transaction
+func GetCmdBurn(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "burn <coin>",
+		Short: "burn coin from the given account",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			coin, err := sdk.ParseCoin(args[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse coin: %w", err)
+			}
+
+			msg := types.NewMsgMint(cliCtx.GetFromAddress(), coin)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
