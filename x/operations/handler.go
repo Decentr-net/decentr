@@ -24,6 +24,8 @@ func NewHandler(keeper Keeper, tokensKeeper token.Keeper, communityKeeper commun
 			return handleMsgBanAccount(ctx, keeper, tokensKeeper, msg)
 		case MsgMint:
 			return handleMsgMint(ctx, keeper, supplyKeeper, msg)
+		case MsgBurn:
+			return handleMsgBurn(ctx, keeper, supplyKeeper, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -75,11 +77,41 @@ func handleMsgMint(ctx sdk.Context, keeper Keeper, supplyKeeper SupplyKeeper, ms
 
 	// send to receiver
 	if err := supplyKeeper.SendCoinsFromModuleToAccount(
-		ctx, ModuleName, msg.Receiver, sdk.NewCoins(msg.Coin)); err != nil {
+		ctx, ModuleName, msg.Owner, sdk.NewCoins(msg.Coin)); err != nil {
 		return nil, err
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("mint %s to %s", msg.Coin, msg.Owner))
+	return &sdk.Result{}, nil
+}
+
+func handleMsgBurn(ctx sdk.Context, keeper Keeper, supplyKeeper SupplyKeeper, msg MsgBurn) (*sdk.Result, error) {
+	found := false
+	for _, v := range keeper.GetParams(ctx).Supervisors {
+		addr, _ := sdk.AccAddressFromBech32(v)
+		if msg.Owner.Equals(addr) && !addr.Empty() {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
+			fmt.Sprintf("%s can not burn coins", msg.Owner))
+	}
+
+	// send to module
+	if err := supplyKeeper.SendCoinsFromAccountToModule(
+		ctx, msg.Owner, ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
+		return nil, err
+	}
+
+	// burn tokens
+	if err := supplyKeeper.BurnCoins(ctx, ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
+		return nil, err
+	}
+
+	ctx.Logger().Info(fmt.Sprintf("mint %s burnt by %s", msg.Coin, msg.Owner))
 	return &sdk.Result{}, nil
 }
 
