@@ -10,6 +10,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgResetAccount{}, "operations/MsgResetAccount", nil)
 	cdc.RegisterConcrete(MsgBanAccount{}, "operations/MsgBanAccount", nil)
 	cdc.RegisterConcrete(MsgMint{}, "operations/MsgMint", nil)
+	cdc.RegisterConcrete(MsgBurn{}, "operations/MsgBurn", nil)
 }
 
 // ModuleCdc is the codec for the module

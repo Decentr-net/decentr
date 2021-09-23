@@ -200,7 +200,7 @@ func GetCmdBurn(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("failed to parse coin: %w", err)
 			}
 
-			msg := types.NewMsgMint(cliCtx.GetFromAddress(), coin)
+			msg := types.NewMsgBurn(cliCtx.GetFromAddress(), coin)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
