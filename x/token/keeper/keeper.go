@@ -137,11 +137,14 @@ func (k Keeper) DistributeRewards(ctx sdk.Context) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.DeltaPrefix)
 
 	total := k.GetBalanceDelta(ctx, types.AccumulatedDelta)
-	if total.IsZero() {
+	if total.IsNil() || total.IsZero() {
 		return
 	}
 
 	part := k.distributionKeeper.GetFeePoolCommunityCoins(ctx).AmountOf(operations.DefaultDenom).QuoInt(total)
+	if part.IsNil() || part.IsZero() {
+		return
+	}
 
 	it := store.Iterator(nil, nil)
 	defer it.Close()
@@ -149,8 +152,7 @@ func (k Keeper) DistributeRewards(ctx sdk.Context) {
 	for it.Valid() {
 		address := sdk.AccAddress(it.Key())
 
-		var delta sdk.Int
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &delta)
+		delta := k.GetBalanceDelta(ctx, address)
 
 		store.Delete(it.Key())
 		it.Next()
@@ -159,10 +161,15 @@ func (k Keeper) DistributeRewards(ctx sdk.Context) {
 			continue
 		}
 
+		amount := part.MulInt(delta).TruncateInt()
+		if amount.IsNil() || amount.IsZero() {
+			continue
+		}
+
 		coins := sdk.Coins{
 			{
 				Denom:  operations.DefaultDenom,
-				Amount: part.MulInt(delta).TruncateInt(),
+				Amount: amount,
 			},
 		}
 
