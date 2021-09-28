@@ -29,8 +29,11 @@ func queryMinGasPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		var mgp sdk.DecCoin
+		cliCtx.Codec.MustUnmarshalBinaryBare(res, &mgp)
+
 		cliCtx = cliCtx.WithHeight(height)
-		rest.PostProcessResponse(w, cliCtx, res)
+		rest.PostProcessResponse(w, cliCtx, mgp)
 	}
 }
 
