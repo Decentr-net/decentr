@@ -93,7 +93,7 @@ func queryFolloweesHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		var out []sdk.Address
+		var out []sdk.AccAddress
 		cliCtx.Codec.MustUnmarshalBinaryBare(bz, &out)
 
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), out)

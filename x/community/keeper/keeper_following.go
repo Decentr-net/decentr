@@ -21,13 +21,13 @@ func (k Keeper) Unfollow(ctx sdk.Context, who, whom sdk.Address) {
 	prefix.NewStore(store, who.Bytes()).Delete(whom.Bytes())
 }
 
-func (k Keeper) GetFollowees(ctx sdk.Context, who sdk.Address) []sdk.Address {
-	var out []sdk.Address
+func (k Keeper) GetFollowees(ctx sdk.Context, who sdk.Address) []sdk.AccAddress {
+	var out []sdk.AccAddress
 
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.FollowersPrefix)
 	it := sdk.KVStorePrefixIterator(prefix.NewStore(store, who.Bytes()), nil)
 	for ; it.Valid(); it.Next() {
-		out = append(out, sdk.AccAddress(it.Key()))
+		out = append(out, it.Key())
 	}
 	it.Close()
 

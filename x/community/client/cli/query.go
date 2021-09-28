@@ -72,7 +72,7 @@ func GetCmdFollowee(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out []sdk.Address
+			var out []sdk.AccAddress
 			cdc.MustUnmarshalBinaryBare(bz, &out)
 
 			return cliCtx.PrintOutput(out)
