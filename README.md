@@ -1,7 +1,8 @@
 # Decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![network version](https://img.shields.io/badge/network%20version-v1.3.8-blue.svg)](https://shields.io/) 
-![candidate version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=candidate%20version&color=green)
+[![testnet version](https://img.shields.io/badge/testnet%20version-v1.3.8-blue.svg)](https://shields.io/) 
+[![mainnet version](https://img.shields.io/badge/mainnet%20version-v1.4.5-brightgreen.svg)](https://shields.io/) 
+![latest version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=latest%20version&color=yellow)
 
 Decentr blockchain
 
