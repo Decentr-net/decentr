@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"time"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -441,5 +442,60 @@ func (app *decentrApp) SimulationManager() *module.SimulationManager {
 }
 
 func (app *decentrApp) setUpgrades() {
-	app.upgradeKeeper.SetUpgradeHandler("v1.2.6", func(_ sdk.Context, _ upgrade.Plan) {})
+	app.upgradeKeeper.SetUpgradeHandler("v1.4.6", app.Upgrade146)
+}
+
+func (app *decentrApp) Upgrade146(ctx sdk.Context, _ upgrade.Plan) {
+	ctx.Logger().Info("upgrade started", "version", "v1.4.6")
+	lostTokensWalletAddr, err := sdk.AccAddressFromBech32("decentr17u227cmkqddl4d0atl37g9wxjxk9j550rv9jej")
+	if err != nil {
+		panic(err)
+	}
+
+	aresAddr, err := sdk.AccAddressFromBech32("decentr1rdq9yzu6wk0xqr3az847az7s006xdqg8rum8q8")
+	if err != nil {
+		panic(err)
+	}
+
+	aresValAddr, err := sdk.ValAddressFromBech32("decentrvaloper1rdq9yzu6wk0xqr3az847az7s006xdqg8unstas")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := app.bankKeeper.SendCoins(ctx, lostTokensWalletAddr, aresAddr, app.bankKeeper.GetCoins(ctx, lostTokensWalletAddr)); err != nil {
+		panic(err)
+	}
+
+	delegation, found := app.stakingKeeper.GetDelegation(ctx, aresAddr, aresValAddr)
+	if !found {
+		panic("delegation is not found")
+	}
+
+	if _, err := app.stakingKeeper.Undelegate(ctx, aresAddr, aresValAddr, delegation.Shares); err != nil {
+		panic(err)
+	}
+
+	ubd, ok := app.stakingKeeper.GetUnbondingDelegation(ctx, aresAddr, aresValAddr)
+	if !ok {
+		panic("unbonding delegation is not found")
+	}
+
+	ubd.Entries[0].CompletionTime = time.Time{}
+
+	app.stakingKeeper.SetUnbondingDelegation(ctx, ubd)
+	if err := app.stakingKeeper.CompleteUnbonding(ctx, aresAddr, aresValAddr); err != nil {
+		panic(err)
+	}
+
+	coins2Burn := app.bankKeeper.GetCoins(ctx, aresAddr)
+	if err := app.supplyKeeper.SendCoinsFromAccountToModule(ctx, aresAddr, operations.ModuleName, coins2Burn); err != nil {
+		panic(err)
+	}
+
+	// burn tokens
+	if err := app.supplyKeeper.BurnCoins(ctx, operations.ModuleName, coins2Burn); err != nil {
+		panic(err)
+	}
+	ctx.Logger().Info("coins burnt", "coins", coins2Burn)
+	ctx.Logger().Info("upgrade finished", "version", "v1.4.6")
 }
