@@ -162,7 +162,7 @@ func (k Keeper) DistributeRewards(ctx sdk.Context) {
 		}
 
 		amount := part.MulInt(delta).TruncateInt()
-		if amount.IsNil() || amount.IsZero() {
+		if amount.IsNil() || amount.IsZero() || amount.IsNegative() {
 			continue
 		}
 
