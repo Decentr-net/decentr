@@ -1,6 +1,6 @@
 # Decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![testnet version](https://img.shields.io/badge/testnet%20version-v1.3.8-blue.svg)](https://shields.io/) 
+[![testnet version](https://img.shields.io/badge/testnet%20version-v1.4.7-blue.svg)](https://shields.io/) 
 [![mainnet version](https://img.shields.io/badge/mainnet%20version-v1.4.6-brightgreen.svg)](https://shields.io/) 
 ![latest version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=latest%20version&color=yellow)
 
@@ -70,7 +70,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
-git clone -b v1.3.8 https://github.com/Decentr-net/decentr
+git clone -b v1.4.7 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
@@ -89,7 +89,8 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "95a70f0119af52e54697fa7feb8b09b4e7c7ec21@ares.testnet.decentr.xyz:26656,b6d499b2b0146627b9bf6f33a9a7e4013312c6d1@hera.testnet.decentr.xyz:26656,576d044b24cc449366850a95f7616f03ab8d14b3@hermes.testnet.decentr.xyz:26656,c98511455134b4450ebb20fce57308a9fb300b89@poseidon.testnet.decentr.xyz:26656,acc5524b4ff34591357a28d5fccf4efb5ad883c5@zeus.testnet.decentr.xyz:26656"
+seeds = "
+36d036d0fe2d3c95950f77abdf4ff53a732f38e3@ares.testnet.decentr.xyz:26656,fcc45b026e948d7c81f46fdb650871c8bdc1378a@hera.testnet.decentr.xyz:26656,744449aff5e8797c9c403c56d0f5e6d2be52604b@hermes.testnet.decentr.xyz:26656,e5b6b3ba0bca1ea8427911843df24568feb53afc@poseidon.testnet.decentr.xyz:26656,a4771cec2e881ead305c68c1b3f8de7403786944@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
