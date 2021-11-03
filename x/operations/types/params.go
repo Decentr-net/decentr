@@ -60,7 +60,7 @@ func validateMinGasPrice(i interface{}) error {
 	}
 
 	if coin.IsZero() {
-		return fmt.Errorf("amount amount is zero")
+		return fmt.Errorf("coin amount is zero")
 	}
 
 	return nil

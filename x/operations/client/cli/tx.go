@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
@@ -51,7 +50,7 @@ func NewDistributeRewardsCmd() *cobra.Command {
 				return fmt.Errorf("invalid receiver: %w", err)
 			}
 
-			reward, err := strconv.ParseUint(args[1], 10, 64)
+			reward, err := sdk.NewDecFromStr(args[1])
 			if err != nil {
 				return fmt.Errorf("invalid reward: %w", err)
 			}
@@ -59,7 +58,7 @@ func NewDistributeRewardsCmd() *cobra.Command {
 			msg := types.NewMsgDistributeRewards(clientCtx.GetFromAddress(), []types.Reward{
 				{
 					Receiver: receiver.String(),
-					Reward:   reward,
+					Reward:   sdk.DecProto{reward},
 				},
 			})
 

@@ -1,9 +1,10 @@
 package operations
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/Decentr-net/decentr/x/operations/keeper"
 	"github.com/Decentr-net/decentr/x/operations/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // InitGenesis initializes the capability module's state from a provided genesis

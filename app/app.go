@@ -92,6 +92,9 @@ import (
 	"github.com/Decentr-net/decentr/x/operations"
 	operationskeeper "github.com/Decentr-net/decentr/x/operations/keeper"
 	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
+	"github.com/Decentr-net/decentr/x/token"
+	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
+	tokentypes "github.com/Decentr-net/decentr/x/token/types"
 )
 
 func getGovProposalHandlers() []govclient.ProposalHandler {
@@ -133,6 +136,7 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		operations.AppModuleBasic{},
+		token.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -201,6 +205,7 @@ type App struct {
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
 	OperationsKeeper operationskeeper.Keeper
+	TokenKeeper      tokenkeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -233,7 +238,7 @@ func New(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		operationstypes.StoreKey,
+		operationstypes.StoreKey, tokentypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -332,6 +337,10 @@ func New(
 		app.GetSubspace(operationstypes.ModuleName))
 	operationsModule := operations.NewAppModule(appCodec, app.OperationsKeeper, app.BankKeeper, nil, nil)
 
+	app.TokenKeeper = *tokenkeeper.NewKeeper(appCodec, keys[tokentypes.StoreKey],
+		app.GetSubspace(tokentypes.ModuleName))
+	tokenModule := token.NewAppModule(appCodec, app.TokenKeeper, app.DistrKeeper)
+
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
@@ -369,6 +378,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 		operationsModule,
+		tokenModule,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -381,7 +391,7 @@ func New(
 		feegrant.ModuleName,
 	)
 
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, operationstypes.ModuleName)
+	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, tokentypes.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -403,6 +413,7 @@ func New(
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		operationstypes.ModuleName,
+		tokentypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
@@ -589,6 +600,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(operationstypes.ModuleName)
+	paramsKeeper.Subspace(tokentypes.ModuleName)
 
 	return paramsKeeper
 }

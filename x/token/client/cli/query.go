@@ -3,13 +3,12 @@ package cli
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/spf13/cobra"
 
-	"github.com/Decentr-net/decentr/x/operations/types"
+	"github.com/Decentr-net/decentr/x/token/types"
+	"github.com/cosmos/cosmos-sdk/client"
 )
 
 func GetQueryCmd(_ string) *cobra.Command {
@@ -22,27 +21,33 @@ func GetQueryCmd(_ string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		NewMinGasPriceCmd(),
-		NewIsAccountBannedCmd(),
+		NewBalanceCmd(),
+		NewPoolCmd(),
 	)
 
 	return cmd
 }
 
-func NewMinGasPriceCmd() *cobra.Command {
+func NewBalanceCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "min-gas-price",
-		Short: "Query the current min gas price value",
-		Args:  cobra.NoArgs,
+		Use:   "balance [address]",
+		Short: "Query account token balance",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
+			address, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid address: %w", err)
+			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			out, err := queryClient.MinGasPrice(cmd.Context(), &types.MinGasPriceRequest{})
+			out, err := queryClient.Balance(cmd.Context(), &types.BalanceRequest{
+				Address: address.String(),
+			})
 			if err != nil {
 				return err
 			}
@@ -55,27 +60,20 @@ func NewMinGasPriceCmd() *cobra.Command {
 	return cmd
 }
 
-func NewIsAccountBannedCmd() *cobra.Command {
+func NewPoolCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "is-account-banned [address]",
-		Short: "Query if the account banned",
-		Args:  cobra.ExactArgs(1),
+		Use:   "pool",
+		Short: "Query pool balance",
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			address, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid address: %w", err)
-			}
-
 			queryClient := types.NewQueryClient(clientCtx)
 
-			out, err := queryClient.IsAccountBanned(cmd.Context(), &types.IsAccountBannedRequest{
-				Address: address.String(),
-			})
+			out, err := queryClient.Pool(cmd.Context(), &types.PoolRequest{})
 			if err != nil {
 				return err
 			}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+package token;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/token/types";
+
+// Params defines the parameters for the bank module.
+message Params {
+    uint64 rewards_block_interval = 1;
+}

@@ -46,7 +46,7 @@ func (s msgServer) DistributeRewards(goCtx context.Context, msg *types.MsgDistri
 
 	for _, v := range msg.Rewards {
 		address, _ := sdk.AccAddressFromBech32(v.Receiver)
-		s.tokenKeeper.AddTokens(ctx, address, sdk.NewIntFromUint64(v.Reward))
+		s.tokenKeeper.IncTokens(ctx, address, v.Reward.Dec)
 	}
 
 	return &types.MsgDistributeRewardsResponse{}, nil

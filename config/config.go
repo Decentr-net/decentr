@@ -1,6 +1,7 @@
 package config
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/spm/cosmoscmd"
 )
 
@@ -10,6 +11,10 @@ const (
 
 	// DefaultBondDenom is the default bond denomination
 	DefaultBondDenom = "udec"
+)
+
+var (
+	InitialTokenBalance = sdk.NewDec(1)
 )
 
 func SetAddressPrefixes() {

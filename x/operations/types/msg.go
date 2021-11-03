@@ -13,10 +13,10 @@ func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistribu
 	}
 }
 
-func NewReward(address sdk.AccAddress, reward uint64) Reward {
+func NewReward(address sdk.AccAddress, reward sdk.Dec) Reward {
 	return Reward{
 		Receiver: address.String(),
-		Reward:   reward,
+		Reward:   sdk.DecProto{reward},
 	}
 }
 
@@ -40,13 +40,14 @@ func (m MsgDistributeRewards) ValidateBasic() error {
 		return sdkerrors.ErrInvalidRequest.Wrap("more than 1000 rewards")
 	}
 
-	for _, reward := range m.Rewards {
-		if _, err := sdk.AccAddressFromBech32(reward.Receiver); err != nil {
+	for _, v := range m.Rewards {
+		if _, err := sdk.AccAddressFromBech32(v.Receiver); err != nil {
 			return sdkerrors.ErrInvalidAddress.Wrapf("invalid receiver address: %s", err)
 		}
 
-		if reward.Reward == 0 {
-			return sdkerrors.ErrInvalidRequest.Wrapf("zero reward for %s", reward.Receiver)
+		reward := v.Reward.Dec
+		if reward.IsNil() || reward.IsZero() || reward.IsNegative() {
+			return sdkerrors.ErrInvalidRequest.Wrapf("invalid reward for %s", v.Receiver)
 		}
 	}
 

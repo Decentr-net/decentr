@@ -17,7 +17,7 @@ service Msg {
 
 message Reward {
     string receiver = 1;
-    uint64 reward = 2;
+    cosmos.base.v1beta1.DecProto reward = 2 [(gogoproto.nullable) = false];
 }
 message MsgDistributeRewards {
     option (gogoproto.equal)           = false;
