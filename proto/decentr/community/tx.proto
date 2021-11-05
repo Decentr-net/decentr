@@ -1,0 +1,68 @@
+syntax = "proto3";
+package community;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "community/community.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/community/types";
+
+// Msg defines the Msg service.
+service Msg {
+    rpc CreatePost(MsgCreatePost) returns (MsgCreatePostResponse);
+    rpc DeletePost(MsgDeletePost) returns (MsgDeletePostResponse);
+    rpc SetLike(MsgSetLike) returns (MsgSetLikeResponse);
+    rpc Follow(MsgFollow) returns (MsgFollowResponse);
+    rpc Unfollow(MsgUnfollow) returns (MsgUnfollowResponse);
+}
+
+message MsgCreatePost {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string uuid = 1;
+    string owner = 2;
+    Category category = 3;
+    string preview_image = 4;
+    string text = 5;
+}
+message MsgCreatePostResponse {}
+
+message MsgDeletePost {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string post_uuid = 1;
+    string post_owner = 2;
+    string owner = 3;
+}
+message MsgDeletePostResponse {}
+
+message MsgSetLike {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string post_owner = 1;
+    string post_uuid = 2;
+    string owner = 3;
+    LikeWeight weight = 4;
+}
+message MsgSetLikeResponse {}
+
+message MsgFollow {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    string whom = 2;
+}
+message MsgFollowResponse {}
+
+message MsgUnfollow {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    string whom = 2;
+}
+message MsgUnfollowResponse {}

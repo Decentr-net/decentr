@@ -1,0 +1,19 @@
+syntax = "proto3";
+package community;
+
+import "gogoproto/gogo.proto";
+import "community/community.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/community/types";
+
+message GenesisState {
+    message AddressList {
+        repeated string address = 1;
+    }
+
+    // params defines all the paramaters of the module.
+    Params params = 1;
+    repeated Post posts = 2 [(gogoproto.nullable) = false];
+    repeated Like likes = 3 [(gogoproto.nullable) = false];
+    map<string, AddressList> followers = 4 [(gogoproto.nullable) = false];
+}

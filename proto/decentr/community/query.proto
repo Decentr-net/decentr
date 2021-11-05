@@ -1,0 +1,70 @@
+syntax = "proto3";
+package community;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "community/community.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/community/types";
+
+// Query defines the gRPC querier service.
+service Query {
+    rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+        option (google.api.http).get = "/decentr/community/posts/{post_owner}/{post_uuid}";
+    }
+
+    rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {
+        option (google.api.http).get = "/decentr/community/posts/{post_owner}";
+    }
+
+    rpc Moderators(ModeratorsRequest) returns (ModeratorsResponse) {
+        option (google.api.http).get = "/decentr/community/moderators";
+    }
+
+    rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse) {
+        option (google.api.http).get = "/decentr/community/followers/{owner}/followed";
+    }
+}
+
+message GetPostRequest {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string post_owner = 1;
+    string post_uuid = 2;
+}
+message GetPostResponse {
+    Post post = 1 [(gogoproto.nullable) = false];
+}
+
+message ListUserPostsRequest {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string post_owner = 1;
+}
+message ListUserPostsResponse {
+    repeated Post posts = 1;
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message ModeratorsRequest {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+}
+message ModeratorsResponse {
+    repeated string moderators = 1;
+}
+
+message ListFollowedRequest {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+message ListFollowedResponse {
+    repeated string address = 1;
+}
