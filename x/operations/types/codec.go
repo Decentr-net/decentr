@@ -9,7 +9,7 @@ import (
 )
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(MsgDistributeRewards{}, "operations/DistributeRewards", nil)
+	cdc.RegisterConcrete(MsgDistributeRewards{}, "operations/MsgDistributeRewards", nil)
 	cdc.RegisterConcrete(MsgResetAccount{}, "operations/MsgResetAccount", nil)
 	cdc.RegisterConcrete(MsgBanAccount{}, "operations/MsgBanAccount", nil)
 	cdc.RegisterConcrete(MsgMint{}, "operations/MsgMint", nil)

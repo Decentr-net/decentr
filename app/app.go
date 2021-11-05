@@ -89,6 +89,9 @@ import (
 	appconfig "github.com/Decentr-net/decentr/config"
 	"github.com/Decentr-net/decentr/docs"
 
+	"github.com/Decentr-net/decentr/x/community"
+	communitykeeper "github.com/Decentr-net/decentr/x/community/keeper"
+	communitytypes "github.com/Decentr-net/decentr/x/community/types"
 	"github.com/Decentr-net/decentr/x/operations"
 	operationskeeper "github.com/Decentr-net/decentr/x/operations/keeper"
 	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
@@ -135,8 +138,9 @@ var (
 		evidence.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
-		operations.AppModuleBasic{},
 		token.AppModuleBasic{},
+		community.AppModuleBasic{},
+		operations.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -204,8 +208,9 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	OperationsKeeper operationskeeper.Keeper
 	TokenKeeper      tokenkeeper.Keeper
+	CommunityKeeper  communitykeeper.Keeper
+	OperationsKeeper operationskeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -238,7 +243,7 @@ func New(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		operationstypes.StoreKey, tokentypes.StoreKey,
+		operationstypes.StoreKey, tokentypes.StoreKey, communitytypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -333,13 +338,17 @@ func New(
 		&stakingKeeper, govRouter,
 	)
 
-	app.OperationsKeeper = *operationskeeper.NewKeeper(appCodec, keys[operationstypes.StoreKey],
-		app.GetSubspace(operationstypes.ModuleName))
-	operationsModule := operations.NewAppModule(appCodec, app.OperationsKeeper, app.BankKeeper, nil, nil)
-
 	app.TokenKeeper = *tokenkeeper.NewKeeper(appCodec, keys[tokentypes.StoreKey],
 		app.GetSubspace(tokentypes.ModuleName))
 	tokenModule := token.NewAppModule(appCodec, app.TokenKeeper, app.DistrKeeper)
+
+	app.CommunityKeeper = *communitykeeper.NewKeeper(appCodec, keys[communitytypes.StoreKey],
+		app.GetSubspace(communitytypes.ModuleName))
+	communityModule := community.NewAppModule(appCodec, app.CommunityKeeper, app.TokenKeeper)
+
+	app.OperationsKeeper = *operationskeeper.NewKeeper(appCodec, keys[operationstypes.StoreKey],
+		app.GetSubspace(operationstypes.ModuleName))
+	operationsModule := operations.NewAppModule(appCodec, app.OperationsKeeper, app.BankKeeper, app.TokenKeeper, app.CommunityKeeper)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter()
@@ -377,8 +386,10 @@ func New(
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
-		operationsModule,
+
 		tokenModule,
+		communityModule,
+		operationsModule,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -412,8 +423,9 @@ func New(
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
-		operationstypes.ModuleName,
 		tokentypes.ModuleName,
+		communitytypes.ModuleName,
+		operationstypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
@@ -599,8 +611,9 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
-	paramsKeeper.Subspace(operationstypes.ModuleName)
 	paramsKeeper.Subspace(tokentypes.ModuleName)
+	paramsKeeper.Subspace(communitytypes.ModuleName)
+	paramsKeeper.Subspace(operationstypes.ModuleName)
 
 	return paramsKeeper
 }

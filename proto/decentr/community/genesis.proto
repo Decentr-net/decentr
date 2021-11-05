@@ -15,5 +15,5 @@ message GenesisState {
     Params params = 1;
     repeated Post posts = 2 [(gogoproto.nullable) = false];
     repeated Like likes = 3 [(gogoproto.nullable) = false];
-    map<string, AddressList> followers = 4 [(gogoproto.nullable) = false];
+    map<string, AddressList> following = 4 [(gogoproto.nullable) = false];
 }

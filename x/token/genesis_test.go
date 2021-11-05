@@ -18,12 +18,13 @@ import (
 )
 
 func TestGenesis(t *testing.T) {
-	addr := NewAccAddress()
+	addr, banned := NewAccAddress(), NewAccAddress()
 
 	tt := []struct {
-		name     string
-		init     types.GenesisState
-		exported types.GenesisState
+		name             string
+		init             types.GenesisState
+		exported         types.GenesisState
+		accumulatedDelta sdk.Dec
 	}{
 		{
 			name: "default",
@@ -35,6 +36,7 @@ func TestGenesis(t *testing.T) {
 				Deltas:   map[string]sdk.DecProto{},
 				BanList:  []string{},
 			},
+			accumulatedDelta: sdk.ZeroDec(),
 		},
 		{
 			name: "predefined",
@@ -48,7 +50,7 @@ func TestGenesis(t *testing.T) {
 				Deltas: map[string]sdk.DecProto{
 					addr.String(): {sdk.NewDec(1)},
 				},
-				BanList: []string{addr.String()},
+				BanList: []string{banned.String()},
 			},
 			exported: types.GenesisState{
 				Params: &types.Params{
@@ -60,8 +62,9 @@ func TestGenesis(t *testing.T) {
 				Deltas: map[string]sdk.DecProto{
 					addr.String(): {sdk.NewDec(1)},
 				},
-				BanList: []string{addr.String()},
+				BanList: []string{banned.String()},
 			},
+			accumulatedDelta: sdk.OneDec(),
 		},
 	}
 
@@ -93,6 +96,7 @@ func TestGenesis(t *testing.T) {
 			)
 
 			token.InitGenesis(ctx, *k, tc.init)
+			require.Equal(t, tc.accumulatedDelta, k.GetAccumulatedDelta(ctx))
 			got := token.ExportGenesis(ctx, *k)
 			require.Equal(t, tc.exported, *got)
 		})

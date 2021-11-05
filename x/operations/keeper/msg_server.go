@@ -2,11 +2,11 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/Decentr-net/decentr/x/operations/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/Decentr-net/decentr/x/operations/types"
 )
 
 var _ types.MsgServer = msgServer{}
@@ -40,8 +40,7 @@ func (s msgServer) DistributeRewards(goCtx context.Context, msg *types.MsgDistri
 	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
 
 	if !s.keeper.IsSupervisor(ctx, owner) {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
-			fmt.Sprintf("%s is not a supervisor", msg.Owner))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	for _, v := range msg.Rewards {
@@ -59,8 +58,7 @@ func (s msgServer) ResetAccount(goCtx context.Context, msg *types.MsgResetAccoun
 	address, _ := sdk.AccAddressFromBech32(msg.Address)
 
 	if !s.keeper.IsSupervisor(ctx, owner) && !owner.Equals(address) {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
-			fmt.Sprintf("%s is not an owner or supervisor", msg.Owner))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not an owner or supervisor", msg.Owner)
 	}
 
 	// reset account in other modules
@@ -75,8 +73,7 @@ func (s msgServer) BanAccount(goCtx context.Context, msg *types.MsgBanAccount) (
 
 	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
 	if !s.keeper.IsSupervisor(ctx, owner) {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
-			fmt.Sprintf("%s is not a supervisor", msg.Owner))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	address, _ := sdk.AccAddressFromBech32(msg.Address)
@@ -90,8 +87,7 @@ func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 
 	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
 	if !s.keeper.IsSupervisor(ctx, owner) {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
-			fmt.Sprintf("%s is not a supervisor", msg.Owner))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	// mint new tokens and send it to owner
@@ -111,8 +107,7 @@ func (s msgServer) Burn(goCtx context.Context, msg *types.MsgBurn) (*types.MsgBu
 
 	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
 	if !s.keeper.IsSupervisor(ctx, owner) {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized,
-			fmt.Sprintf("%s is not a supervisor", msg.Owner))
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	// send tokens to module and burn it

@@ -17,6 +17,8 @@ import (
 
 	"github.com/Decentr-net/decentr/config"
 	. "github.com/Decentr-net/decentr/testutil"
+	communitykeeper "github.com/Decentr-net/decentr/x/community/keeper"
+	communitytypes "github.com/Decentr-net/decentr/x/community/types"
 	"github.com/Decentr-net/decentr/x/operations/types"
 	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 	tokentypes "github.com/Decentr-net/decentr/x/token/types"
@@ -35,7 +37,7 @@ type keeperSet struct {
 
 func setupKeeper(t testing.TB) (keeperSet, sdk.Context) {
 	keys := sdk.NewKVStoreKeys(types.StoreKey, authtypes.StoreKey, banktypes.StoreKey, paramstypes.StoreKey,
-		tokentypes.StoreKey)
+		tokentypes.StoreKey, communitytypes.StoreKey)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 
 	ctx, err := GetContext(keys, tkeys)
@@ -73,6 +75,11 @@ func setupKeeper(t testing.TB) (keeperSet, sdk.Context) {
 		cdc,
 		keys[tokentypes.StoreKey],
 		paramsKeeper.Subspace(tokentypes.StoreKey),
+	)
+	set.communityKeeper = *communitykeeper.NewKeeper(
+		cdc,
+		keys[communitytypes.StoreKey],
+		paramsKeeper.Subspace(communitytypes.StoreKey),
 	)
 
 	set.keeper = *NewKeeper(

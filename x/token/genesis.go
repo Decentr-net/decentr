@@ -24,16 +24,13 @@ func InitGenesis(ctx sdk.Context, keeper keeper.Keeper, genState types.GenesisSt
 		keeper.SetBalance(ctx, address, v.Dec)
 	}
 
-	accumulatedDelta := sdk.ZeroDec()
 	for k, v := range genState.Deltas {
 		address, err := sdk.AccAddressFromBech32(k)
 		if err != nil {
 			panic(fmt.Errorf("invalid address %s in deltas : %w", k, err))
 		}
 		keeper.SetBalanceDelta(ctx, address, v.Dec)
-		accumulatedDelta = accumulatedDelta.Add(v.Dec)
 	}
-	keeper.IncAccumulatedDelta(ctx, accumulatedDelta)
 
 	for _, v := range genState.BanList {
 		address, err := sdk.AccAddressFromBech32(v)

@@ -2,7 +2,6 @@ syntax = "proto3";
 package community;
 
 import "gogoproto/gogo.proto";
-import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/Decentr-net/decentr/x/community/types";
 
@@ -19,21 +18,21 @@ message FixedGasParams {
 }
 
 enum Category {
-    UNDEFINED = 0;
-    WORLD_NEWS = 1;
-    TRAVEL_AND_TOURISM = 2;
-    SCIENCE_AND_TECHNOLOGY = 3;
-    STRANGE_WORLD = 4;
-    ARTS_AND_ENTERTAINMENT = 5;
-    WRITERS_AND_WRITING = 6;
-    HEALTH_AND_FITNESS = 7;
-    CRYPTO_AND_BLOCKCHAIN = 8;
-    SPORTS = 9;
+    CATEGORY_UNDEFINED = 0;
+    CATEGORY_WORLD_NEWS = 1;
+    CATEGORY_TRAVEL_AND_TOURISM = 2;
+    CATEGORY_SCIENCE_AND_TECHNOLOGY = 3;
+    CATEGORY_STRANGE_WORLD = 4;
+    CATEGORY_ARTS_AND_ENTERTAINMENT = 5;
+    CATEGORY_WRITERS_AND_WRITING = 6;
+    CATEGORY_HEALTH_AND_FITNESS = 7;
+    CATEGORY_CRYPTO_AND_BLOCKCHAIN = 8;
+    CATEGORY_SPORTS = 9;
 }
 
 message Post {
-    string uuid = 1;
-    string owner = 2;
+    string owner = 1;
+    string uuid = 2;
     string title = 3;
     string preview_image = 4;
     Category category = 5;
@@ -41,9 +40,9 @@ message Post {
 }
 
 enum LikeWeight {
-    LikeWeightZero = 0;
-    LikeWeightUp = 1;
-    LikeWeightDown = -1;
+    LIKE_WEIGHT_ZERO = 0;
+    LIKE_WEIGHT_UP = 1;
+    LIKE_WEIGHT_DOWN = -1;
 }
 
 message Like {

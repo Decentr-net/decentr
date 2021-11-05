@@ -1,7 +1,6 @@
 syntax = "proto3";
 package operations;
 
-import "gogoproto/gogo.proto";
 import "operations/operations.proto";
 
 option go_package = "github.com/Decentr-net/decentr/x/operations/types";

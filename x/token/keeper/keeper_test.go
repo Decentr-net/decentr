@@ -294,9 +294,9 @@ func TestKeeper_SetBalanceDelta_NegativeDelta(t *testing.T) {
 	require.Equal(t, sdk.NewDec(2), k.GetAccumulatedDelta(ctx))
 
 	k.SetBalanceDelta(ctx, addr1, sdk.OneDec().Neg())
-	require.Equal(t, sdk.ZeroDec(), k.GetBalanceDelta(ctx, addr1))
+	require.Equal(t, sdk.OneDec().Neg(), k.GetBalanceDelta(ctx, addr1))
 	require.Equal(t, sdk.OneDec(), k.GetBalanceDelta(ctx, addr2))
-	require.Equal(t, sdk.OneDec(), k.GetAccumulatedDelta(ctx))
+	require.Equal(t, sdk.ZeroDec(), k.GetAccumulatedDelta(ctx))
 }
 
 func TestKeeper_GetBalanceDelta(t *testing.T) {

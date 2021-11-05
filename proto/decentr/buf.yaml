@@ -4,10 +4,15 @@ lint:
     - DEFAULT
   ignore_only:
     RPC_RESPONSE_STANDARD_NAME:
+      - community/tx.proto
       - operations/tx.proto
+      - token/tx.proto
     RPC_REQUEST_STANDARD_NAME:
+      - community/tx.proto
       - operations/tx.proto
+      - token/tx.proto
   except:
+    - ENUM_ZERO_VALUE_SUFFIX
     - SERVICE_SUFFIX
     - PACKAGE_VERSION_SUFFIX
   enum_zero_value_suffix: _UNSPECIFIED

@@ -10,6 +10,14 @@ import (
 )
 
 func DistributeRewards(ctx sdk.Context, k Keeper, distributionKeeper types.DistributionKeeper) {
+	// drop negative deltas
+	k.IterateBalanceDelta(ctx, func(address sdk.AccAddress, delta sdk.Dec) (stop bool) {
+		if delta.IsNegative() {
+			k.SetBalanceDelta(ctx, address, sdk.ZeroDec())
+		}
+		return false
+	})
+
 	total := k.GetAccumulatedDelta(ctx)
 	if total.IsZero() {
 		return

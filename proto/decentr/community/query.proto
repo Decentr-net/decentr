@@ -3,7 +3,6 @@ package community;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "community/community.proto";
 
@@ -16,7 +15,7 @@ service Query {
     }
 
     rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {
-        option (google.api.http).get = "/decentr/community/posts/{post_owner}";
+        option (google.api.http).get = "/decentr/community/posts/{owner}";
     }
 
     rpc Moderators(ModeratorsRequest) returns (ModeratorsResponse) {
@@ -43,11 +42,12 @@ message ListUserPostsRequest {
     option (gogoproto.equal)           = false;
     option (gogoproto.goproto_getters) = false;
 
-    string post_owner = 1;
+    string owner = 1;
+    cosmos.base.query.v1beta1.PageRequest pagination = 2 [(gogoproto.nullable) = false];
 }
 message ListUserPostsResponse {
-    repeated Post posts = 1;
-    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+    repeated Post posts = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2 [(gogoproto.nullable) = false];
 }
 
 message ModeratorsRequest {
@@ -63,8 +63,9 @@ message ListFollowedRequest {
     option (gogoproto.goproto_getters) = false;
 
     string owner = 1;
-    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+    cosmos.base.query.v1beta1.PageRequest pagination = 2 [(gogoproto.nullable) = false];
 }
 message ListFollowedResponse {
-    repeated string address = 1;
+    repeated string followed = 1;
+    cosmos.base.query.v1beta1.PageResponse pagination = 2 [(gogoproto.nullable) = false];
 }

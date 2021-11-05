@@ -72,9 +72,6 @@ func TestMsgServer_ResetAccount(t *testing.T) {
 		Address: address.String(),
 	})
 	require.NoError(t, err)
-	// check token
-	// check blog
-	// check likes
 }
 
 func TestMsgServer_ResetAccount_SelfReset(t *testing.T) {

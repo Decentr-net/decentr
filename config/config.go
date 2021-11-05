@@ -17,6 +17,11 @@ var (
 	InitialTokenBalance = sdk.NewDec(1)
 )
 
+var isConfigSealed bool
+
 func SetAddressPrefixes() {
-	cosmoscmd.SetPrefixes(AccountAddressPrefix)
+	if !isConfigSealed {
+		cosmoscmd.SetPrefixes(AccountAddressPrefix)
+	}
+	isConfigSealed = true
 }

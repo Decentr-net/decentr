@@ -51,6 +51,10 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 func (k Keeper) IncTokens(ctx sdk.Context, address sdk.AccAddress, amount sdk.Dec) {
+	if amount.IsZero() {
+		return
+	}
+
 	k.SetBalance(ctx, address, k.GetBalance(ctx, address).Add(amount))
 	k.SetBalanceDelta(ctx, address, k.GetBalanceDelta(ctx, address).Add(amount))
 }
@@ -110,10 +114,6 @@ func (k Keeper) IncAccumulatedDelta(ctx sdk.Context, amount sdk.Dec) {
 
 func (k Keeper) SetBalanceDelta(ctx sdk.Context, address sdk.AccAddress, amount sdk.Dec) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.BalanceDeltaPrefix)
-
-	if amount.IsNegative() {
-		amount = sdk.ZeroDec()
-	}
 
 	if diff := amount.Sub(k.GetBalanceDelta(ctx, address)); !diff.IsZero() {
 		k.IncAccumulatedDelta(ctx, diff)
