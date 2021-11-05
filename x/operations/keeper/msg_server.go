@@ -67,13 +67,6 @@ func (s msgServer) ResetAccount(goCtx context.Context, msg *types.MsgResetAccoun
 	s.tokenKeeper.ResetAccount(ctx, address)
 	s.communityKeeper.ResetAccount(ctx, address)
 
-	if err := ctx.EventManager().EmitTypedEvent(&types.EventResetAccount{
-		Address: msg.Address,
-		ResetBy: msg.Owner,
-	}); err != nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrPanic, "failed to emit event: %s", err)
-	}
-
 	return &types.MsgResetAccountResponse{}, nil
 }
 
@@ -88,16 +81,6 @@ func (s msgServer) BanAccount(goCtx context.Context, msg *types.MsgBanAccount) (
 
 	address, _ := sdk.AccAddressFromBech32(msg.Address)
 	s.tokenKeeper.SetBan(ctx, address, msg.Ban)
-
-	if msg.Ban {
-		if err := ctx.EventManager().EmitTypedEvent(&types.EventBanAccount{Address: msg.Address}); err != nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrPanic, "failed to emit event: %s", err)
-		}
-	} else {
-		if err := ctx.EventManager().EmitTypedEvent(&types.EventUnbanAccount{Address: msg.Address}); err != nil {
-			return nil, sdkerrors.Wrapf(sdkerrors.ErrPanic, "failed to emit event: %s", err)
-		}
-	}
 
 	return &types.MsgBanAccountResponse{}, nil
 }
@@ -120,13 +103,6 @@ func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 		return nil, err
 	}
 
-	if err := ctx.EventManager().EmitTypedEvent(&types.EventMintCoin{
-		Address: msg.Owner,
-		Amount:  msg.Coin,
-	}); err != nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrPanic, "failed to emit event: %s", err)
-	}
-
 	return &types.MsgMintResponse{}, nil
 }
 
@@ -146,13 +122,6 @@ func (s msgServer) Burn(goCtx context.Context, msg *types.MsgBurn) (*types.MsgBu
 	}
 	if err := s.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
 		return nil, err
-	}
-
-	if err := ctx.EventManager().EmitTypedEvent(&types.EventBurnCoin{
-		Address: msg.Owner,
-		Amount:  msg.Coin,
-	}); err != nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrPanic, "failed to emit event: %s", err)
 	}
 
 	return &types.MsgBurnResponse{}, nil

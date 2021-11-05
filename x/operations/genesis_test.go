@@ -88,9 +88,6 @@ func TestGenesis(t *testing.T) {
 				cdc,
 				keys[types.StoreKey],
 				paramsKeeper.Subspace(types.StoreKey),
-				nil,
-				nil,
-				nil,
 			)
 
 			operations.InitGenesis(ctx, *k, tc.init)

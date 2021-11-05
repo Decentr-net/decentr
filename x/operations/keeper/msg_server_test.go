@@ -3,6 +3,7 @@ package keeper
 import (
 	"testing"
 
+	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +17,7 @@ import (
 
 func TestMsgServer_DistributeRewards(t *testing.T) {
 	set, ctx := setupKeeper(t)
+	tk := set.tokenKeeper.(tokenkeeper.Keeper)
 	s := NewMsgServer(set.keeper, set.bankKeeper, set.tokenKeeper, set.communityKeeper)
 
 	owner, addr1, addr2 := NewAccAddress(), NewAccAddress(), NewAccAddress()
@@ -28,13 +30,14 @@ func TestMsgServer_DistributeRewards(t *testing.T) {
 	_, err := s.DistributeRewards(sdk.WrapSDKContext(ctx), &types.MsgDistributeRewards{
 		Owner: owner.String(),
 		Rewards: []types.Reward{
-			{Receiver: addr1.String(), Reward: 1},
-			{Receiver: addr2.String(), Reward: 2},
+			{Receiver: addr1.String(), Reward: sdk.DecProto{sdk.NewDec(1)}},
+			{Receiver: addr2.String(), Reward: sdk.DecProto{sdk.NewDec(2)}},
 		},
 	})
 	require.NoError(t, err)
 
-	// check token
+	require.Equal(t, sdk.NewDec(2), tk.GetBalance(ctx, addr1))
+	require.Equal(t, sdk.NewDec(3), tk.GetBalance(ctx, addr2))
 }
 
 func TestMsgServer_DistributeRewards_Unauthorized(t *testing.T) {
@@ -46,7 +49,7 @@ func TestMsgServer_DistributeRewards_Unauthorized(t *testing.T) {
 	_, err := s.DistributeRewards(sdk.WrapSDKContext(ctx), &types.MsgDistributeRewards{
 		Owner: owner.String(),
 		Rewards: []types.Reward{
-			{Receiver: addr1.String(), Reward: 1},
+			{Receiver: addr1.String(), Reward: sdk.DecProto{sdk.NewDec(1)}},
 		},
 	})
 	require.Error(t, err)

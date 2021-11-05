@@ -11,7 +11,7 @@ import (
 
 func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
 	valid := NewMsgDistributeRewards(NewAccAddress(), []Reward{
-		NewReward(NewAccAddress(), 10),
+		NewReward(NewAccAddress(), sdk.NewDec(10)),
 	})
 
 	alter := func(f func(m *MsgDistributeRewards)) MsgDistributeRewards {
@@ -40,23 +40,23 @@ func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = []Reward{
-			{Receiver: "", Reward: 1},
+			{Receiver: "", Reward: sdk.DecProto{sdk.OneDec()}},
 		}
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = []Reward{
-			{Receiver: "1", Reward: 1},
+			{Receiver: "1", Reward: sdk.DecProto{sdk.OneDec()}},
 		}
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = []Reward{
-			NewReward(NewAccAddress(), 0),
+			NewReward(NewAccAddress(), sdk.ZeroDec()),
 		}
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = []Reward{
-			NewReward(NewAccAddress(), 1),
-			NewReward(NewAccAddress(), 0),
+			NewReward(NewAccAddress(), sdk.OneDec()),
+			NewReward(NewAccAddress(), sdk.ZeroDec()),
 		}
 	}).ValidateBasic())
 }

@@ -24,7 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Params defines the parameters for the bank module.
 type Params struct {
 	Supervisors []string       `protobuf:"bytes,1,rep,name=supervisors,proto3" json:"supervisors,omitempty"`
 	FixedGas    FixedGasParams `protobuf:"bytes,2,opt,name=fixed_gas,json=fixedGas,proto3" json:"fixed_gas"`

@@ -23,7 +23,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Params defines the parameters for the bank module.
 type Params struct {
 	RewardsBlockInterval uint64 `protobuf:"varint,1,opt,name=rewards_block_interval,json=rewardsBlockInterval,proto3" json:"rewards_block_interval,omitempty"`
 }
