@@ -96,7 +96,7 @@ Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.3.8/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.4.7/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
