@@ -7,6 +7,8 @@
 starport chain serve
 ```
 
+
+npm install -g swagger-combine
 `serve` command installs dependencies, builds, initializes, and starts your blockchain in development.
 
 ### Configure
