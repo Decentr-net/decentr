@@ -84,10 +84,11 @@ func TestKeeper_GetParams(t *testing.T) {
 	p := types.Params{
 		Moderators: []string{NewAccAddress().String()},
 		FixedGas: types.FixedGasParams{
-			CretePost: 1,
-			SetLike:   2,
-			Follow:    3,
-			Unfollow:  4,
+			CreatePost: 1,
+			DeletePost: 2,
+			SetLike:    3,
+			Follow:     4,
+			Unfollow:   5,
 		},
 	}
 

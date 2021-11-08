@@ -28,10 +28,11 @@ func TestGenesis(t *testing.T) {
 		Params: &types.Params{
 			Moderators: []string{addr.String()},
 			FixedGas: types.FixedGasParams{
-				CretePost: 1,
-				SetLike:   2,
-				Follow:    3,
-				Unfollow:  4,
+				CreatePost: 1,
+				DeletePost: 2,
+				SetLike:    3,
+				Follow:     4,
+				Unfollow:   5,
 			},
 		},
 		Posts: []types.Post{

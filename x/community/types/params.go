@@ -54,17 +54,18 @@ func validateModerators(i interface{}) error {
 	return nil
 }
 
-func NewFixedGasParams(createPost, setLike, follow, unfollow sdk.Gas) FixedGasParams {
+func NewFixedGasParams(createPost, deletePost, setLike, follow, unfollow sdk.Gas) FixedGasParams {
 	return FixedGasParams{
-		CretePost: createPost,
-		SetLike:   setLike,
-		Follow:    follow,
-		Unfollow:  unfollow,
+		CreatePost: createPost,
+		DeletePost: deletePost,
+		SetLike:    setLike,
+		Follow:     follow,
+		Unfollow:   unfollow,
 	}
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(0, 0, 0, 0)
+	return NewFixedGasParams(100, 100, 100, 100, 100)
 }
 
 func validateFixedGasParams(i interface{}) error {

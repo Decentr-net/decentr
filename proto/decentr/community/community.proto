@@ -11,10 +11,11 @@ message Params {
 }
 
 message FixedGasParams {
-    uint64 crete_post = 1;
-    uint64 set_like =2;
-    uint64 follow = 3;
-    uint64 unfollow = 4;
+    uint64 create_post = 1;
+    uint64 delete_post = 2;
+    uint64 set_like =3;
+    uint64 follow = 4;
+    uint64 unfollow = 5;
 }
 
 enum Category {
