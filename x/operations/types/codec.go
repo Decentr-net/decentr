@@ -2,10 +2,13 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
-// RegisterCodec registers concrete types on codec
-func RegisterCodec(cdc *codec.Codec) {
+func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(MsgDistributeRewards{}, "operations/DistributeRewards", nil)
 	cdc.RegisterConcrete(MsgResetAccount{}, "operations/MsgResetAccount", nil)
 	cdc.RegisterConcrete(MsgBanAccount{}, "operations/MsgBanAccount", nil)
@@ -13,9 +16,15 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgBurn{}, "operations/MsgBurn", nil)
 }
 
-// ModuleCdc is the codec for the module
-var ModuleCdc = codec.New()
-
-func init() {
-	RegisterCodec(ModuleCdc)
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgDistributeRewards{},
+		&MsgResetAccount{},
+		&MsgBanAccount{},
+		&MsgMint{},
+		&MsgBurn{},
+	)
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
+
+var ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())

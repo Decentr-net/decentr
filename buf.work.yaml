@@ -1,0 +1,4 @@
+version: v1
+directories:
+  - proto/decentr
+  - proto/3rdparty

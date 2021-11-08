@@ -1,0 +1,66 @@
+syntax = "proto3";
+package operations;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/operations/types";
+
+// Msg defines the Msg service.
+service Msg {
+    rpc DistributeRewards(MsgDistributeRewards) returns (MsgDistributeRewardsResponse);
+    rpc ResetAccount(MsgResetAccount) returns (MsgResetAccountResponse);
+    rpc BanAccount(MsgBanAccount) returns (MsgBanAccountResponse);
+    rpc Mint(MsgMint) returns (MsgMintResponse);
+    rpc Burn(MsgBurn) returns (MsgBurnResponse);
+}
+
+message Reward {
+    string receiver = 1;
+    uint64 reward = 2;
+}
+message MsgDistributeRewards {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    repeated Reward rewards = 2 [(gogoproto.nullable) = false];
+}
+message MsgDistributeRewardsResponse {}
+
+message MsgResetAccount {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    string address = 2;
+}
+message MsgResetAccountResponse {}
+
+message MsgBanAccount {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    string address = 2;
+    bool ban = 3;
+}
+message MsgBanAccountResponse {}
+
+message MsgMint {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    cosmos.base.v1beta1.Coin coin = 2 [(gogoproto.nullable) = false];
+}
+message MsgMintResponse {}
+
+message MsgBurn {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string owner = 1;
+    cosmos.base.v1beta1.Coin coin = 2 [(gogoproto.nullable) = false];
+}
+message MsgBurnResponse {}
