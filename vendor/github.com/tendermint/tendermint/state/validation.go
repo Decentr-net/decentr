@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/types"
 )
@@ -14,14 +12,15 @@ import (
 //-----------------------------------------------------
 // Validate block
 
-func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block *types.Block) error {
+func validateBlock(state State, block *types.Block) error {
 	// Validate internal consistency.
 	if err := block.ValidateBasic(); err != nil {
 		return err
 	}
 
 	// Validate basic info.
-	if block.Version != state.Version.Consensus {
+	if block.Version.App != state.Version.Consensus.App ||
+		block.Version.Block != state.Version.Consensus.Block {
 		return fmt.Errorf("wrong Block.Header.Version. Expected %v, got %v",
 			state.Version.Consensus,
 			block.Version,
@@ -33,13 +32,16 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 			block.ChainID,
 		)
 	}
-	if block.Height != state.LastBlockHeight+1 {
+	if state.LastBlockHeight == 0 && block.Height != state.InitialHeight {
+		return fmt.Errorf("wrong Block.Header.Height. Expected %v for initial block, got %v",
+			block.Height, state.InitialHeight)
+	}
+	if state.LastBlockHeight > 0 && block.Height != state.LastBlockHeight+1 {
 		return fmt.Errorf("wrong Block.Header.Height. Expected %v, got %v",
 			state.LastBlockHeight+1,
 			block.Height,
 		)
 	}
-
 	// Validate prev block info.
 	if !block.LastBlockID.Equals(state.LastBlockID) {
 		return fmt.Errorf("wrong Block.Header.LastBlockID.  Expected %v, got %v",
@@ -55,9 +57,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 			block.AppHash,
 		)
 	}
-	if !bytes.Equal(block.ConsensusHash, state.ConsensusParams.Hash()) {
+	hashCP := types.HashConsensusParams(state.ConsensusParams)
+	if !bytes.Equal(block.ConsensusHash, hashCP) {
 		return fmt.Errorf("wrong Block.Header.ConsensusHash.  Expected %X, got %v",
-			state.ConsensusParams.Hash(),
+			hashCP,
 			block.ConsensusHash,
 		)
 	}
@@ -81,30 +84,42 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 	}
 
 	// Validate block LastCommit.
-	if block.Height == 1 {
+	if block.Height == state.InitialHeight {
 		if len(block.LastCommit.Signatures) != 0 {
-			return errors.New("block at height 1 can't have LastCommit signatures")
+			return errors.New("initial block can't have LastCommit signatures")
 		}
 	} else {
-		if len(block.LastCommit.Signatures) != state.LastValidators.Size() {
-			return types.NewErrInvalidCommitSignatures(state.LastValidators.Size(), len(block.LastCommit.Signatures))
-		}
-		err := state.LastValidators.VerifyCommit(
-			state.ChainID, state.LastBlockID, block.Height-1, block.LastCommit)
-		if err != nil {
+		// LastCommit.Signatures length is checked in VerifyCommit.
+		if err := state.LastValidators.VerifyCommit(
+			state.ChainID, state.LastBlockID, block.Height-1, block.LastCommit); err != nil {
 			return err
 		}
 	}
 
+	// NOTE: We can't actually verify it's the right proposer because we don't
+	// know what round the block was first proposed. So just check that it's
+	// a legit address and a known validator.
+	if len(block.ProposerAddress) != crypto.AddressSize {
+		return fmt.Errorf("expected ProposerAddress size %d, got %d",
+			crypto.AddressSize,
+			len(block.ProposerAddress),
+		)
+	}
+	if !state.Validators.HasAddress(block.ProposerAddress) {
+		return fmt.Errorf("block.Header.ProposerAddress %X is not a validator",
+			block.ProposerAddress,
+		)
+	}
+
 	// Validate block Time
-	if block.Height > 1 {
+	switch {
+	case block.Height > state.InitialHeight:
 		if !block.Time.After(state.LastBlockTime) {
 			return fmt.Errorf("block time %v not greater than last block time %v",
 				block.Time,
 				state.LastBlockTime,
 			)
 		}
-
 		medianTime := MedianTime(block.LastCommit, state.LastValidators)
 		if !block.Time.Equal(medianTime) {
 			return fmt.Errorf("invalid block time. Expected %v, got %v",
@@ -112,7 +127,8 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 				block.Time,
 			)
 		}
-	} else if block.Height == 1 {
+
+	case block.Height == state.InitialHeight:
 		genesisTime := state.LastBlockTime
 		if !block.Time.Equal(genesisTime) {
 			return fmt.Errorf("block time %v is not equal to genesis time %v",
@@ -120,84 +136,15 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 				genesisTime,
 			)
 		}
+
+	default:
+		return fmt.Errorf("block height %v lower than initial height %v",
+			block.Height, state.InitialHeight)
 	}
 
-	// Limit the amount of evidence
-	maxNumEvidence, _ := types.MaxEvidencePerBlock(state.ConsensusParams.Block.MaxBytes)
-	numEvidence := int64(len(block.Evidence.Evidence))
-	if numEvidence > maxNumEvidence {
-		return types.NewErrEvidenceOverflow(maxNumEvidence, numEvidence)
-
-	}
-
-	// Validate all evidence.
-	for _, ev := range block.Evidence.Evidence {
-		if err := VerifyEvidence(stateDB, state, ev); err != nil {
-			return types.NewErrEvidenceInvalid(ev, err)
-		}
-		if evidencePool != nil && evidencePool.IsCommitted(ev) {
-			return types.NewErrEvidenceInvalid(ev, errors.New("evidence was already committed"))
-		}
-	}
-
-	// NOTE: We can't actually verify it's the right proposer because we dont
-	// know what round the block was first proposed. So just check that it's
-	// a legit address and a known validator.
-	if len(block.ProposerAddress) != crypto.AddressSize ||
-		!state.Validators.HasAddress(block.ProposerAddress) {
-		return fmt.Errorf("block.Header.ProposerAddress, %X, is not a validator",
-			block.ProposerAddress,
-		)
-	}
-
-	return nil
-}
-
-// VerifyEvidence verifies the evidence fully by checking:
-// - it is sufficiently recent (MaxAge)
-// - it is from a key who was a validator at the given height
-// - it is internally consistent
-// - it was properly signed by the alleged equivocator
-func VerifyEvidence(stateDB dbm.DB, state State, evidence types.Evidence) error {
-	var (
-		height         = state.LastBlockHeight
-		evidenceParams = state.ConsensusParams.Evidence
-
-		ageDuration  = state.LastBlockTime.Sub(evidence.Time())
-		ageNumBlocks = height - evidence.Height()
-	)
-
-	if ageDuration > evidenceParams.MaxAgeDuration && ageNumBlocks > evidenceParams.MaxAgeNumBlocks {
-		return fmt.Errorf(
-			"evidence from height %d (created at: %v) is too old; min height is %d and evidence can not be older than %v",
-			evidence.Height(),
-			evidence.Time(),
-			height-evidenceParams.MaxAgeNumBlocks,
-			state.LastBlockTime.Add(evidenceParams.MaxAgeDuration),
-		)
-	}
-
-	valset, err := LoadValidators(stateDB, evidence.Height())
-	if err != nil {
-		// TODO: if err is just that we cant find it cuz we pruned, ignore.
-		// TODO: if its actually bad evidence, punish peer
-		return err
-	}
-
-	// The address must have been an active validator at the height.
-	// NOTE: we will ignore evidence from H if the key was not a validator
-	// at H, even if it is a validator at some nearby H'
-	// XXX: this makes lite-client bisection as is unsafe
-	// See https://github.com/tendermint/tendermint/issues/3244
-	ev := evidence
-	height, addr := ev.Height(), ev.Address()
-	_, val := valset.GetByAddress(addr)
-	if val == nil {
-		return fmt.Errorf("address %X was not a validator at height %d", addr, height)
-	}
-
-	if err := evidence.Verify(state.ChainID, val.PubKey); err != nil {
-		return err
+	// Check evidence doesn't exceed the limit amount of bytes.
+	if max, got := state.ConsensusParams.Evidence.MaxBytes, block.Evidence.ByteSize(); got > max {
+		return types.NewErrEvidenceOverflow(max, got)
 	}
 
 	return nil

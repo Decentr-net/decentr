@@ -9,7 +9,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	ce "github.com/tendermint/tendermint/crypto/encoding"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 // Volatile state for each Validator
@@ -23,6 +23,7 @@ type Validator struct {
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
+// NewValidator returns a new validator with the given pubkey and voting power.
 func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
 	return &Validator{
 		Address:          pubKey.Address(),
@@ -30,6 +31,26 @@ func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
 		VotingPower:      votingPower,
 		ProposerPriority: 0,
 	}
+}
+
+// ValidateBasic performs basic validation.
+func (v *Validator) ValidateBasic() error {
+	if v == nil {
+		return errors.New("nil validator")
+	}
+	if v.PubKey == nil {
+		return errors.New("validator does not have a public key")
+	}
+
+	if v.VotingPower < 0 {
+		return errors.New("validator has negative voting power")
+	}
+
+	if len(v.Address) != crypto.AddressSize {
+		return fmt.Errorf("validator address is the wrong size: %v", v.Address)
+	}
+
+	return nil
 }
 
 // Creates a new copy of the validator so we can mutate ProposerPriority.
@@ -62,6 +83,12 @@ func (v *Validator) CompareProposerPriority(other *Validator) *Validator {
 	}
 }
 
+// String returns a string representation of String.
+//
+// 1. address
+// 2. public key
+// 3. voting power
+// 4. proposer priority
 func (v *Validator) String() string {
 	if v == nil {
 		return "nil-Validator"
@@ -88,13 +115,21 @@ func ValidatorListString(vals []*Validator) string {
 // as its redundant with the pubkey. This also excludes ProposerPriority
 // which changes every round.
 func (v *Validator) Bytes() []byte {
-	return cdcEncode(struct {
-		PubKey      crypto.PubKey
-		VotingPower int64
-	}{
-		v.PubKey,
-		v.VotingPower,
-	})
+	pk, err := ce.PubKeyToProto(v.PubKey)
+	if err != nil {
+		panic(err)
+	}
+
+	pbv := tmproto.SimpleValidator{
+		PubKey:      &pk,
+		VotingPower: v.VotingPower,
+	}
+
+	bz, err := pbv.Marshal()
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 // ToProto converts Valiator to protobuf
@@ -125,7 +160,7 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 		return nil, errors.New("nil validator")
 	}
 
-	pk, err := ce.PubKeyFromProto(&vp.PubKey)
+	pk, err := ce.PubKeyFromProto(vp.PubKey)
 	if err != nil {
 		return nil, err
 	}

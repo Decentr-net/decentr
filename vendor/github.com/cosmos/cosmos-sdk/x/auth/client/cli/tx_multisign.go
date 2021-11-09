@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,155 +9,408 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/tendermint/tendermint/crypto/multisig"
-
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/errors"
+	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 )
 
+// BroadcastReq defines a tx broadcasting request.
+type BroadcastReq struct {
+	Tx   legacytx.StdTx `json:"tx" yaml:"tx"`
+	Mode string         `json:"mode" yaml:"mode"`
+}
+
 // GetSignCommand returns the sign command
-func GetMultiSignCommand(cdc *codec.Codec) *cobra.Command {
+func GetMultiSignCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "multisign [file] [name] [[signature]...]",
 		Short: "Generate multisig signatures for transactions generated offline",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Sign transactions created with the --generate-only flag that require multisig signatures.
 
-Read signature(s) from [signature] file(s), generate a multisig signature compliant to the
-multisig key [name], and attach it to the transaction read from [file].
+Read one or more signatures from one or more [signature] file, generate a multisig signature compliant to the
+multisig key [name], and attach the key name to the transaction read from [file].
 
 Example:
-$ %s multisign transaction.json k1k2k3 k1sig.json k2sig.json k3sig.json
+$ %s tx multisign transaction.json k1k2k3 k1sig.json k2sig.json k3sig.json
 
-If the flag --signature-only flag is on, it outputs a JSON representation
-of the generated signature only.
+If --signature-only flag is on, output a JSON representation
+of only the generated signature.
 
-The --offline flag makes sure that the client will not reach out to an external node.
-Thus account number or sequence number lookups will not be performed and it is
-recommended to set such parameters manually.
+If the --offline flag is on, the client will not reach out to an external node.
+Account number or sequence number lookups are not performed so you must
+set these parameters manually.
+
+The current multisig implementation defaults to amino-json sign mode.
+The SIGN_MODE_DIRECT sign mode is not supported.'
 `,
-				version.ClientName,
+				version.AppName,
 			),
 		),
-		RunE: makeMultiSignCmd(cdc),
+		RunE: makeMultiSignCmd(),
 		Args: cobra.MinimumNArgs(3),
 	}
 
 	cmd.Flags().Bool(flagSigOnly, false, "Print only the generated signature, then exit")
-	cmd.Flags().Bool(flagOffline, false, "Offline mode. Do not query a full node")
-	cmd.Flags().String(flagOutfile, "", "The document will be written to the given file instead of STDOUT")
+	cmd.Flags().String(flags.FlagOutputDocument, "", "The document is written to the given file instead of STDOUT")
+	cmd.Flags().Bool(flagAmino, false, "Generate Amino-encoded JSON suitable for submitting to the txs REST endpoint")
+	flags.AddTxFlagsToCmd(cmd)
+	cmd.Flags().String(flags.FlagChainID, "", "network chain ID")
 
-	// Add the flags here and return the command
-	return flags.PostCommands(cmd)[0]
+	return cmd
 }
 
-func makeMultiSignCmd(cdc *codec.Codec) func(cmd *cobra.Command, args []string) error {
+func makeMultiSignCmd() func(cmd *cobra.Command, args []string) (err error) {
 	return func(cmd *cobra.Command, args []string) (err error) {
-		stdTx, err := utils.ReadStdTxFromFile(cdc, args[0])
+		clientCtx, err := client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+		parsedTx, err := authclient.ReadTxFromFile(clientCtx, args[0])
 		if err != nil {
 			return
 		}
 
-		inBuf := bufio.NewReader(cmd.InOrStdin())
-		kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
-			viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), inBuf)
-		if err != nil {
-			return
+		txFactory := tx.NewFactoryCLI(clientCtx, cmd.Flags())
+		if txFactory.SignMode() == signingtypes.SignMode_SIGN_MODE_UNSPECIFIED {
+			txFactory = txFactory.WithSignMode(signingtypes.SignMode_SIGN_MODE_LEGACY_AMINO_JSON)
 		}
 
-		multisigInfo, err := kb.Get(args[1])
+		txCfg := clientCtx.TxConfig
+		txBuilder, err := txCfg.WrapTxBuilder(parsedTx)
 		if err != nil {
-			return
-		}
-		if multisigInfo.GetType() != keys.TypeMulti {
-			return fmt.Errorf("%q must be of type %s: %s", args[1], keys.TypeMulti, multisigInfo.GetType())
+			return err
 		}
 
-		multisigPub := multisigInfo.GetPubKey().(multisig.PubKeyMultisigThreshold)
+		multisigInfo, err := getMultisigInfo(clientCtx, args[1])
+		if err != nil {
+			return err
+		}
+
+		multisigPub := multisigInfo.GetPubKey().(*kmultisig.LegacyAminoPubKey)
 		multisigSig := multisig.NewMultisig(len(multisigPub.PubKeys))
-		cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-		txBldr := types.NewTxBuilderFromCLI(inBuf)
-
-		if !viper.GetBool(flagOffline) {
-			accnum, seq, err := types.NewAccountRetriever(cliCtx).GetAccountNumberSequence(multisigInfo.GetAddress())
+		if !clientCtx.Offline {
+			accnum, seq, err := clientCtx.AccountRetriever.GetAccountNumberSequence(clientCtx, multisigInfo.GetAddress())
 			if err != nil {
 				return err
 			}
 
-			txBldr = txBldr.WithAccountNumber(accnum).WithSequence(seq)
+			txFactory = txFactory.WithAccountNumber(accnum).WithSequence(seq)
 		}
 
 		// read each signature and add it to the multisig if valid
 		for i := 2; i < len(args); i++ {
-			stdSig, err := readAndUnmarshalStdSignature(cdc, args[i])
+			sigs, err := unmarshalSignatureJSON(clientCtx, args[i])
 			if err != nil {
 				return err
 			}
 
-			// Validate each signature
-			sigBytes := types.StdSignBytes(
-				txBldr.ChainID(), txBldr.AccountNumber(), txBldr.Sequence(),
-				stdTx.Fee, stdTx.GetMsgs(), stdTx.GetMemo(),
-			)
-			if ok := stdSig.PubKey.VerifyBytes(sigBytes, stdSig.Signature); !ok {
-				return fmt.Errorf("couldn't verify signature")
+			if txFactory.ChainID() == "" {
+				return fmt.Errorf("set the chain id with either the --chain-id flag or config file")
 			}
-			if err := multisigSig.AddSignatureFromPubKey(stdSig.Signature, stdSig.PubKey, multisigPub.PubKeys); err != nil {
+
+			signingData := signing.SignerData{
+				ChainID:       txFactory.ChainID(),
+				AccountNumber: txFactory.AccountNumber(),
+				Sequence:      txFactory.Sequence(),
+			}
+
+			for _, sig := range sigs {
+				err = signing.VerifySignature(sig.PubKey, signingData, sig.Data, txCfg.SignModeHandler(), txBuilder.GetTx())
+				if err != nil {
+					addr, _ := sdk.AccAddressFromHex(sig.PubKey.Address().String())
+					return fmt.Errorf("couldn't verify signature for address %s", addr)
+				}
+
+				if err := multisig.AddSignatureV2(multisigSig, sig, multisigPub.GetPubKeys()); err != nil {
+					return err
+				}
+			}
+		}
+
+		sigV2 := signingtypes.SignatureV2{
+			PubKey:   multisigPub,
+			Data:     multisigSig,
+			Sequence: txFactory.Sequence(),
+		}
+
+		err = txBuilder.SetSignatures(sigV2)
+		if err != nil {
+			return err
+		}
+
+		sigOnly, _ := cmd.Flags().GetBool(flagSigOnly)
+
+		aminoJSON, _ := cmd.Flags().GetBool(flagAmino)
+
+		var json []byte
+
+		if aminoJSON {
+			stdTx, err := tx.ConvertTxToStdTx(clientCtx.LegacyAmino, txBuilder.GetTx())
+			if err != nil {
+				return err
+			}
+
+			req := BroadcastReq{
+				Tx:   stdTx,
+				Mode: "block|sync|async",
+			}
+
+			json, _ = clientCtx.LegacyAmino.MarshalJSON(req)
+
+		} else {
+			json, err = marshalSignatureJSON(txCfg, txBuilder, sigOnly)
+			if err != nil {
 				return err
 			}
 		}
 
-		newStdSig := types.StdSignature{Signature: cdc.MustMarshalBinaryBare(multisigSig), PubKey: multisigPub}
-		newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo())
-
-		sigOnly := viper.GetBool(flagSigOnly)
-		var json []byte
-		switch {
-		case sigOnly && cliCtx.Indent:
-			json, err = cdc.MarshalJSONIndent(newTx.Signatures[0], "", "  ")
-		case sigOnly && !cliCtx.Indent:
-			json, err = cdc.MarshalJSON(newTx.Signatures[0])
-		case !sigOnly && cliCtx.Indent:
-			json, err = cdc.MarshalJSONIndent(newTx, "", "  ")
-		default:
-			json, err = cdc.MarshalJSON(newTx)
-		}
-		if err != nil {
-			return err
-		}
-
-		if viper.GetString(flagOutfile) == "" {
-			fmt.Printf("%s\n", json)
+		outputDoc, _ := cmd.Flags().GetString(flags.FlagOutputDocument)
+		if outputDoc == "" {
+			cmd.Printf("%s\n", json)
 			return
 		}
 
-		fp, err := os.OpenFile(
-			viper.GetString(flagOutfile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644,
-		)
+		fp, err := os.OpenFile(outputDoc, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
-		defer fp.Close()
 
-		fmt.Fprintf(fp, "%s\n", json)
+		defer func() {
+			err2 := fp.Close()
+			if err == nil {
+				err = err2
+			}
+		}()
+
+		err = clientCtx.PrintBytes(json)
 
 		return
 	}
 }
 
-func readAndUnmarshalStdSignature(cdc *codec.Codec, filename string) (stdSig types.StdSignature, err error) {
+func GetMultiSignBatchCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "multisign-batch [file] [name] [[signature-file]...]",
+		Short: "Assemble multisig transactions in batch from batch signatures",
+		Long: strings.TrimSpace(
+			fmt.Sprintf(`Assemble a batch of multisig transactions generated by batch sign command.
+
+Read one or more signatures from one or more [signature] file, generate a multisig signature compliant to the
+multisig key [name], and attach the key name to the transaction read from [file].
+
+Example:
+$ %s tx multisign-batch transactions.json multisigk1k2k3 k1sigs.json k2sigs.json k3sig.json
+
+The current multisig implementation defaults to amino-json sign mode.
+The SIGN_MODE_DIRECT sign mode is not supported.'
+`, version.AppName,
+			),
+		),
+		PreRun: preSignCmd,
+		RunE:   makeBatchMultisignCmd(),
+		Args:   cobra.MinimumNArgs(3),
+	}
+
+	cmd.Flags().Bool(flagNoAutoIncrement, false, "disable sequence auto increment")
+	cmd.Flags().String(
+		flagMultisig, "",
+		"Address of the multisig account that the transaction signs on behalf of",
+	)
+	cmd.Flags().String(flags.FlagOutputDocument, "", "The document is written to the given file instead of STDOUT")
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func makeBatchMultisignCmd() func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) (err error) {
+		var clientCtx client.Context
+
+		clientCtx, err = client.GetClientTxContext(cmd)
+		if err != nil {
+			return err
+		}
+
+		txCfg := clientCtx.TxConfig
+		txFactory := tx.NewFactoryCLI(clientCtx, cmd.Flags())
+		if txFactory.SignMode() == signingtypes.SignMode_SIGN_MODE_UNSPECIFIED {
+			txFactory = txFactory.WithSignMode(signingtypes.SignMode_SIGN_MODE_LEGACY_AMINO_JSON)
+		}
+
+		var infile = os.Stdin
+		if args[0] != "-" {
+			infile, err = os.Open(args[0])
+			defer func() {
+				err2 := infile.Close()
+				if err == nil {
+					err = err2
+				}
+			}()
+
+			if err != nil {
+				return fmt.Errorf("couldn't open %s: %w", args[0], err)
+			}
+		}
+		scanner := authclient.NewBatchScanner(txCfg, infile)
+
+		multisigInfo, err := getMultisigInfo(clientCtx, args[1])
+		if err != nil {
+			return err
+		}
+
+		var signatureBatch [][]signingtypes.SignatureV2
+		for i := 2; i < len(args); i++ {
+			sigs, err := readSignaturesFromFile(clientCtx, args[i])
+			if err != nil {
+				return err
+			}
+
+			signatureBatch = append(signatureBatch, sigs)
+		}
+
+		if !clientCtx.Offline {
+			accnum, seq, err := clientCtx.AccountRetriever.GetAccountNumberSequence(clientCtx, multisigInfo.GetAddress())
+			if err != nil {
+				return err
+			}
+
+			txFactory = txFactory.WithAccountNumber(accnum).WithSequence(seq)
+		}
+
+		// prepare output document
+		closeFunc, err := setOutputFile(cmd)
+		if err != nil {
+			return err
+		}
+
+		defer closeFunc()
+		clientCtx.WithOutput(cmd.OutOrStdout())
+
+		for i := 0; scanner.Scan(); i++ {
+			txBldr, err := txCfg.WrapTxBuilder(scanner.Tx())
+			if err != nil {
+				return err
+			}
+
+			multisigPub := multisigInfo.GetPubKey().(*kmultisig.LegacyAminoPubKey)
+			multisigSig := multisig.NewMultisig(len(multisigPub.PubKeys))
+			signingData := signing.SignerData{
+				ChainID:       txFactory.ChainID(),
+				AccountNumber: txFactory.AccountNumber(),
+				Sequence:      txFactory.Sequence(),
+			}
+
+			for _, sig := range signatureBatch {
+				err = signing.VerifySignature(sig[i].PubKey, signingData, sig[i].Data, txCfg.SignModeHandler(), txBldr.GetTx())
+				if err != nil {
+					return fmt.Errorf("couldn't verify signature: %w %v", err, sig)
+				}
+
+				if err := multisig.AddSignatureV2(multisigSig, sig[i], multisigPub.GetPubKeys()); err != nil {
+					return err
+				}
+			}
+
+			sigV2 := signingtypes.SignatureV2{
+				PubKey:   multisigPub,
+				Data:     multisigSig,
+				Sequence: txFactory.Sequence(),
+			}
+
+			err = txBldr.SetSignatures(sigV2)
+			if err != nil {
+				return err
+			}
+
+			sigOnly, _ := cmd.Flags().GetBool(flagSigOnly)
+			aminoJSON, _ := cmd.Flags().GetBool(flagAmino)
+
+			var json []byte
+
+			if aminoJSON {
+				stdTx, err := tx.ConvertTxToStdTx(clientCtx.LegacyAmino, txBldr.GetTx())
+				if err != nil {
+					return err
+				}
+
+				req := BroadcastReq{
+					Tx:   stdTx,
+					Mode: "block|sync|async",
+				}
+
+				json, _ = clientCtx.LegacyAmino.MarshalJSON(req)
+
+			} else {
+				json, err = marshalSignatureJSON(txCfg, txBldr, sigOnly)
+				if err != nil {
+					return err
+				}
+			}
+
+			err = clientCtx.PrintString(fmt.Sprintf("%s\n", json))
+			if err != nil {
+				return err
+			}
+
+			if viper.GetBool(flagNoAutoIncrement) {
+				continue
+			}
+			sequence := txFactory.Sequence() + 1
+			txFactory = txFactory.WithSequence(sequence)
+		}
+
+		return scanner.UnmarshalErr()
+	}
+}
+
+func unmarshalSignatureJSON(clientCtx client.Context, filename string) (sigs []signingtypes.SignatureV2, err error) {
 	var bytes []byte
 	if bytes, err = ioutil.ReadFile(filename); err != nil {
 		return
 	}
-	if err = cdc.UnmarshalJSON(bytes, &stdSig); err != nil {
-		return
+	return clientCtx.TxConfig.UnmarshalSignatureJSON(bytes)
+}
+
+func readSignaturesFromFile(ctx client.Context, filename string) (sigs []signingtypes.SignatureV2, err error) {
+	bz, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
 	}
-	return
+
+	newString := strings.TrimSuffix(string(bz), "\n")
+	lines := strings.Split(newString, "\n")
+
+	for _, bz := range lines {
+		sig, err := ctx.TxConfig.UnmarshalSignatureJSON([]byte(bz))
+		if err != nil {
+			return nil, err
+		}
+
+		sigs = append(sigs, sig...)
+	}
+	return sigs, nil
+}
+
+func getMultisigInfo(clientCtx client.Context, name string) (keyring.Info, error) {
+	kb := clientCtx.Keyring
+	multisigInfo, err := kb.Key(name)
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting keybase multisig account")
+	}
+	if multisigInfo.GetType() != keyring.TypeMulti {
+		return nil, fmt.Errorf("%q must be of type %s: %s", name, keyring.TypeMulti, multisigInfo.GetType())
+	}
+
+	return multisigInfo, nil
 }

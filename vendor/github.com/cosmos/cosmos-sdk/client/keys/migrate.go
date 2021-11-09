@@ -6,14 +6,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/input"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/input"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // migratePassphrase is used as a no-op migration key passphrase as a passphrase
@@ -23,16 +22,18 @@ const migratePassphrase = "NOOP_PASSPHRASE"
 // MigrateCommand migrates key information from legacy keybase to OS secret store.
 func MigrateCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "migrate",
+		Use:   "migrate <old_home_dir>",
 		Short: "Migrate keys from the legacy (db-based) Keybase",
-		Long: `Migrate key information from the legacy (db-based) Keybase to the new keyring-based Keybase.
+		Long: `Migrate key information from the legacy (db-based) Keybase to the new keyring-based Keyring.
+The legacy Keybase used to persist keys in a LevelDB database stored in a 'keys' sub-directory of
+the old client application's home directory, e.g. $HOME/.gaiacli/keys/.
 For each key material entry, the command will prompt if the key should be skipped or not. If the key
 is not to be skipped, the passphrase must be entered. The key will only be migrated if the passphrase
 is correct. Otherwise, the command will exit and migration must be repeated.
 
 It is recommended to run in 'dry-run' mode first to verify all key migration material.
 `,
-		Args: cobra.ExactArgs(0),
+		Args: cobra.ExactArgs(1),
 		RunE: runMigrateCmd,
 	}
 
@@ -41,12 +42,16 @@ It is recommended to run in 'dry-run' mode first to verify all key migration mat
 }
 
 func runMigrateCmd(cmd *cobra.Command, args []string) error {
+	rootDir, _ := cmd.Flags().GetString(flags.FlagHome)
+
 	// instantiate legacy keybase
-	rootDir := viper.GetString(flags.FlagHome)
-	legacyKb, err := NewKeyBaseFromDir(rootDir)
+	var legacyKb keyring.LegacyKeybase
+	legacyKb, err := NewLegacyKeyBaseFromDir(args[0])
 	if err != nil {
 		return err
 	}
+
+	defer func() { _ = legacyKb.Close() }()
 
 	// fetch list of keys from legacy keybase
 	oldKeys, err := legacyKb.List()
@@ -58,22 +63,24 @@ func runMigrateCmd(cmd *cobra.Command, args []string) error {
 	keyringServiceName := sdk.KeyringServiceName()
 
 	var (
-		tmpDir  string
-		keybase keys.Keybase
+		tmpDir   string
+		migrator keyring.Importer
 	)
 
-	if viper.GetBool(flags.FlagDryRun) {
-		tmpDir, err = ioutil.TempDir("", "keybase-migrate-dryrun")
+	if dryRun, _ := cmd.Flags().GetBool(flags.FlagDryRun); dryRun {
+		tmpDir, err = ioutil.TempDir("", "migrator-migrate-dryrun")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temporary directory for dryrun migration")
 		}
 
-		defer os.RemoveAll(tmpDir)
+		defer func() { _ = os.RemoveAll(tmpDir) }()
 
-		keybase, err = keys.NewKeyring(keyringServiceName, "test", tmpDir, buf)
+		migrator, err = keyring.New(keyringServiceName, keyring.BackendTest, tmpDir, buf)
 	} else {
-		keybase, err = keys.NewKeyring(keyringServiceName, viper.GetString(flags.FlagKeyringBackend), rootDir, buf)
+		backend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
+		migrator, err = keyring.New(keyringServiceName, backend, rootDir, buf)
 	}
+
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf(
 			"failed to initialize keybase for service %s at directory %s",
@@ -81,25 +88,19 @@ func runMigrateCmd(cmd *cobra.Command, args []string) error {
 		))
 	}
 
-	for _, key := range oldKeys {
-		legKeyInfo, err := legacyKb.Export(key.GetName())
-		if err != nil {
-			return err
-		}
+	if len(oldKeys) == 0 {
+		cmd.PrintErrln("Migration Aborted: no keys to migrate")
+		return nil
+	}
 
-		keyName := key.GetName()
-		keyType := key.GetType()
+	for _, oldInfo := range oldKeys {
+		keyName := oldInfo.GetName()
+		keyType := oldInfo.GetType()
 
-		// skip key if already migrated
-		if _, err := keybase.Get(keyName); err == nil {
-			cmd.PrintErrf("Key '%s (%s)' already exists; skipping ...\n", key.GetName(), keyType)
-			continue
-		}
-
-		cmd.PrintErrf("Migrating key: '%s (%s)' ...\n", key.GetName(), keyType)
+		cmd.PrintErrf("Migrating key: '%s (%s)' ...\n", keyName, keyType)
 
 		// allow user to skip migrating specific keys
-		ok, err := input.GetConfirmation("Skip key migration?", buf)
+		ok, err := input.GetConfirmation("Skip key migration?", buf, cmd.ErrOrStderr())
 		if err != nil {
 			return err
 		}
@@ -107,8 +108,15 @@ func runMigrateCmd(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		if keyType != keys.TypeLocal {
-			if err := keybase.Import(keyName, legKeyInfo); err != nil {
+		// TypeLocal needs an additional step to ask password.
+		// The other keyring types are handled by ImportInfo.
+		if keyType != keyring.TypeLocal {
+			infoImporter, ok := migrator.(keyring.LegacyInfoImporter)
+			if !ok {
+				return fmt.Errorf("the Keyring implementation does not support import operations of Info types")
+			}
+
+			if err = infoImporter.ImportInfo(oldInfo); err != nil {
 				return err
 			}
 
@@ -128,10 +136,12 @@ func runMigrateCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if err := keybase.ImportPrivKey(keyName, armoredPriv, migratePassphrase); err != nil {
+		if err := migrator.ImportPrivKey(keyName, armoredPriv, migratePassphrase); err != nil {
 			return err
 		}
+
 	}
+	cmd.PrintErrln("Migration complete.")
 
 	return err
 }

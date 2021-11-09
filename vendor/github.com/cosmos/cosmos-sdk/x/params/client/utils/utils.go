@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 )
 
 type (
@@ -29,7 +29,7 @@ type (
 		Title       string           `json:"title" yaml:"title"`
 		Description string           `json:"description" yaml:"description"`
 		Changes     ParamChangesJSON `json:"changes" yaml:"changes"`
-		Deposit     sdk.Coins        `json:"deposit" yaml:"deposit"`
+		Deposit     string           `json:"deposit" yaml:"deposit"`
 	}
 
 	// ParamChangeProposalReq defines a parameter change proposal request body.
@@ -49,14 +49,14 @@ func NewParamChangeJSON(subspace, key string, value json.RawMessage) ParamChange
 }
 
 // ToParamChange converts a ParamChangeJSON object to ParamChange.
-func (pcj ParamChangeJSON) ToParamChange() params.ParamChange {
-	return params.NewParamChange(pcj.Subspace, pcj.Key, string(pcj.Value))
+func (pcj ParamChangeJSON) ToParamChange() proposal.ParamChange {
+	return proposal.NewParamChange(pcj.Subspace, pcj.Key, string(pcj.Value))
 }
 
 // ToParamChanges converts a slice of ParamChangeJSON objects to a slice of
 // ParamChange.
-func (pcj ParamChangesJSON) ToParamChanges() []params.ParamChange {
-	res := make([]params.ParamChange, len(pcj))
+func (pcj ParamChangesJSON) ToParamChanges() []proposal.ParamChange {
+	res := make([]proposal.ParamChange, len(pcj))
 	for i, pc := range pcj {
 		res[i] = pc.ToParamChange()
 	}
@@ -65,7 +65,7 @@ func (pcj ParamChangesJSON) ToParamChanges() []params.ParamChange {
 
 // ParseParamChangeProposalJSON reads and parses a ParamChangeProposalJSON from
 // file.
-func ParseParamChangeProposalJSON(cdc *codec.Codec, proposalFile string) (ParamChangeProposalJSON, error) {
+func ParseParamChangeProposalJSON(cdc *codec.LegacyAmino, proposalFile string) (ParamChangeProposalJSON, error) {
 	proposal := ParamChangeProposalJSON{}
 
 	contents, err := ioutil.ReadFile(proposalFile)

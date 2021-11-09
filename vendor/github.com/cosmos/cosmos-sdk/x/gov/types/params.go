@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/subspace"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // Default period for deposits & voting
@@ -15,10 +17,10 @@ const (
 
 // Default governance params
 var (
-	DefaultMinDepositTokens = sdk.TokensFromConsensusPower(10)
+	DefaultMinDepositTokens = sdk.NewInt(10000000)
 	DefaultQuorum           = sdk.NewDecWithPrec(334, 3)
 	DefaultThreshold        = sdk.NewDecWithPrec(5, 1)
-	DefaultVeto             = sdk.NewDecWithPrec(334, 3)
+	DefaultVetoThreshold    = sdk.NewDecWithPrec(334, 3)
 )
 
 // Parameter store key
@@ -29,18 +31,12 @@ var (
 )
 
 // ParamKeyTable - Key declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable(
-		params.NewParamSetPair(ParamStoreKeyDepositParams, DepositParams{}, validateDepositParams),
-		params.NewParamSetPair(ParamStoreKeyVotingParams, VotingParams{}, validateVotingParams),
-		params.NewParamSetPair(ParamStoreKeyTallyParams, TallyParams{}, validateTallyParams),
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable(
+		paramtypes.NewParamSetPair(ParamStoreKeyDepositParams, DepositParams{}, validateDepositParams),
+		paramtypes.NewParamSetPair(ParamStoreKeyVotingParams, VotingParams{}, validateVotingParams),
+		paramtypes.NewParamSetPair(ParamStoreKeyTallyParams, TallyParams{}, validateTallyParams),
 	)
-}
-
-// DepositParams defines the params around deposits for governance
-type DepositParams struct {
-	MinDeposit       sdk.Coins     `json:"min_deposit,omitempty" yaml:"min_deposit,omitempty"`               //  Minimum deposit for a proposal to enter voting period.
-	MaxDepositPeriod time.Duration `json:"max_deposit_period,omitempty" yaml:"max_deposit_period,omitempty"` //  Maximum period for Atom holders to deposit on a proposal. Initial value: 2 months
 }
 
 // NewDepositParams creates a new DepositParams object
@@ -61,9 +57,8 @@ func DefaultDepositParams() DepositParams {
 
 // String implements stringer insterface
 func (dp DepositParams) String() string {
-	return fmt.Sprintf(`Deposit Params:
-  Min Deposit:        %s
-  Max Deposit Period: %s`, dp.MinDeposit, dp.MaxDepositPeriod)
+	out, _ := yaml.Marshal(dp)
+	return string(out)
 }
 
 // Equal checks equality of DepositParams
@@ -87,34 +82,29 @@ func validateDepositParams(i interface{}) error {
 	return nil
 }
 
-// TallyParams defines the params around Tallying votes in governance
-type TallyParams struct {
-	Quorum    sdk.Dec `json:"quorum,omitempty" yaml:"quorum,omitempty"`       //  Minimum percentage of total stake needed to vote for a result to be considered valid
-	Threshold sdk.Dec `json:"threshold,omitempty" yaml:"threshold,omitempty"` //  Minimum proportion of Yes votes for proposal to pass. Initial value: 0.5
-	Veto      sdk.Dec `json:"veto,omitempty" yaml:"veto,omitempty"`           //  Minimum value of Veto votes to Total votes ratio for proposal to be vetoed. Initial value: 1/3
-}
-
 // NewTallyParams creates a new TallyParams object
-func NewTallyParams(quorum, threshold, veto sdk.Dec) TallyParams {
+func NewTallyParams(quorum, threshold, vetoThreshold sdk.Dec) TallyParams {
 	return TallyParams{
-		Quorum:    quorum,
-		Threshold: threshold,
-		Veto:      veto,
+		Quorum:        quorum,
+		Threshold:     threshold,
+		VetoThreshold: vetoThreshold,
 	}
 }
 
 // DefaultTallyParams default parameters for tallying
 func DefaultTallyParams() TallyParams {
-	return NewTallyParams(DefaultQuorum, DefaultThreshold, DefaultVeto)
+	return NewTallyParams(DefaultQuorum, DefaultThreshold, DefaultVetoThreshold)
+}
+
+// Equal checks equality of TallyParams
+func (tp TallyParams) Equal(other TallyParams) bool {
+	return tp.Quorum.Equal(other.Quorum) && tp.Threshold.Equal(other.Threshold) && tp.VetoThreshold.Equal(other.VetoThreshold)
 }
 
 // String implements stringer insterface
 func (tp TallyParams) String() string {
-	return fmt.Sprintf(`Tally Params:
-  Quorum:             %s
-  Threshold:          %s
-  Veto:               %s`,
-		tp.Quorum, tp.Threshold, tp.Veto)
+	out, _ := yaml.Marshal(tp)
+	return string(out)
 }
 
 func validateTallyParams(i interface{}) error {
@@ -135,19 +125,14 @@ func validateTallyParams(i interface{}) error {
 	if v.Threshold.GT(sdk.OneDec()) {
 		return fmt.Errorf("vote threshold too large: %s", v)
 	}
-	if !v.Veto.IsPositive() {
+	if !v.VetoThreshold.IsPositive() {
 		return fmt.Errorf("veto threshold must be positive: %s", v.Threshold)
 	}
-	if v.Veto.GT(sdk.OneDec()) {
+	if v.VetoThreshold.GT(sdk.OneDec()) {
 		return fmt.Errorf("veto threshold too large: %s", v)
 	}
 
 	return nil
-}
-
-// VotingParams defines the params around Voting in governance
-type VotingParams struct {
-	VotingPeriod time.Duration `json:"voting_period,omitempty" yaml:"voting_period,omitempty"` //  Length of the voting period.
 }
 
 // NewVotingParams creates a new VotingParams object
@@ -162,10 +147,15 @@ func DefaultVotingParams() VotingParams {
 	return NewVotingParams(DefaultPeriod)
 }
 
+// Equal checks equality of TallyParams
+func (vp VotingParams) Equal(other VotingParams) bool {
+	return vp.VotingPeriod == other.VotingPeriod
+}
+
 // String implements stringer interface
 func (vp VotingParams) String() string {
-	return fmt.Sprintf(`Voting Params:
-  Voting Period:      %s`, vp.VotingPeriod)
+	out, _ := yaml.Marshal(vp)
+	return string(out)
 }
 
 func validateVotingParams(i interface{}) error {
@@ -185,7 +175,7 @@ func validateVotingParams(i interface{}) error {
 type Params struct {
 	VotingParams  VotingParams  `json:"voting_params" yaml:"voting_params"`
 	TallyParams   TallyParams   `json:"tally_params" yaml:"tally_params"`
-	DepositParams DepositParams `json:"deposit_params" yaml:"deposit_parmas"`
+	DepositParams DepositParams `json:"deposit_params" yaml:"deposit_params"`
 }
 
 func (gp Params) String() string {

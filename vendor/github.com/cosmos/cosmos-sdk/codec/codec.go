@@ -1,65 +1,98 @@
 package codec
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
+	"github.com/gogo/protobuf/proto"
 
-	amino "github.com/tendermint/go-amino"
-	cryptoamino "github.com/tendermint/tendermint/crypto/encoding/amino"
-	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 )
 
-// amino codec to marshal/unmarshal
-type Codec = amino.Codec
-
-func New() *Codec {
-	return amino.NewCodec()
-}
-
-// Register the go-crypto to the codec
-func RegisterCrypto(cdc *Codec) {
-	cryptoamino.RegisterAmino(cdc)
-}
-
-// RegisterEvidences registers Tendermint evidence types with the provided codec.
-func RegisterEvidences(cdc *Codec) {
-	tmtypes.RegisterEvidences(cdc)
-}
-
-// attempt to make some pretty json
-func MarshalJSONIndent(cdc *Codec, obj interface{}) ([]byte, error) {
-	bz, err := cdc.MarshalJSON(obj)
-	if err != nil {
-		return nil, err
+type (
+	// Codec defines a functionality for serializing other objects.
+	// Users can defin a custom Protobuf-based serialization.
+	// Note, Amino can still be used without any dependency on Protobuf.
+	// SDK provides to Codec implementations:
+	//
+	// 1. AminoCodec: Provides full Amino serialization compatibility.
+	// 2. ProtoCodec: Provides full Protobuf serialization compatibility.
+	Codec interface {
+		BinaryCodec
+		JSONCodec
 	}
 
-	var out bytes.Buffer
-	err = json.Indent(&out, bz, "", "  ")
-	if err != nil {
-		return nil, err
+	BinaryCodec interface {
+		// Marshal returns binary encoding of v.
+		Marshal(o ProtoMarshaler) ([]byte, error)
+		// MustMarshal calls Marshal and panics if error is returned.
+		MustMarshal(o ProtoMarshaler) []byte
+
+		// MarshalLengthPrefixed returns binary encoding of v with bytes length prefix.
+		MarshalLengthPrefixed(o ProtoMarshaler) ([]byte, error)
+		// MustMarshalLengthPrefixed calls MarshalLengthPrefixed and panics if
+		// error is returned.
+		MustMarshalLengthPrefixed(o ProtoMarshaler) []byte
+
+		// Unmarshal parses the data encoded with Marshal method and stores the result
+		// in the value pointed to by v.
+		Unmarshal(bz []byte, ptr ProtoMarshaler) error
+		// MustUnmarshal calls Unmarshal and panics if error is returned.
+		MustUnmarshal(bz []byte, ptr ProtoMarshaler)
+
+		// Unmarshal parses the data encoded with UnmarshalLengthPrefixed method and stores
+		// the result in the value pointed to by v.
+		UnmarshalLengthPrefixed(bz []byte, ptr ProtoMarshaler) error
+		// MustUnmarshalLengthPrefixed calls UnmarshalLengthPrefixed and panics if error
+		// is returned.
+		MustUnmarshalLengthPrefixed(bz []byte, ptr ProtoMarshaler)
+
+		// MarshalInterface is a helper method which will wrap `i` into `Any` for correct
+		// binary interface (de)serialization.
+		MarshalInterface(i proto.Message) ([]byte, error)
+		// UnmarshalInterface is a helper method which will parse binary enoded data
+		// into `Any` and unpack any into the `ptr`. It fails if the target interface type
+		// is not registered in codec, or is not compatible with the serialized data
+		UnmarshalInterface(bz []byte, ptr interface{}) error
+
+		types.AnyUnpacker
 	}
-	return out.Bytes(), nil
-}
 
-// MustMarshalJSONIndent executes MarshalJSONIndent except it panics upon failure.
-func MustMarshalJSONIndent(cdc *Codec, obj interface{}) []byte {
-	bz, err := MarshalJSONIndent(cdc, obj)
-	if err != nil {
-		panic(fmt.Sprintf("failed to marshal JSON: %s", err))
+	JSONCodec interface {
+		// MarshalJSON returns JSON encoding of v.
+		MarshalJSON(o proto.Message) ([]byte, error)
+		// MustMarshalJSON calls MarshalJSON and panics if error is returned.
+		MustMarshalJSON(o proto.Message) []byte
+		// MarshalInterfaceJSON is a helper method which will wrap `i` into `Any` for correct
+		// JSON interface (de)serialization.
+		MarshalInterfaceJSON(i proto.Message) ([]byte, error)
+		// UnmarshalInterfaceJSON is a helper method which will parse JSON enoded data
+		// into `Any` and unpack any into the `ptr`. It fails if the target interface type
+		// is not registered in codec, or is not compatible with the serialized data
+		UnmarshalInterfaceJSON(bz []byte, ptr interface{}) error
+
+		// UnmarshalJSON parses the data encoded with MarshalJSON method and stores the result
+		// in the value pointed to by v.
+		UnmarshalJSON(bz []byte, ptr proto.Message) error
+		// MustUnmarshalJSON calls Unmarshal and panics if error is returned.
+		MustUnmarshalJSON(bz []byte, ptr proto.Message)
 	}
 
-	return bz
-}
+	// ProtoMarshaler defines an interface a type must implement to serialize itself
+	// as a protocol buffer defined message.
+	ProtoMarshaler interface {
+		proto.Message // for JSON serialization
 
-//__________________________________________________________________
+		Marshal() ([]byte, error)
+		MarshalTo(data []byte) (n int, err error)
+		MarshalToSizedBuffer(dAtA []byte) (int, error)
+		Size() int
+		Unmarshal(data []byte) error
+	}
 
-// Cdc generic sealed codec to be used throughout sdk
-var Cdc *Codec
-
-func init() {
-	cdc := New()
-	RegisterCrypto(cdc)
-	RegisterEvidences(cdc)
-	Cdc = cdc.Seal()
-}
+	// AminoMarshaler defines an interface a type must implement to serialize itself
+	// for Amino codec.
+	AminoMarshaler interface {
+		MarshalAmino() ([]byte, error)
+		UnmarshalAmino([]byte) error
+		MarshalAminoJSON() ([]byte, error)
+		UnmarshalAminoJSON([]byte) error
+	}
+)

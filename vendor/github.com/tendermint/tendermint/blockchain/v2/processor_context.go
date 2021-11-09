@@ -12,6 +12,7 @@ type processorContext interface {
 	verifyCommit(chainID string, blockID types.BlockID, height int64, commit *types.Commit) error
 	saveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit)
 	tmState() state.State
+	setState(state.State)
 }
 
 type pContext struct {
@@ -38,8 +39,12 @@ func (pc pContext) tmState() state.State {
 	return pc.state
 }
 
+func (pc *pContext) setState(state state.State) {
+	pc.state = state
+}
+
 func (pc pContext) verifyCommit(chainID string, blockID types.BlockID, height int64, commit *types.Commit) error {
-	return pc.state.Validators.VerifyCommit(chainID, blockID, height, commit)
+	return pc.state.Validators.VerifyCommitLight(chainID, blockID, height, commit)
 }
 
 func (pc *pContext) saveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit) {
@@ -84,6 +89,10 @@ func (mpc *mockPContext) verifyCommit(chainID string, blockID types.BlockID, hei
 
 func (mpc *mockPContext) saveBlock(block *types.Block, blockParts *types.PartSet, seenCommit *types.Commit) {
 
+}
+
+func (mpc *mockPContext) setState(state state.State) {
+	mpc.state = state
 }
 
 func (mpc *mockPContext) tmState() state.State {

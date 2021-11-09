@@ -1,11 +1,14 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -13,110 +16,130 @@ import (
 // DefaultStartingProposalID is 1
 const DefaultStartingProposalID uint64 = 1
 
-// Proposal defines a struct used by the governance module to allow for voting
-// on network changes.
-type Proposal struct {
-	Content `json:"content" yaml:"content"` // Proposal content interface
-
-	ProposalID       uint64         `json:"id" yaml:"id"`                                 //  ID of the proposal
-	Status           ProposalStatus `json:"proposal_status" yaml:"proposal_status"`       // Status of the Proposal {Pending, Active, Passed, Rejected}
-	FinalTallyResult TallyResult    `json:"final_tally_result" yaml:"final_tally_result"` // Result of Tallys
-
-	SubmitTime     time.Time `json:"submit_time" yaml:"submit_time"`           // Time of the block where TxGovSubmitProposal was included
-	DepositEndTime time.Time `json:"deposit_end_time" yaml:"deposit_end_time"` // Time that the Proposal would expire if deposit amount isn't met
-	TotalDeposit   sdk.Coins `json:"total_deposit" yaml:"total_deposit"`       // Current deposit on this proposal. Initial value is set at InitialDeposit
-
-	VotingStartTime time.Time `json:"voting_start_time" yaml:"voting_start_time"` // Time of the block where MinDeposit was reached. -1 if MinDeposit is not reached
-	VotingEndTime   time.Time `json:"voting_end_time" yaml:"voting_end_time"`     // Time that the VotingPeriod for this proposal will end and votes will be tallied
-}
-
 // NewProposal creates a new Proposal instance
-func NewProposal(content Content, id uint64, submitTime, depositEndTime time.Time) Proposal {
-	return Proposal{
-		Content:          content,
-		ProposalID:       id,
+func NewProposal(content Content, id uint64, submitTime, depositEndTime time.Time) (Proposal, error) {
+	msg, ok := content.(proto.Message)
+	if !ok {
+		return Proposal{}, fmt.Errorf("%T does not implement proto.Message", content)
+	}
+
+	any, err := types.NewAnyWithValue(msg)
+	if err != nil {
+		return Proposal{}, err
+	}
+
+	p := Proposal{
+		Content:          any,
+		ProposalId:       id,
 		Status:           StatusDepositPeriod,
 		FinalTallyResult: EmptyTallyResult(),
 		TotalDeposit:     sdk.NewCoins(),
 		SubmitTime:       submitTime,
 		DepositEndTime:   depositEndTime,
 	}
+
+	return p, nil
 }
 
 // String implements stringer interface
 func (p Proposal) String() string {
-	return fmt.Sprintf(`Proposal %d:
-  Title:              %s
-  Type:               %s
-  Status:             %s
-  Submit Time:        %s
-  Deposit End Time:   %s
-  Total Deposit:      %s
-  Voting Start Time:  %s
-  Voting End Time:    %s
-  Description:        %s`,
-		p.ProposalID, p.GetTitle(), p.ProposalType(),
-		p.Status, p.SubmitTime, p.DepositEndTime,
-		p.TotalDeposit, p.VotingStartTime, p.VotingEndTime, p.GetDescription(),
-	)
+	out, _ := yaml.Marshal(p)
+	return string(out)
+}
+
+// GetContent returns the proposal Content
+func (p Proposal) GetContent() Content {
+	content, ok := p.Content.GetCachedValue().(Content)
+	if !ok {
+		return nil
+	}
+	return content
+}
+
+func (p Proposal) ProposalType() string {
+	content := p.GetContent()
+	if content == nil {
+		return ""
+	}
+	return content.ProposalType()
+}
+
+func (p Proposal) ProposalRoute() string {
+	content := p.GetContent()
+	if content == nil {
+		return ""
+	}
+	return content.ProposalRoute()
+}
+
+func (p Proposal) GetTitle() string {
+	content := p.GetContent()
+	if content == nil {
+		return ""
+	}
+	return content.GetTitle()
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (p Proposal) UnpackInterfaces(unpacker types.AnyUnpacker) error {
+	var content Content
+	return unpacker.UnpackAny(p.Content, &content)
 }
 
 // Proposals is an array of proposal
 type Proposals []Proposal
+
+var _ types.UnpackInterfacesMessage = Proposals{}
+
+// Equal returns true if two slices (order-dependant) of proposals are equal.
+func (p Proposals) Equal(other Proposals) bool {
+	if len(p) != len(other) {
+		return false
+	}
+
+	for i, proposal := range p {
+		if !proposal.Equal(other[i]) {
+			return false
+		}
+	}
+
+	return true
+}
 
 // String implements stringer interface
 func (p Proposals) String() string {
 	out := "ID - (Status) [Type] Title\n"
 	for _, prop := range p {
 		out += fmt.Sprintf("%d - (%s) [%s] %s\n",
-			prop.ProposalID, prop.Status,
+			prop.ProposalId, prop.Status,
 			prop.ProposalType(), prop.GetTitle())
 	}
 	return strings.TrimSpace(out)
 }
 
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (p Proposals) UnpackInterfaces(unpacker types.AnyUnpacker) error {
+	for _, x := range p {
+		err := x.UnpackInterfaces(unpacker)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type (
 	// ProposalQueue defines a queue for proposal ids
 	ProposalQueue []uint64
-
-	// ProposalStatus is a type alias that represents a proposal status as a byte
-	ProposalStatus byte
-)
-
-// Valid Proposal statuses
-const (
-	StatusNil           ProposalStatus = 0x00
-	StatusDepositPeriod ProposalStatus = 0x01
-	StatusVotingPeriod  ProposalStatus = 0x02
-	StatusPassed        ProposalStatus = 0x03
-	StatusRejected      ProposalStatus = 0x04
-	StatusFailed        ProposalStatus = 0x05
 )
 
 // ProposalStatusFromString turns a string into a ProposalStatus
 func ProposalStatusFromString(str string) (ProposalStatus, error) {
-	switch str {
-	case "DepositPeriod":
-		return StatusDepositPeriod, nil
-
-	case "VotingPeriod":
-		return StatusVotingPeriod, nil
-
-	case "Passed":
-		return StatusPassed, nil
-
-	case "Rejected":
-		return StatusRejected, nil
-
-	case "Failed":
-		return StatusFailed, nil
-
-	case "":
-		return StatusNil, nil
-
-	default:
-		return ProposalStatus(0xff), fmt.Errorf("'%s' is not a valid proposal status", str)
+	num, ok := ProposalStatus_value[str]
+	if !ok {
+		return StatusNil, fmt.Errorf("'%s' is not a valid proposal status", str)
 	}
+	return ProposalStatus(num), nil
 }
 
 // ValidProposalStatus returns true if the proposal status is valid and false
@@ -143,51 +166,6 @@ func (status *ProposalStatus) Unmarshal(data []byte) error {
 	return nil
 }
 
-// MarshalJSON Marshals to JSON using string representation of the status
-func (status ProposalStatus) MarshalJSON() ([]byte, error) {
-	return json.Marshal(status.String())
-}
-
-// UnmarshalJSON Unmarshals from JSON assuming Bech32 encoding
-func (status *ProposalStatus) UnmarshalJSON(data []byte) error {
-	var s string
-	err := json.Unmarshal(data, &s)
-	if err != nil {
-		return err
-	}
-
-	bz2, err := ProposalStatusFromString(s)
-	if err != nil {
-		return err
-	}
-
-	*status = bz2
-	return nil
-}
-
-// String implements the Stringer interface.
-func (status ProposalStatus) String() string {
-	switch status {
-	case StatusDepositPeriod:
-		return "DepositPeriod"
-
-	case StatusVotingPeriod:
-		return "VotingPeriod"
-
-	case StatusPassed:
-		return "Passed"
-
-	case StatusRejected:
-		return "Rejected"
-
-	case StatusFailed:
-		return "Failed"
-
-	default:
-		return ""
-	}
-}
-
 // Format implements the fmt.Formatter interface.
 // nolint: errcheck
 func (status ProposalStatus) Format(s fmt.State, verb rune) {
@@ -205,42 +183,33 @@ const (
 	ProposalTypeText string = "Text"
 )
 
-// TextProposal defines a standard text proposal whose changes need to be
-// manually updated in case of approval
-type TextProposal struct {
-	Title       string `json:"title" yaml:"title"`
-	Description string `json:"description" yaml:"description"`
-}
+// Implements Content Interface
+var _ Content = &TextProposal{}
 
 // NewTextProposal creates a text proposal Content
 func NewTextProposal(title, description string) Content {
-	return TextProposal{title, description}
+	return &TextProposal{title, description}
 }
 
-// Implements Content Interface
-var _ Content = TextProposal{}
-
 // GetTitle returns the proposal title
-func (tp TextProposal) GetTitle() string { return tp.Title }
+func (tp *TextProposal) GetTitle() string { return tp.Title }
 
 // GetDescription returns the proposal description
-func (tp TextProposal) GetDescription() string { return tp.Description }
+func (tp *TextProposal) GetDescription() string { return tp.Description }
 
 // ProposalRoute returns the proposal router key
-func (tp TextProposal) ProposalRoute() string { return RouterKey }
+func (tp *TextProposal) ProposalRoute() string { return RouterKey }
 
 // ProposalType is "Text"
-func (tp TextProposal) ProposalType() string { return ProposalTypeText }
+func (tp *TextProposal) ProposalType() string { return ProposalTypeText }
 
 // ValidateBasic validates the content's title and description of the proposal
-func (tp TextProposal) ValidateBasic() error { return ValidateAbstract(tp) }
+func (tp *TextProposal) ValidateBasic() error { return ValidateAbstract(tp) }
 
 // String implements Stringer interface
 func (tp TextProposal) String() string {
-	return fmt.Sprintf(`Text Proposal:
-  Title:       %s
-  Description: %s
-`, tp.Title, tp.Description)
+	out, _ := yaml.Marshal(tp)
+	return string(out)
 }
 
 var validProposalTypes = map[string]struct{}{

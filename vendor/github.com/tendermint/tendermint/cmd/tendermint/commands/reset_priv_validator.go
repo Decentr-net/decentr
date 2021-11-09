@@ -13,22 +13,26 @@ import (
 // ResetAllCmd removes the database of this Tendermint core
 // instance.
 var ResetAllCmd = &cobra.Command{
-	Use:   "unsafe_reset_all",
-	Short: "(unsafe) Remove all the data and WAL, reset this node's validator to genesis state",
-	Run:   resetAll,
+	Use:     "unsafe-reset-all",
+	Aliases: []string{"unsafe_reset_all"},
+	Short:   "(unsafe) Remove all the data and WAL, reset this node's validator to genesis state",
+	Run:     resetAll,
+	PreRun:  deprecateSnakeCase,
 }
 
 var keepAddrBook bool
 
 func init() {
-	ResetAllCmd.Flags().BoolVar(&keepAddrBook, "keep-addr-book", false, "Keep the address book intact")
+	ResetAllCmd.Flags().BoolVar(&keepAddrBook, "keep-addr-book", false, "keep the address book intact")
 }
 
 // ResetPrivValidatorCmd resets the private validator files.
 var ResetPrivValidatorCmd = &cobra.Command{
-	Use:   "unsafe_reset_priv_validator",
-	Short: "(unsafe) Reset this node's validator to genesis state",
-	Run:   resetPrivValidator,
+	Use:     "unsafe-reset-priv-validator",
+	Aliases: []string{"unsafe_reset_priv_validator"},
+	Short:   "(unsafe) Reset this node's validator to genesis state",
+	Run:     resetPrivValidator,
+	PreRun:  deprecateSnakeCase,
 }
 
 // XXX: this is totally unsafe.
@@ -58,7 +62,9 @@ func ResetAll(dbDir, addrBookFile, privValKeyFile, privValStateFile string, logg
 		logger.Error("Error removing all blockchain history", "dir", dbDir, "err", err)
 	}
 	// recreate the dbDir since the privVal state needs to live there
-	tmos.EnsureDir(dbDir, 0700)
+	if err := tmos.EnsureDir(dbDir, 0700); err != nil {
+		logger.Error("unable to recreate dbDir", "err", err)
+	}
 	resetFilePV(privValKeyFile, privValStateFile, logger)
 }
 

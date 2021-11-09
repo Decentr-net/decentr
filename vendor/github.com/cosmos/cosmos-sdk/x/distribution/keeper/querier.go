@@ -9,38 +9,38 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-func NewQuerier(k Keeper) sdk.Querier {
+func NewQuerier(k Keeper, legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case types.QueryParams:
-			return queryParams(ctx, path[1:], req, k)
+			return queryParams(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryValidatorOutstandingRewards:
-			return queryValidatorOutstandingRewards(ctx, path[1:], req, k)
+			return queryValidatorOutstandingRewards(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryValidatorCommission:
-			return queryValidatorCommission(ctx, path[1:], req, k)
+			return queryValidatorCommission(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryValidatorSlashes:
-			return queryValidatorSlashes(ctx, path[1:], req, k)
+			return queryValidatorSlashes(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryDelegationRewards:
-			return queryDelegationRewards(ctx, path[1:], req, k)
+			return queryDelegationRewards(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryDelegatorTotalRewards:
-			return queryDelegatorTotalRewards(ctx, path[1:], req, k)
+			return queryDelegatorTotalRewards(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryDelegatorValidators:
-			return queryDelegatorValidators(ctx, path[1:], req, k)
+			return queryDelegatorValidators(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryWithdrawAddr:
-			return queryDelegatorWithdrawAddress(ctx, path[1:], req, k)
+			return queryDelegatorWithdrawAddress(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		case types.QueryCommunityPool:
-			return queryCommunityPool(ctx, path[1:], req, k)
+			return queryCommunityPool(ctx, path[1:], req, k, legacyQuerierCdc)
 
 		default:
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unknown query path: %s", path[0])
@@ -48,10 +48,10 @@ func NewQuerier(k Keeper) sdk.Querier {
 	}
 }
 
-func queryParams(ctx sdk.Context, path []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryParams(ctx sdk.Context, _ []string, _ abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	params := k.GetParams(ctx)
 
-	res, err := codec.MarshalJSONIndent(k.cdc, params)
+	res, err := codec.MarshalJSONIndent(legacyQuerierCdc, params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -59,19 +59,19 @@ func queryParams(ctx sdk.Context, path []string, req abci.RequestQuery, k Keeper
 	return res, nil
 }
 
-func queryValidatorOutstandingRewards(ctx sdk.Context, path []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryValidatorOutstandingRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryValidatorOutstandingRewardsParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
 	rewards := k.GetValidatorOutstandingRewards(ctx, params.ValidatorAddress)
-	if rewards == nil {
-		rewards = sdk.DecCoins{}
+	if rewards.GetRewards() == nil {
+		rewards.Rewards = sdk.DecCoins{}
 	}
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, rewards)
+	bz, err := codec.MarshalJSONIndent(legacyQuerierCdc, rewards)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -79,19 +79,19 @@ func queryValidatorOutstandingRewards(ctx sdk.Context, path []string, req abci.R
 	return bz, nil
 }
 
-func queryValidatorCommission(ctx sdk.Context, path []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryValidatorCommission(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryValidatorCommissionParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
 	commission := k.GetValidatorAccumulatedCommission(ctx, params.ValidatorAddress)
-	if commission == nil {
-		commission = sdk.DecCoins{}
+	if commission.Commission == nil {
+		commission.Commission = sdk.DecCoins{}
 	}
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, commission)
+	bz, err := codec.MarshalJSONIndent(legacyQuerierCdc, commission)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -99,9 +99,9 @@ func queryValidatorCommission(ctx sdk.Context, path []string, req abci.RequestQu
 	return bz, nil
 }
 
-func queryValidatorSlashes(ctx sdk.Context, path []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryValidatorSlashes(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryValidatorSlashesParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
@@ -114,7 +114,7 @@ func queryValidatorSlashes(ctx sdk.Context, path []string, req abci.RequestQuery
 		},
 	)
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, events)
+	bz, err := codec.MarshalJSONIndent(legacyQuerierCdc, events)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -122,14 +122,14 @@ func queryValidatorSlashes(ctx sdk.Context, path []string, req abci.RequestQuery
 	return bz, nil
 }
 
-func queryDelegationRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryDelegationRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryDelegationRewardsParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	// cache-wrap context as to not persist state changes during querying
+	// branch the context to isolate state changes
 	ctx, _ = ctx.CacheContext()
 
 	val := k.stakingKeeper.Validator(ctx, params.ValidatorAddress)
@@ -142,13 +142,13 @@ func queryDelegationRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, 
 		return nil, types.ErrNoDelegationExists
 	}
 
-	endingPeriod := k.incrementValidatorPeriod(ctx, val)
-	rewards := k.calculateDelegationRewards(ctx, val, del, endingPeriod)
+	endingPeriod := k.IncrementValidatorPeriod(ctx, val)
+	rewards := k.CalculateDelegationRewards(ctx, val, del, endingPeriod)
 	if rewards == nil {
 		rewards = sdk.DecCoins{}
 	}
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, rewards)
+	bz, err := codec.MarshalJSONIndent(legacyQuerierCdc, rewards)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -156,26 +156,27 @@ func queryDelegationRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, 
 	return bz, nil
 }
 
-func queryDelegatorTotalRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryDelegatorTotalRewards(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryDelegatorParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	// cache-wrap context as to not persist state changes during querying
+	// branch the context to isolate state changes
 	ctx, _ = ctx.CacheContext()
 
 	total := sdk.DecCoins{}
+
 	var delRewards []types.DelegationDelegatorReward
 
 	k.stakingKeeper.IterateDelegations(
 		ctx, params.DelegatorAddress,
-		func(_ int64, del exported.DelegationI) (stop bool) {
+		func(_ int64, del stakingtypes.DelegationI) (stop bool) {
 			valAddr := del.GetValidatorAddr()
 			val := k.stakingKeeper.Validator(ctx, valAddr)
-			endingPeriod := k.incrementValidatorPeriod(ctx, val)
-			delReward := k.calculateDelegationRewards(ctx, val, del, endingPeriod)
+			endingPeriod := k.IncrementValidatorPeriod(ctx, val)
+			delReward := k.CalculateDelegationRewards(ctx, val, del, endingPeriod)
 
 			delRewards = append(delRewards, types.NewDelegationDelegatorReward(valAddr, delReward))
 			total = total.Add(delReward...)
@@ -193,27 +194,27 @@ func queryDelegatorTotalRewards(ctx sdk.Context, _ []string, req abci.RequestQue
 	return bz, nil
 }
 
-func queryDelegatorValidators(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryDelegatorValidators(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryDelegatorParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	// cache-wrap context as to not persist state changes during querying
+	// branch the context to isolate state changes
 	ctx, _ = ctx.CacheContext()
 
 	var validators []sdk.ValAddress
 
 	k.stakingKeeper.IterateDelegations(
 		ctx, params.DelegatorAddress,
-		func(_ int64, del exported.DelegationI) (stop bool) {
+		func(_ int64, del stakingtypes.DelegationI) (stop bool) {
 			validators = append(validators, del.GetValidatorAddr())
 			return false
 		},
 	)
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, validators)
+	bz, err := codec.MarshalJSONIndent(legacyQuerierCdc, validators)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -221,18 +222,18 @@ func queryDelegatorValidators(ctx sdk.Context, _ []string, req abci.RequestQuery
 	return bz, nil
 }
 
-func queryDelegatorWithdrawAddress(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryDelegatorWithdrawAddress(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	var params types.QueryDelegatorWithdrawAddrParams
-	err := k.cdc.UnmarshalJSON(req.Data, &params)
+	err := legacyQuerierCdc.UnmarshalJSON(req.Data, &params)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 
-	// cache-wrap context as to not persist state changes during querying
+	// branch the context to isolate state changes
 	ctx, _ = ctx.CacheContext()
 	withdrawAddr := k.GetDelegatorWithdrawAddr(ctx, params.DelegatorAddress)
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, withdrawAddr)
+	bz, err := codec.MarshalJSONIndent(legacyQuerierCdc, withdrawAddr)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -240,13 +241,13 @@ func queryDelegatorWithdrawAddress(ctx sdk.Context, _ []string, req abci.Request
 	return bz, nil
 }
 
-func queryCommunityPool(ctx sdk.Context, _ []string, req abci.RequestQuery, k Keeper) ([]byte, error) {
+func queryCommunityPool(ctx sdk.Context, _ []string, _ abci.RequestQuery, k Keeper, legacyQuerierCdc *codec.LegacyAmino) ([]byte, error) {
 	pool := k.GetFeePoolCommunityCoins(ctx)
 	if pool == nil {
 		pool = sdk.DecCoins{}
 	}
 
-	bz, err := k.cdc.MarshalJSON(pool)
+	bz, err := legacyQuerierCdc.MarshalJSON(pool)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}

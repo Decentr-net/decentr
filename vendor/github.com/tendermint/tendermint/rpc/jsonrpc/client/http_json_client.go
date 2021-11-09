@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,11 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 
-	"github.com/pkg/errors"
-	amino "github.com/tendermint/go-amino"
-
+	tmsync "github.com/tendermint/tendermint/libs/sync"
 	types "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 )
 
@@ -23,6 +21,7 @@ const (
 	protoWSS   = "wss"
 	protoWS    = "ws"
 	protoTCP   = "tcp"
+	protoUNIX  = "unix"
 )
 
 //-------------------------------------------------------------
@@ -30,6 +29,8 @@ const (
 // Parsed URL structure
 type parsedURL struct {
 	url.URL
+
+	isUnixSocket bool
 }
 
 // Parse URL and set defaults
@@ -44,7 +45,16 @@ func newParsedURL(remoteAddr string) (*parsedURL, error) {
 		u.Scheme = protoTCP
 	}
 
-	return &parsedURL{*u}, nil
+	pu := &parsedURL{
+		URL:          *u,
+		isUnixSocket: false,
+	}
+
+	if u.Scheme == protoUNIX {
+		pu.isUnixSocket = true
+	}
+
+	return pu, nil
 }
 
 // Change protocol to HTTP for unknown protocols and TCP protocol - useful for RPC connections
@@ -67,8 +77,24 @@ func (u parsedURL) GetHostWithPath() string {
 
 // Get a trimmed address - useful for WS connections
 func (u parsedURL) GetTrimmedHostWithPath() string {
-	// replace / with . for http requests (kvstore domain)
-	return strings.Replace(u.GetHostWithPath(), "/", ".", -1)
+	// if it's not an unix socket we return the normal URL
+	if !u.isUnixSocket {
+		return u.GetHostWithPath()
+	}
+	// if it's a unix socket we replace the host slashes with a period
+	// this is because otherwise the http.Client would think that the
+	// domain is invalid.
+	return strings.ReplaceAll(u.GetHostWithPath(), "/", ".")
+}
+
+// GetDialAddress returns the endpoint to dial for the parsed URL
+func (u parsedURL) GetDialAddress() string {
+	// if it's not a unix socket we return the host, example: localhost:443
+	if !u.isUnixSocket {
+		return u.Host
+	}
+	// otherwise we return the path of the unix socket, ex /tmp/socket
+	return u.GetHostWithPath()
 }
 
 // Get a trimmed address with protocol - useful as address in RPC connections
@@ -81,25 +107,18 @@ func (u parsedURL) GetTrimmedURL() string {
 // HTTPClient is a common interface for JSON-RPC HTTP clients.
 type HTTPClient interface {
 	// Call calls the given method with the params and returns a result.
-	Call(method string, params map[string]interface{}, result interface{}) (interface{}, error)
-	// Codec returns an amino codec used.
-	Codec() *amino.Codec
-	// SetCodec sets an amino codec.
-	SetCodec(*amino.Codec)
+	Call(ctx context.Context, method string, params map[string]interface{}, result interface{}) (interface{}, error)
 }
 
 // Caller implementers can facilitate calling the JSON-RPC endpoint.
 type Caller interface {
-	Call(method string, params map[string]interface{}, result interface{}) (interface{}, error)
+	Call(ctx context.Context, method string, params map[string]interface{}, result interface{}) (interface{}, error)
 }
 
 //-------------------------------------------------------------
 
 // Client is a JSON-RPC client, which sends POST HTTP requests to the
 // remote server.
-//
-// Request values are amino encoded. Response is expected to be amino encoded.
-// New amino codec is used if no other codec was set using SetCodec.
 //
 // Client is safe for concurrent use by multiple goroutines.
 type Client struct {
@@ -108,9 +127,8 @@ type Client struct {
 	password string
 
 	client *http.Client
-	cdc    *amino.Codec
 
-	mtx       sync.Mutex
+	mtx       tmsync.Mutex
 	nextReqID int
 }
 
@@ -155,52 +173,57 @@ func NewWithHTTPClient(remote string, client *http.Client) (*Client, error) {
 		username: username,
 		password: password,
 		client:   client,
-		cdc:      amino.NewCodec(),
 	}
 
 	return rpcClient, nil
 }
 
 // Call issues a POST HTTP request. Requests are JSON encoded. Content-Type:
-// text/json.
-func (c *Client) Call(method string, params map[string]interface{}, result interface{}) (interface{}, error) {
+// application/json.
+func (c *Client) Call(
+	ctx context.Context,
+	method string,
+	params map[string]interface{},
+	result interface{},
+) (interface{}, error) {
 	id := c.nextRequestID()
 
-	request, err := types.MapToRequest(c.cdc, id, method, params)
+	request, err := types.MapToRequest(id, method, params)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode params")
+		return nil, fmt.Errorf("failed to encode params: %w", err)
 	}
 
 	requestBytes, err := json.Marshal(request)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal request")
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
 	requestBuf := bytes.NewBuffer(requestBytes)
-	httpRequest, err := http.NewRequest(http.MethodPost, c.address, requestBuf)
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, c.address, requestBuf)
 	if err != nil {
-		return nil, errors.Wrap(err, "Request failed")
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	httpRequest.Header.Set("Content-Type", "text/json")
+
+	httpRequest.Header.Set("Content-Type", "application/json")
+
 	if c.username != "" || c.password != "" {
 		httpRequest.SetBasicAuth(c.username, c.password)
 	}
+
 	httpResponse, err := c.client.Do(httpRequest)
 	if err != nil {
-		return nil, errors.Wrap(err, "Post failed")
+		return nil, fmt.Errorf("post failed: %w", err)
 	}
-	defer httpResponse.Body.Close() // nolint: errcheck
+
+	defer httpResponse.Body.Close()
 
 	responseBytes, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return unmarshalResponseBytes(c.cdc, responseBytes, id, result)
+	return unmarshalResponseBytes(responseBytes, id, result)
 }
-
-func (c *Client) Codec() *amino.Codec       { return c.cdc }
-func (c *Client) SetCodec(cdc *amino.Codec) { c.cdc = cdc }
 
 // NewRequestBatch starts a batch of requests for this client.
 func (c *Client) NewRequestBatch() *RequestBatch {
@@ -210,7 +233,7 @@ func (c *Client) NewRequestBatch() *RequestBatch {
 	}
 }
 
-func (c *Client) sendBatch(requests []*jsonRPCBufferedRequest) ([]interface{}, error) {
+func (c *Client) sendBatch(ctx context.Context, requests []*jsonRPCBufferedRequest) ([]interface{}, error) {
 	reqs := make([]types.RPCRequest, 0, len(requests))
 	results := make([]interface{}, 0, len(requests))
 	for _, req := range requests {
@@ -221,26 +244,30 @@ func (c *Client) sendBatch(requests []*jsonRPCBufferedRequest) ([]interface{}, e
 	// serialize the array of requests into a single JSON object
 	requestBytes, err := json.Marshal(reqs)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal requests")
+		return nil, fmt.Errorf("json marshal: %w", err)
 	}
 
-	httpRequest, err := http.NewRequest(http.MethodPost, c.address, bytes.NewBuffer(requestBytes))
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, c.address, bytes.NewBuffer(requestBytes))
 	if err != nil {
-		return nil, errors.Wrap(err, "Request failed")
+		return nil, fmt.Errorf("new request: %w", err)
 	}
-	httpRequest.Header.Set("Content-Type", "text/json")
+
+	httpRequest.Header.Set("Content-Type", "application/json")
+
 	if c.username != "" || c.password != "" {
 		httpRequest.SetBasicAuth(c.username, c.password)
 	}
+
 	httpResponse, err := c.client.Do(httpRequest)
 	if err != nil {
-		return nil, errors.Wrap(err, "Post failed")
+		return nil, fmt.Errorf("post: %w", err)
 	}
-	defer httpResponse.Body.Close() // nolint: errcheck
+
+	defer httpResponse.Body.Close()
 
 	responseBytes, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, fmt.Errorf("read response body: %w", err)
 	}
 
 	// collect ids to check responses IDs in unmarshalResponseBytesArray
@@ -249,7 +276,7 @@ func (c *Client) sendBatch(requests []*jsonRPCBufferedRequest) ([]interface{}, e
 		ids[i] = req.request.ID.(types.JSONRPCIntID)
 	}
 
-	return unmarshalResponseBytesArray(c.cdc, responseBytes, ids, results)
+	return unmarshalResponseBytesArray(responseBytes, ids, results)
 }
 
 func (c *Client) nextRequestID() types.JSONRPCIntID {
@@ -275,7 +302,7 @@ type jsonRPCBufferedRequest struct {
 type RequestBatch struct {
 	client *Client
 
-	mtx      sync.Mutex
+	mtx      tmsync.Mutex
 	requests []*jsonRPCBufferedRequest
 }
 
@@ -308,24 +335,25 @@ func (b *RequestBatch) clear() int {
 // Send will attempt to send the current batch of enqueued requests, and then
 // will clear out the requests once done. On success, this returns the
 // deserialized list of results from each of the enqueued requests.
-func (b *RequestBatch) Send() ([]interface{}, error) {
+func (b *RequestBatch) Send(ctx context.Context) ([]interface{}, error) {
 	b.mtx.Lock()
 	defer func() {
 		b.clear()
 		b.mtx.Unlock()
 	}()
-	return b.client.sendBatch(b.requests)
+	return b.client.sendBatch(ctx, b.requests)
 }
 
 // Call enqueues a request to call the given RPC method with the specified
 // parameters, in the same way that the `Client.Call` function would.
 func (b *RequestBatch) Call(
+	_ context.Context,
 	method string,
 	params map[string]interface{},
 	result interface{},
 ) (interface{}, error) {
 	id := b.client.nextRequestID()
-	request, err := types.MapToRequest(b.client.cdc, id, method, params)
+	request, err := types.MapToRequest(id, method, params)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +378,7 @@ func makeHTTPDialer(remoteAddr string) (func(string, string) (net.Conn, error), 
 	}
 
 	dialFn := func(proto, addr string) (net.Conn, error) {
-		return net.Dial(protocol, u.GetHostWithPath())
+		return net.Dial(protocol, u.GetDialAddress())
 	}
 
 	return dialFn, nil

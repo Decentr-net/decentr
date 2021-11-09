@@ -1,13 +1,13 @@
 package types
 
 import (
+	"errors"
+	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmstrings "github.com/tendermint/tendermint/libs/strings"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 const (
@@ -15,83 +15,55 @@ const (
 	MaxBlockSizeBytes = 104857600 // 100MB
 
 	// BlockPartSizeBytes is the size of one block part.
-	BlockPartSizeBytes = 65536 // 64kB
+	BlockPartSizeBytes uint32 = 65536 // 64kB
 
 	// MaxBlockPartsCount is the maximum number of block parts.
 	MaxBlockPartsCount = (MaxBlockSizeBytes / BlockPartSizeBytes) + 1
 )
 
-// ConsensusParams contains consensus critical parameters that determine the
-// validity of blocks.
-type ConsensusParams struct {
-	Block     BlockParams     `json:"block"`
-	Evidence  EvidenceParams  `json:"evidence"`
-	Validator ValidatorParams `json:"validator"`
-}
-
-// HashedParams is a subset of ConsensusParams.
-// It is amino encoded and hashed into
-// the Header.ConsensusHash.
-type HashedParams struct {
-	BlockMaxBytes int64
-	BlockMaxGas   int64
-}
-
-// BlockParams define limits on the block size and gas plus minimum time
-// between blocks.
-type BlockParams struct {
-	MaxBytes int64 `json:"max_bytes"`
-	MaxGas   int64 `json:"max_gas"`
-	// Minimum time increment between consecutive blocks (in milliseconds)
-	// Not exposed to the application.
-	TimeIotaMs int64 `json:"time_iota_ms"`
-}
-
-// EvidenceParams determine how we handle evidence of malfeasance.
-type EvidenceParams struct {
-	MaxAgeNumBlocks int64         `json:"max_age_num_blocks"` // only accept new evidence more recent than this
-	MaxAgeDuration  time.Duration `json:"max_age_duration"`
-}
-
-// ValidatorParams restrict the public key types validators can use.
-// NOTE: uses ABCI pubkey naming, not Amino names.
-type ValidatorParams struct {
-	PubKeyTypes []string `json:"pub_key_types"`
-}
-
 // DefaultConsensusParams returns a default ConsensusParams.
-func DefaultConsensusParams() *ConsensusParams {
-	return &ConsensusParams{
-		DefaultBlockParams(),
-		DefaultEvidenceParams(),
-		DefaultValidatorParams(),
+func DefaultConsensusParams() *tmproto.ConsensusParams {
+	return &tmproto.ConsensusParams{
+		Block:     DefaultBlockParams(),
+		Evidence:  DefaultEvidenceParams(),
+		Validator: DefaultValidatorParams(),
+		Version:   DefaultVersionParams(),
 	}
 }
 
 // DefaultBlockParams returns a default BlockParams.
-func DefaultBlockParams() BlockParams {
-	return BlockParams{
+func DefaultBlockParams() tmproto.BlockParams {
+	return tmproto.BlockParams{
 		MaxBytes:   22020096, // 21MB
 		MaxGas:     -1,
 		TimeIotaMs: 1000, // 1s
 	}
 }
 
-// DefaultEvidenceParams Params returns a default EvidenceParams.
-func DefaultEvidenceParams() EvidenceParams {
-	return EvidenceParams{
+// DefaultEvidenceParams returns a default EvidenceParams.
+func DefaultEvidenceParams() tmproto.EvidenceParams {
+	return tmproto.EvidenceParams{
 		MaxAgeNumBlocks: 100000, // 27.8 hrs at 1block/s
 		MaxAgeDuration:  48 * time.Hour,
+		MaxBytes:        1048576, // 1MB
 	}
 }
 
 // DefaultValidatorParams returns a default ValidatorParams, which allows
 // only ed25519 pubkeys.
-func DefaultValidatorParams() ValidatorParams {
-	return ValidatorParams{[]string{ABCIPubKeyTypeEd25519}}
+func DefaultValidatorParams() tmproto.ValidatorParams {
+	return tmproto.ValidatorParams{
+		PubKeyTypes: []string{ABCIPubKeyTypeEd25519},
+	}
 }
 
-func (params *ValidatorParams) IsValidPubkeyType(pubkeyType string) bool {
+func DefaultVersionParams() tmproto.VersionParams {
+	return tmproto.VersionParams{
+		AppVersion: 0,
+	}
+}
+
+func IsValidPubkeyType(params tmproto.ValidatorParams, pubkeyType string) bool {
 	for i := 0; i < len(params.PubKeyTypes); i++ {
 		if params.PubKeyTypes[i] == pubkeyType {
 			return true
@@ -102,34 +74,44 @@ func (params *ValidatorParams) IsValidPubkeyType(pubkeyType string) bool {
 
 // Validate validates the ConsensusParams to ensure all values are within their
 // allowed limits, and returns an error if they are not.
-func (params *ConsensusParams) Validate() error {
+func ValidateConsensusParams(params tmproto.ConsensusParams) error {
 	if params.Block.MaxBytes <= 0 {
-		return errors.Errorf("block.MaxBytes must be greater than 0. Got %d",
+		return fmt.Errorf("block.MaxBytes must be greater than 0. Got %d",
 			params.Block.MaxBytes)
 	}
 	if params.Block.MaxBytes > MaxBlockSizeBytes {
-		return errors.Errorf("block.MaxBytes is too big. %d > %d",
+		return fmt.Errorf("block.MaxBytes is too big. %d > %d",
 			params.Block.MaxBytes, MaxBlockSizeBytes)
 	}
 
 	if params.Block.MaxGas < -1 {
-		return errors.Errorf("block.MaxGas must be greater or equal to -1. Got %d",
+		return fmt.Errorf("block.MaxGas must be greater or equal to -1. Got %d",
 			params.Block.MaxGas)
 	}
 
 	if params.Block.TimeIotaMs <= 0 {
-		return errors.Errorf("block.TimeIotaMs must be greater than 0. Got %v",
+		return fmt.Errorf("block.TimeIotaMs must be greater than 0. Got %v",
 			params.Block.TimeIotaMs)
 	}
 
 	if params.Evidence.MaxAgeNumBlocks <= 0 {
-		return errors.Errorf("evidenceParams.MaxAgeNumBlocks must be greater than 0. Got %d",
+		return fmt.Errorf("evidence.MaxAgeNumBlocks must be greater than 0. Got %d",
 			params.Evidence.MaxAgeNumBlocks)
 	}
 
 	if params.Evidence.MaxAgeDuration <= 0 {
-		return errors.Errorf("evidenceParams.MaxAgeDuration must be grater than 0 if provided, Got %v",
+		return fmt.Errorf("evidence.MaxAgeDuration must be grater than 0 if provided, Got %v",
 			params.Evidence.MaxAgeDuration)
+	}
+
+	if params.Evidence.MaxBytes > params.Block.MaxBytes {
+		return fmt.Errorf("evidence.MaxBytesEvidence is greater than upper bound, %d > %d",
+			params.Evidence.MaxBytes, params.Block.MaxBytes)
+	}
+
+	if params.Evidence.MaxBytes < 0 {
+		return fmt.Errorf("evidence.MaxBytes must be non negative. Got: %d",
+			params.Evidence.MaxBytes)
 	}
 
 	if len(params.Validator.PubKeyTypes) == 0 {
@@ -139,8 +121,8 @@ func (params *ConsensusParams) Validate() error {
 	// Check if keyType is a known ABCIPubKeyType
 	for i := 0; i < len(params.Validator.PubKeyTypes); i++ {
 		keyType := params.Validator.PubKeyTypes[i]
-		if _, ok := ABCIPubKeyTypesToAminoNames[keyType]; !ok {
-			return errors.Errorf("params.Validator.PubKeyTypes[%d], %s, is an unknown pubkey type",
+		if _, ok := ABCIPubKeyTypesToNames[keyType]; !ok {
+			return fmt.Errorf("params.Validator.PubKeyTypes[%d], %s, is an unknown pubkey type",
 				i, keyType)
 		}
 	}
@@ -152,28 +134,29 @@ func (params *ConsensusParams) Validate() error {
 // Only the Block.MaxBytes and Block.MaxGas are included in the hash.
 // This allows the ConsensusParams to evolve more without breaking the block
 // protocol. No need for a Merkle tree here, just a small struct to hash.
-func (params *ConsensusParams) Hash() []byte {
+func HashConsensusParams(params tmproto.ConsensusParams) []byte {
 	hasher := tmhash.New()
-	bz := cdcEncode(HashedParams{
-		params.Block.MaxBytes,
-		params.Block.MaxGas,
-	})
-	if bz == nil {
-		panic("cannot fail to encode ConsensusParams")
-	}
-	hasher.Write(bz)
-	return hasher.Sum(nil)
-}
 
-func (params *ConsensusParams) Equals(params2 *ConsensusParams) bool {
-	return params.Block == params2.Block &&
-		params.Evidence == params2.Evidence &&
-		tmstrings.StringSliceEqual(params.Validator.PubKeyTypes, params2.Validator.PubKeyTypes)
+	hp := tmproto.HashedParams{
+		BlockMaxBytes: params.Block.MaxBytes,
+		BlockMaxGas:   params.Block.MaxGas,
+	}
+
+	bz, err := hp.Marshal()
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = hasher.Write(bz)
+	if err != nil {
+		panic(err)
+	}
+	return hasher.Sum(nil)
 }
 
 // Update returns a copy of the params with updates from the non-zero fields of p2.
 // NOTE: note: must not modify the original
-func (params ConsensusParams) Update(params2 *abci.ConsensusParams) ConsensusParams {
+func UpdateConsensusParams(params tmproto.ConsensusParams, params2 *abci.ConsensusParams) tmproto.ConsensusParams {
 	res := params // explicit copy
 
 	if params2 == nil {
@@ -188,11 +171,15 @@ func (params ConsensusParams) Update(params2 *abci.ConsensusParams) ConsensusPar
 	if params2.Evidence != nil {
 		res.Evidence.MaxAgeNumBlocks = params2.Evidence.MaxAgeNumBlocks
 		res.Evidence.MaxAgeDuration = params2.Evidence.MaxAgeDuration
+		res.Evidence.MaxBytes = params2.Evidence.MaxBytes
 	}
 	if params2.Validator != nil {
 		// Copy params2.Validator.PubkeyTypes, and set result's value to the copy.
 		// This avoids having to initialize the slice to 0 values, and then write to it again.
 		res.Validator.PubKeyTypes = append([]string{}, params2.Validator.PubKeyTypes...)
+	}
+	if params2.Version != nil {
+		res.Version.AppVersion = params2.Version.AppVersion
 	}
 	return res
 }

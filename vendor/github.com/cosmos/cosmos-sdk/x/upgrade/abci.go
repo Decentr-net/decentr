@@ -2,10 +2,14 @@ package upgrade
 
 import (
 	"fmt"
+	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	"github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
 // BeginBlock will check if there is a scheduled plan and if it is ready to be executed.
@@ -16,7 +20,8 @@ import (
 // The purpose is to ensure the binary is switched EXACTLY at the desired block, and to allow
 // a migration to be executed if needed upon this switch (migration defined in the new binary)
 // skipUpgradeHeightArray is a set of block heights for which the upgrade must be skipped
-func BeginBlocker(k Keeper, ctx sdk.Context, _ abci.RequestBeginBlock) {
+func BeginBlocker(k keeper.Keeper, ctx sdk.Context, _ abci.RequestBeginBlock) {
+	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 	plan, found := k.GetUpgradePlan(ctx)
 	if !found {
 		return
@@ -35,9 +40,17 @@ func BeginBlocker(k Keeper, ctx sdk.Context, _ abci.RequestBeginBlock) {
 		}
 
 		if !k.HasHandler(plan.Name) {
-			upgradeMsg := fmt.Sprintf("UPGRADE \"%s\" NEEDED at %s: %s", plan.Name, plan.DueAt(), plan.Info)
+			// Write the upgrade info to disk. The UpgradeStoreLoader uses this info to perform or skip
+			// store migrations.
+			err := k.DumpUpgradeInfoToDisk(ctx.BlockHeight(), plan.Name)
+			if err != nil {
+				panic(fmt.Errorf("unable to write upgrade info to filesystem: %s", err.Error()))
+			}
+
+			upgradeMsg := BuildUpgradeNeededMsg(plan)
 			// We don't have an upgrade handler for this upgrade name, meaning this software is out of date so shutdown
 			ctx.Logger().Error(upgradeMsg)
+
 			panic(upgradeMsg)
 		}
 		// We have an upgrade handler for this upgrade name, so apply the upgrade
@@ -54,4 +67,9 @@ func BeginBlocker(k Keeper, ctx sdk.Context, _ abci.RequestBeginBlock) {
 		ctx.Logger().Error(downgradeMsg)
 		panic(downgradeMsg)
 	}
+}
+
+// BuildUpgradeNeededMsg prints the message that notifies that an upgrade is needed.
+func BuildUpgradeNeededMsg(plan types.Plan) string {
+	return fmt.Sprintf("UPGRADE \"%s\" NEEDED at %s: %s", plan.Name, plan.DueAt(), plan.Info)
 }

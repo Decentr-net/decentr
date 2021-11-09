@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build amd64 && linux
 // +build amd64,linux
 
 package unix
@@ -20,15 +21,9 @@ package unix
 //sysnb	Getgid() (gid int)
 //sysnb	Getrlimit(resource int, rlim *Rlimit) (err error)
 //sysnb	Getuid() (uid int)
-//sysnb	inotifyInit() (fd int, err error)
 
 func InotifyInit() (fd int, err error) {
-	// First try inotify_init1, because Android's seccomp policy blocks the latter.
-	fd, err = InotifyInit1(0)
-	if err == ENOSYS {
-		fd, err = inotifyInit()
-	}
-	return
+	return InotifyInit1(0)
 }
 
 //sys	Ioperm(from int, num int, on int) (err error)
@@ -138,7 +133,7 @@ func Pipe(p []int) (err error) {
 	return
 }
 
-//sysnb pipe2(p *[2]_C_int, flags int) (err error)
+//sysnb	pipe2(p *[2]_C_int, flags int) (err error)
 
 func Pipe2(p []int, flags int) (err error) {
 	if len(p) != 2 {
@@ -169,6 +164,10 @@ func (msghdr *Msghdr) SetIovlen(length int) {
 
 func (cmsg *Cmsghdr) SetLen(length int) {
 	cmsg.Len = uint64(length)
+}
+
+func (rsa *RawSockaddrNFCLLCP) SetServiceNameLen(length int) {
+	rsa.Service_name_len = uint64(length)
 }
 
 //sys	poll(fds *PollFd, nfds int, timeout int) (n int, err error)

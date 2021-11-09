@@ -3,7 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/exported"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 // TODO: Break into several smaller functions for clarity
@@ -21,28 +21,34 @@ func (keeper Keeper) Tally(ctx sdk.Context, proposal types.Proposal) (passes boo
 	currValidators := make(map[string]types.ValidatorGovInfo)
 
 	// fetch all the bonded validators, insert them into currValidators
-	keeper.sk.IterateBondedValidatorsByPower(ctx, func(index int64, validator exported.ValidatorI) (stop bool) {
+	keeper.sk.IterateBondedValidatorsByPower(ctx, func(index int64, validator stakingtypes.ValidatorI) (stop bool) {
 		currValidators[validator.GetOperator().String()] = types.NewValidatorGovInfo(
 			validator.GetOperator(),
 			validator.GetBondedTokens(),
 			validator.GetDelegatorShares(),
 			sdk.ZeroDec(),
-			types.OptionEmpty,
+			types.WeightedVoteOptions{},
 		)
 
 		return false
 	})
 
-	keeper.IterateVotes(ctx, proposal.ProposalID, func(vote types.Vote) bool {
+	keeper.IterateVotes(ctx, proposal.ProposalId, func(vote types.Vote) bool {
 		// if validator, just record it in the map
-		valAddrStr := sdk.ValAddress(vote.Voter).String()
+		voter, err := sdk.AccAddressFromBech32(vote.Voter)
+
+		if err != nil {
+			panic(err)
+		}
+
+		valAddrStr := sdk.ValAddress(voter.Bytes()).String()
 		if val, ok := currValidators[valAddrStr]; ok {
-			val.Vote = vote.Option
+			val.Vote = vote.Options
 			currValidators[valAddrStr] = val
 		}
 
 		// iterate over all delegations from voter, deduct from any delegated-to validators
-		keeper.sk.IterateDelegations(ctx, vote.Voter, func(index int64, delegation exported.DelegationI) (stop bool) {
+		keeper.sk.IterateDelegations(ctx, voter, func(index int64, delegation stakingtypes.DelegationI) (stop bool) {
 			valAddrStr := delegation.GetValidatorAddr().String()
 
 			if val, ok := currValidators[valAddrStr]; ok {
@@ -51,31 +57,36 @@ func (keeper Keeper) Tally(ctx sdk.Context, proposal types.Proposal) (passes boo
 				val.DelegatorDeductions = val.DelegatorDeductions.Add(delegation.GetShares())
 				currValidators[valAddrStr] = val
 
-				delegatorShare := delegation.GetShares().Quo(val.DelegatorShares)
-				votingPower := delegatorShare.MulInt(val.BondedTokens)
+				// delegation shares * bonded / total shares
+				votingPower := delegation.GetShares().MulInt(val.BondedTokens).Quo(val.DelegatorShares)
 
-				results[vote.Option] = results[vote.Option].Add(votingPower)
+				for _, option := range vote.Options {
+					subPower := votingPower.Mul(option.Weight)
+					results[option.Option] = results[option.Option].Add(subPower)
+				}
 				totalVotingPower = totalVotingPower.Add(votingPower)
 			}
 
 			return false
 		})
 
-		keeper.deleteVote(ctx, vote.ProposalID, vote.Voter)
+		keeper.deleteVote(ctx, vote.ProposalId, voter)
 		return false
 	})
 
 	// iterate over the validators again to tally their voting power
 	for _, val := range currValidators {
-		if val.Vote == types.OptionEmpty {
+		if len(val.Vote) == 0 {
 			continue
 		}
 
 		sharesAfterDeductions := val.DelegatorShares.Sub(val.DelegatorDeductions)
-		fractionAfterDeductions := sharesAfterDeductions.Quo(val.DelegatorShares)
-		votingPower := fractionAfterDeductions.MulInt(val.BondedTokens)
+		votingPower := sharesAfterDeductions.MulInt(val.BondedTokens).Quo(val.DelegatorShares)
 
-		results[val.Vote] = results[val.Vote].Add(votingPower)
+		for _, option := range val.Vote {
+			subPower := votingPower.Mul(option.Weight)
+			results[option.Option] = results[option.Option].Add(subPower)
+		}
 		totalVotingPower = totalVotingPower.Add(votingPower)
 	}
 
@@ -100,7 +111,7 @@ func (keeper Keeper) Tally(ctx sdk.Context, proposal types.Proposal) (passes boo
 	}
 
 	// If more than 1/3 of voters veto, proposal fails
-	if results[types.OptionNoWithVeto].Quo(totalVotingPower).GT(tallyParams.Veto) {
+	if results[types.OptionNoWithVeto].Quo(totalVotingPower).GT(tallyParams.VetoThreshold) {
 		return false, true, tallyResults
 	}
 

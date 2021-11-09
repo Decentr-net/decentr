@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	gogotypes "github.com/gogo/protobuf/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
@@ -48,47 +50,50 @@ func (k Keeper) GetFeePool(ctx sdk.Context) (feePool types.FeePool) {
 	if b == nil {
 		panic("Stored fee pool should not have been nil")
 	}
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &feePool)
+	k.cdc.MustUnmarshal(b, &feePool)
 	return
 }
 
 // set the global fee pool distribution info
 func (k Keeper) SetFeePool(ctx sdk.Context, feePool types.FeePool) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(feePool)
+	b := k.cdc.MustMarshal(&feePool)
 	store.Set(types.FeePoolKey, b)
 }
 
-// get the proposer public key for this block
-func (k Keeper) GetPreviousProposerConsAddr(ctx sdk.Context) (consAddr sdk.ConsAddress) {
+// GetPreviousProposerConsAddr returns the proposer consensus address for the
+// current block.
+func (k Keeper) GetPreviousProposerConsAddr(ctx sdk.Context) sdk.ConsAddress {
 	store := ctx.KVStore(k.storeKey)
-	b := store.Get(types.ProposerKey)
-	if b == nil {
-		panic("Previous proposer not set")
+	bz := store.Get(types.ProposerKey)
+	if bz == nil {
+		panic("previous proposer not set")
 	}
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &consAddr)
-	return
+
+	addrValue := gogotypes.BytesValue{}
+	k.cdc.MustUnmarshal(bz, &addrValue)
+	return addrValue.GetValue()
 }
 
 // set the proposer public key for this block
 func (k Keeper) SetPreviousProposerConsAddr(ctx sdk.Context, consAddr sdk.ConsAddress) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(consAddr)
-	store.Set(types.ProposerKey, b)
+	bz := k.cdc.MustMarshal(&gogotypes.BytesValue{Value: consAddr})
+	store.Set(types.ProposerKey, bz)
 }
 
 // get the starting info associated with a delegator
 func (k Keeper) GetDelegatorStartingInfo(ctx sdk.Context, val sdk.ValAddress, del sdk.AccAddress) (period types.DelegatorStartingInfo) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.GetDelegatorStartingInfoKey(val, del))
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &period)
+	k.cdc.MustUnmarshal(b, &period)
 	return
 }
 
 // set the starting info associated with a delegator
 func (k Keeper) SetDelegatorStartingInfo(ctx sdk.Context, val sdk.ValAddress, del sdk.AccAddress, period types.DelegatorStartingInfo) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(period)
+	b := k.cdc.MustMarshal(&period)
 	store.Set(types.GetDelegatorStartingInfoKey(val, del), b)
 }
 
@@ -111,7 +116,7 @@ func (k Keeper) IterateDelegatorStartingInfos(ctx sdk.Context, handler func(val 
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var info types.DelegatorStartingInfo
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &info)
+		k.cdc.MustUnmarshal(iter.Value(), &info)
 		val, del := types.GetDelegatorStartingInfoAddresses(iter.Key())
 		if handler(val, del, info) {
 			break
@@ -123,14 +128,14 @@ func (k Keeper) IterateDelegatorStartingInfos(ctx sdk.Context, handler func(val 
 func (k Keeper) GetValidatorHistoricalRewards(ctx sdk.Context, val sdk.ValAddress, period uint64) (rewards types.ValidatorHistoricalRewards) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.GetValidatorHistoricalRewardsKey(val, period))
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &rewards)
+	k.cdc.MustUnmarshal(b, &rewards)
 	return
 }
 
 // set historical rewards for a particular period
 func (k Keeper) SetValidatorHistoricalRewards(ctx sdk.Context, val sdk.ValAddress, period uint64, rewards types.ValidatorHistoricalRewards) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(rewards)
+	b := k.cdc.MustMarshal(&rewards)
 	store.Set(types.GetValidatorHistoricalRewardsKey(val, period), b)
 }
 
@@ -141,7 +146,7 @@ func (k Keeper) IterateValidatorHistoricalRewards(ctx sdk.Context, handler func(
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var rewards types.ValidatorHistoricalRewards
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &rewards)
+		k.cdc.MustUnmarshal(iter.Value(), &rewards)
 		addr, period := types.GetValidatorHistoricalRewardsAddressPeriod(iter.Key())
 		if handler(addr, period, rewards) {
 			break
@@ -182,7 +187,7 @@ func (k Keeper) GetValidatorHistoricalReferenceCount(ctx sdk.Context) (count uin
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var rewards types.ValidatorHistoricalRewards
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &rewards)
+		k.cdc.MustUnmarshal(iter.Value(), &rewards)
 		count += uint64(rewards.ReferenceCount)
 	}
 	return
@@ -192,14 +197,14 @@ func (k Keeper) GetValidatorHistoricalReferenceCount(ctx sdk.Context) (count uin
 func (k Keeper) GetValidatorCurrentRewards(ctx sdk.Context, val sdk.ValAddress) (rewards types.ValidatorCurrentRewards) {
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.GetValidatorCurrentRewardsKey(val))
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &rewards)
+	k.cdc.MustUnmarshal(b, &rewards)
 	return
 }
 
 // set current rewards for a validator
 func (k Keeper) SetValidatorCurrentRewards(ctx sdk.Context, val sdk.ValAddress, rewards types.ValidatorCurrentRewards) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(rewards)
+	b := k.cdc.MustMarshal(&rewards)
 	store.Set(types.GetValidatorCurrentRewardsKey(val), b)
 }
 
@@ -216,7 +221,7 @@ func (k Keeper) IterateValidatorCurrentRewards(ctx sdk.Context, handler func(val
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var rewards types.ValidatorCurrentRewards
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &rewards)
+		k.cdc.MustUnmarshal(iter.Value(), &rewards)
 		addr := types.GetValidatorCurrentRewardsAddress(iter.Key())
 		if handler(addr, rewards) {
 			break
@@ -231,7 +236,7 @@ func (k Keeper) GetValidatorAccumulatedCommission(ctx sdk.Context, val sdk.ValAd
 	if b == nil {
 		return types.ValidatorAccumulatedCommission{}
 	}
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &commission)
+	k.cdc.MustUnmarshal(b, &commission)
 	return
 }
 
@@ -240,10 +245,10 @@ func (k Keeper) SetValidatorAccumulatedCommission(ctx sdk.Context, val sdk.ValAd
 	var bz []byte
 
 	store := ctx.KVStore(k.storeKey)
-	if commission.IsZero() {
-		bz = k.cdc.MustMarshalBinaryLengthPrefixed(types.InitialValidatorAccumulatedCommission())
+	if commission.Commission.IsZero() {
+		bz = k.cdc.MustMarshal(&types.ValidatorAccumulatedCommission{})
 	} else {
-		bz = k.cdc.MustMarshalBinaryLengthPrefixed(commission)
+		bz = k.cdc.MustMarshal(&commission)
 	}
 
 	store.Set(types.GetValidatorAccumulatedCommissionKey(val), bz)
@@ -262,7 +267,7 @@ func (k Keeper) IterateValidatorAccumulatedCommissions(ctx sdk.Context, handler 
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var commission types.ValidatorAccumulatedCommission
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &commission)
+		k.cdc.MustUnmarshal(iter.Value(), &commission)
 		addr := types.GetValidatorAccumulatedCommissionAddress(iter.Key())
 		if handler(addr, commission) {
 			break
@@ -273,15 +278,15 @@ func (k Keeper) IterateValidatorAccumulatedCommissions(ctx sdk.Context, handler 
 // get validator outstanding rewards
 func (k Keeper) GetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddress) (rewards types.ValidatorOutstandingRewards) {
 	store := ctx.KVStore(k.storeKey)
-	b := store.Get(types.GetValidatorOutstandingRewardsKey(val))
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &rewards)
+	bz := store.Get(types.GetValidatorOutstandingRewardsKey(val))
+	k.cdc.MustUnmarshal(bz, &rewards)
 	return
 }
 
 // set validator outstanding rewards
 func (k Keeper) SetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddress, rewards types.ValidatorOutstandingRewards) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(rewards)
+	b := k.cdc.MustMarshal(&rewards)
 	store.Set(types.GetValidatorOutstandingRewardsKey(val), b)
 }
 
@@ -297,8 +302,8 @@ func (k Keeper) IterateValidatorOutstandingRewards(ctx sdk.Context, handler func
 	iter := sdk.KVStorePrefixIterator(store, types.ValidatorOutstandingRewardsPrefix)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		var rewards types.ValidatorOutstandingRewards
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &rewards)
+		rewards := types.ValidatorOutstandingRewards{}
+		k.cdc.MustUnmarshal(iter.Value(), &rewards)
 		addr := types.GetValidatorOutstandingRewardsAddress(iter.Key())
 		if handler(addr, rewards) {
 			break
@@ -313,14 +318,14 @@ func (k Keeper) GetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, heig
 	if b == nil {
 		return types.ValidatorSlashEvent{}, false
 	}
-	k.cdc.MustUnmarshalBinaryLengthPrefixed(b, &event)
+	k.cdc.MustUnmarshal(b, &event)
 	return event, true
 }
 
 // set slash event for height
 func (k Keeper) SetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, height, period uint64, event types.ValidatorSlashEvent) {
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshalBinaryLengthPrefixed(event)
+	b := k.cdc.MustMarshal(&event)
 	store.Set(types.GetValidatorSlashEventKey(val, height, period), b)
 }
 
@@ -335,7 +340,7 @@ func (k Keeper) IterateValidatorSlashEventsBetween(ctx sdk.Context, val sdk.ValA
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var event types.ValidatorSlashEvent
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &event)
+		k.cdc.MustUnmarshal(iter.Value(), &event)
 		_, height := types.GetValidatorSlashEventAddressHeight(iter.Key())
 		if handler(height, event) {
 			break
@@ -350,7 +355,7 @@ func (k Keeper) IterateValidatorSlashEvents(ctx sdk.Context, handler func(val sd
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var event types.ValidatorSlashEvent
-		k.cdc.MustUnmarshalBinaryLengthPrefixed(iter.Value(), &event)
+		k.cdc.MustUnmarshal(iter.Value(), &event)
 		val, height := types.GetValidatorSlashEventAddressHeight(iter.Key())
 		if handler(val, height, event) {
 			break

@@ -15,16 +15,14 @@ func (k Keeper) GetHistoricalInfo(ctx sdk.Context, height int64) (types.Historic
 		return types.HistoricalInfo{}, false
 	}
 
-	hi := types.MustUnmarshalHistoricalInfo(k.cdc, value)
-	return hi, true
+	return types.MustUnmarshalHistoricalInfo(k.cdc, value), true
 }
 
 // SetHistoricalInfo sets the historical info at a given height
-func (k Keeper) SetHistoricalInfo(ctx sdk.Context, height int64, hi types.HistoricalInfo) {
+func (k Keeper) SetHistoricalInfo(ctx sdk.Context, height int64, hi *types.HistoricalInfo) {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetHistoricalInfoKey(height)
-
-	value := types.MustMarshalHistoricalInfo(k.cdc, hi)
+	value := k.cdc.MustMarshal(hi)
 	store.Set(key, value)
 }
 
@@ -34,6 +32,35 @@ func (k Keeper) DeleteHistoricalInfo(ctx sdk.Context, height int64) {
 	key := types.GetHistoricalInfoKey(height)
 
 	store.Delete(key)
+}
+
+// IterateHistoricalInfo provides an interator over all stored HistoricalInfo
+//  objects. For each HistoricalInfo object, cb will be called. If the cb returns
+// true, the iterator will close and stop.
+func (k Keeper) IterateHistoricalInfo(ctx sdk.Context, cb func(types.HistoricalInfo) bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	iterator := sdk.KVStorePrefixIterator(store, types.HistoricalInfoKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		histInfo := types.MustUnmarshalHistoricalInfo(k.cdc, iterator.Value())
+		if cb(histInfo) {
+			break
+		}
+	}
+}
+
+// GetAllHistoricalInfo returns all stored HistoricalInfo objects.
+func (k Keeper) GetAllHistoricalInfo(ctx sdk.Context) []types.HistoricalInfo {
+	var infos []types.HistoricalInfo
+
+	k.IterateHistoricalInfo(ctx, func(histInfo types.HistoricalInfo) bool {
+		infos = append(infos, histInfo)
+		return false
+	})
+
+	return infos
 }
 
 // TrackHistoricalInfo saves the latest historical-info and deletes the oldest
@@ -64,8 +91,8 @@ func (k Keeper) TrackHistoricalInfo(ctx sdk.Context) {
 
 	// Create HistoricalInfo struct
 	lastVals := k.GetLastValidators(ctx)
-	historicalEntry := types.NewHistoricalInfo(ctx.BlockHeader(), lastVals)
+	historicalEntry := types.NewHistoricalInfo(ctx.BlockHeader(), lastVals, k.PowerReduction(ctx))
 
 	// Set latest HistoricalInfo at current height
-	k.SetHistoricalInfo(ctx, ctx.BlockHeight(), historicalEntry)
+	k.SetHistoricalInfo(ctx, ctx.BlockHeight(), &historicalEntry)
 }

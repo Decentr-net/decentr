@@ -1,19 +1,20 @@
 package core
 
 import (
+	"encoding/base64"
 	"fmt"
 	"time"
-
-	dbm "github.com/tendermint/tm-db"
 
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/consensus"
 	"github.com/tendermint/tendermint/crypto"
+	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/libs/log"
 	mempl "github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proxy"
 	sm "github.com/tendermint/tendermint/state"
+	"github.com/tendermint/tendermint/state/indexer"
 	"github.com/tendermint/tendermint/state/txindex"
 	"github.com/tendermint/tendermint/types"
 )
@@ -26,6 +27,10 @@ const (
 	// SubscribeTimeout is the maximum time we wait to subscribe for an event.
 	// must be less than the server's write timeout (see rpcserver.DefaultConfig)
 	SubscribeTimeout = 5 * time.Second
+
+	// genesisChunkSize is the maximum size, in bytes, of each
+	// chunk in the genesis structure for the chunked API
+	genesisChunkSize = 16 * 1024 * 1024 // 16
 )
 
 var (
@@ -58,6 +63,8 @@ type transport interface {
 
 type peers interface {
 	AddPersistentPeers([]string) error
+	AddUnconditionalPeerIDs([]string) error
+	AddPrivatePeerIDs([]string) error
 	DialPeersAsync([]string) error
 	Peers() p2p.IPeerSet
 }
@@ -67,10 +74,11 @@ type peers interface {
 // to be setup once during startup.
 type Environment struct {
 	// external, thread safe interfaces
-	ProxyAppQuery proxy.AppConnQuery
+	ProxyAppQuery   proxy.AppConnQuery
+	ProxyAppMempool proxy.AppConnMempool
 
 	// interfaces defined in types and above
-	StateDB        dbm.DB
+	StateStore     sm.Store
 	BlockStore     sm.BlockStore
 	EvidencePool   sm.EvidencePool
 	ConsensusState Consensus
@@ -81,6 +89,7 @@ type Environment struct {
 	PubKey           crypto.PubKey
 	GenDoc           *types.GenesisDoc // cache the genesis structure
 	TxIndexer        txindex.TxIndexer
+	BlockIndexer     indexer.BlockIndexer
 	ConsensusReactor *consensus.Reactor
 	EventBus         *types.EventBus // thread safe
 	Mempool          mempl.Mempool
@@ -88,37 +97,75 @@ type Environment struct {
 	Logger log.Logger
 
 	Config cfg.RPCConfig
+
+	// cache of chunked genesis data.
+	genChunks []string
 }
 
 //----------------------------------------------
 
-func validatePage(page, perPage, totalCount int) (int, error) {
+func validatePage(pagePtr *int, perPage, totalCount int) (int, error) {
 	if perPage < 1 {
 		panic(fmt.Sprintf("zero or negative perPage: %d", perPage))
 	}
 
-	if page == 0 {
-		return 1, nil // default
+	if pagePtr == nil { // no page parameter
+		return 1, nil
 	}
 
 	pages := ((totalCount - 1) / perPage) + 1
 	if pages == 0 {
 		pages = 1 // one page (even if it's empty)
 	}
-	if page < 0 || page > pages {
-		return 1, fmt.Errorf("page should be within [0, %d] range, given %d", pages, page)
+	page := *pagePtr
+	if page <= 0 || page > pages {
+		return 1, fmt.Errorf("page should be within [1, %d] range, given %d", pages, page)
 	}
 
 	return page, nil
 }
 
-func validatePerPage(perPage int) int {
+func validatePerPage(perPagePtr *int) int {
+	if perPagePtr == nil { // no per_page parameter
+		return defaultPerPage
+	}
+
+	perPage := *perPagePtr
 	if perPage < 1 {
 		return defaultPerPage
 	} else if perPage > maxPerPage {
 		return maxPerPage
 	}
 	return perPage
+}
+
+// InitGenesisChunks configures the environment and should be called on service
+// startup.
+func InitGenesisChunks() error {
+	if env.genChunks != nil {
+		return nil
+	}
+
+	if env.GenDoc == nil {
+		return nil
+	}
+
+	data, err := tmjson.Marshal(env.GenDoc)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(data); i += genesisChunkSize {
+		end := i + genesisChunkSize
+
+		if end > len(data) {
+			end = len(data)
+		}
+
+		env.genChunks = append(env.genChunks, base64.StdEncoding.EncodeToString(data[i:end]))
+	}
+
+	return nil
 }
 
 func validateSkipCount(page, perPage int) int {
@@ -143,7 +190,7 @@ func getHeight(latestHeight int64, heightPtr *int64) (int64, error) {
 		}
 		base := env.BlockStore.Base()
 		if height < base {
-			return 0, fmt.Errorf("height %v is not available, blocks pruned at height %v",
+			return 0, fmt.Errorf("height %d is not available, lowest height is %d",
 				height, base)
 		}
 		return height, nil
@@ -152,7 +199,7 @@ func getHeight(latestHeight int64, heightPtr *int64) (int64, error) {
 }
 
 func latestUncommittedHeight() int64 {
-	nodeIsSyncing := env.ConsensusReactor.FastSync()
+	nodeIsSyncing := env.ConsensusReactor.WaitSync()
 	if nodeIsSyncing {
 		return env.BlockStore.Height()
 	}

@@ -6,9 +6,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp/helpers"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
@@ -25,8 +25,8 @@ const (
 
 // WeightedOperations returns all the operations from the module with their respective weights
 func WeightedOperations(
-	appParams simulation.AppParams, cdc *codec.Codec, ak types.AccountKeeper,
-	k keeper.Keeper, sk stakingkeeper.Keeper,
+	appParams simtypes.AppParams, cdc codec.JSONCodec, ak types.AccountKeeper,
+	bk types.BankKeeper, k keeper.Keeper, sk stakingkeeper.Keeper,
 ) simulation.WeightedOperations {
 
 	var weightMsgSetWithdrawAddress int
@@ -60,173 +60,161 @@ func WeightedOperations(
 	return simulation.WeightedOperations{
 		simulation.NewWeightedOperation(
 			weightMsgSetWithdrawAddress,
-			SimulateMsgSetWithdrawAddress(ak, k),
+			SimulateMsgSetWithdrawAddress(ak, bk, k),
 		),
 		simulation.NewWeightedOperation(
 			weightMsgWithdrawDelegationReward,
-			SimulateMsgWithdrawDelegatorReward(ak, k, sk),
+			SimulateMsgWithdrawDelegatorReward(ak, bk, k, sk),
 		),
 		simulation.NewWeightedOperation(
 			weightMsgWithdrawValidatorCommission,
-			SimulateMsgWithdrawValidatorCommission(ak, k, sk),
+			SimulateMsgWithdrawValidatorCommission(ak, bk, k, sk),
 		),
 		simulation.NewWeightedOperation(
 			weightMsgFundCommunityPool,
-			SimulateMsgFundCommunityPool(ak, k, sk),
+			SimulateMsgFundCommunityPool(ak, bk, k, sk),
 		),
 	}
 }
 
 // SimulateMsgSetWithdrawAddress generates a MsgSetWithdrawAddress with random values.
-// nolint: funlen
-func SimulateMsgSetWithdrawAddress(ak types.AccountKeeper, k keeper.Keeper) simulation.Operation {
+func SimulateMsgSetWithdrawAddress(ak types.AccountKeeper, bk types.BankKeeper, k keeper.Keeper) simtypes.Operation {
 	return func(
-		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simulation.Account, chainID string,
-	) (simulation.OperationMsg, []simulation.FutureOperation, error) {
+		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
+	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		if !k.GetWithdrawAddrEnabled(ctx) {
-			return simulation.NoOpMsg(types.ModuleName), nil, nil
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgSetWithdrawAddress, "withdrawal is not enabled"), nil, nil
 		}
 
-		simAccount, _ := simulation.RandomAcc(r, accs)
-		simToAccount, _ := simulation.RandomAcc(r, accs)
+		simAccount, _ := simtypes.RandomAcc(r, accs)
+		simToAccount, _ := simtypes.RandomAcc(r, accs)
+
 		account := ak.GetAccount(ctx, simAccount.Address)
-
-		fees, err := simulation.RandomFees(r, ctx, account.SpendableCoins(ctx.BlockTime()))
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
-		}
+		spendable := bk.SpendableCoins(ctx, account.GetAddress())
 
 		msg := types.NewMsgSetWithdrawAddress(simAccount.Address, simToAccount.Address)
 
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			simAccount.PrivKey,
-		)
-
-		_, _, err = app.Deliver(tx)
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
+		txCtx := simulation.OperationInput{
+			R:               r,
+			App:             app,
+			TxGen:           simappparams.MakeTestEncodingConfig().TxConfig,
+			Cdc:             nil,
+			Msg:             msg,
+			MsgType:         msg.Type(),
+			Context:         ctx,
+			SimAccount:      simAccount,
+			AccountKeeper:   ak,
+			Bankkeeper:      bk,
+			ModuleName:      types.ModuleName,
+			CoinsSpentInMsg: spendable,
 		}
 
-		return simulation.NewOperationMsg(msg, true, ""), nil, nil
+		return simulation.GenAndDeliverTxWithRandFees(txCtx)
 	}
 }
 
 // SimulateMsgWithdrawDelegatorReward generates a MsgWithdrawDelegatorReward with random values.
-// nolint: funlen
-func SimulateMsgWithdrawDelegatorReward(ak types.AccountKeeper, k keeper.Keeper, sk stakingkeeper.Keeper) simulation.Operation {
+func SimulateMsgWithdrawDelegatorReward(ak types.AccountKeeper, bk types.BankKeeper, k keeper.Keeper, sk stakingkeeper.Keeper) simtypes.Operation {
 	return func(
-		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simulation.Account, chainID string,
-	) (simulation.OperationMsg, []simulation.FutureOperation, error) {
-		simAccount, _ := simulation.RandomAcc(r, accs)
+		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
+	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
+		simAccount, _ := simtypes.RandomAcc(r, accs)
 		delegations := sk.GetAllDelegatorDelegations(ctx, simAccount.Address)
 		if len(delegations) == 0 {
-			return simulation.NoOpMsg(types.ModuleName), nil, nil
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawDelegatorReward, "number of delegators equal 0"), nil, nil
 		}
 
 		delegation := delegations[r.Intn(len(delegations))]
 
 		validator := sk.Validator(ctx, delegation.GetValidatorAddr())
 		if validator == nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, fmt.Errorf("validator %s not found", delegation.GetValidatorAddr())
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawDelegatorReward, "validator is nil"), nil, fmt.Errorf("validator %s not found", delegation.GetValidatorAddr())
 		}
 
 		account := ak.GetAccount(ctx, simAccount.Address)
-		fees, err := simulation.RandomFees(r, ctx, account.SpendableCoins(ctx.BlockTime()))
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
-		}
+		spendable := bk.SpendableCoins(ctx, account.GetAddress())
 
 		msg := types.NewMsgWithdrawDelegatorReward(simAccount.Address, validator.GetOperator())
 
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			simAccount.PrivKey,
-		)
-
-		_, _, err = app.Deliver(tx)
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
+		txCtx := simulation.OperationInput{
+			R:               r,
+			App:             app,
+			TxGen:           simappparams.MakeTestEncodingConfig().TxConfig,
+			Cdc:             nil,
+			Msg:             msg,
+			MsgType:         msg.Type(),
+			Context:         ctx,
+			SimAccount:      simAccount,
+			AccountKeeper:   ak,
+			Bankkeeper:      bk,
+			ModuleName:      types.ModuleName,
+			CoinsSpentInMsg: spendable,
 		}
 
-		return simulation.NewOperationMsg(msg, true, ""), nil, nil
+		return simulation.GenAndDeliverTxWithRandFees(txCtx)
 	}
 }
 
 // SimulateMsgWithdrawValidatorCommission generates a MsgWithdrawValidatorCommission with random values.
-// nolint: funlen
-func SimulateMsgWithdrawValidatorCommission(ak types.AccountKeeper, k keeper.Keeper, sk stakingkeeper.Keeper) simulation.Operation {
+func SimulateMsgWithdrawValidatorCommission(ak types.AccountKeeper, bk types.BankKeeper, k keeper.Keeper, sk stakingkeeper.Keeper) simtypes.Operation {
 	return func(
-		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simulation.Account, chainID string,
-	) (simulation.OperationMsg, []simulation.FutureOperation, error) {
+		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
+	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 
 		validator, ok := stakingkeeper.RandomValidator(r, sk, ctx)
 		if !ok {
-			return simulation.NoOpMsg(types.ModuleName), nil, nil
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawValidatorCommission, "random validator is not ok"), nil, nil
 		}
 
 		commission := k.GetValidatorAccumulatedCommission(ctx, validator.GetOperator())
-		if commission.IsZero() {
-			return simulation.NoOpMsg(types.ModuleName), nil, nil
+		if commission.Commission.IsZero() {
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawValidatorCommission, "validator commission is zero"), nil, nil
 		}
 
-		simAccount, found := simulation.FindAccount(accs, sdk.AccAddress(validator.GetOperator()))
+		simAccount, found := simtypes.FindAccount(accs, sdk.AccAddress(validator.GetOperator()))
 		if !found {
-			return simulation.NoOpMsg(types.ModuleName), nil, fmt.Errorf("validator %s not found", validator.GetOperator())
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawValidatorCommission, "could not find account"), nil, fmt.Errorf("validator %s not found", validator.GetOperator())
 		}
 
 		account := ak.GetAccount(ctx, simAccount.Address)
-		fees, err := simulation.RandomFees(r, ctx, account.SpendableCoins(ctx.BlockTime()))
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
-		}
+		spendable := bk.SpendableCoins(ctx, account.GetAddress())
 
 		msg := types.NewMsgWithdrawValidatorCommission(validator.GetOperator())
 
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			simAccount.PrivKey,
-		)
-
-		_, _, err = app.Deliver(tx)
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
+		txCtx := simulation.OperationInput{
+			R:               r,
+			App:             app,
+			TxGen:           simappparams.MakeTestEncodingConfig().TxConfig,
+			Cdc:             nil,
+			Msg:             msg,
+			MsgType:         msg.Type(),
+			Context:         ctx,
+			SimAccount:      simAccount,
+			AccountKeeper:   ak,
+			Bankkeeper:      bk,
+			ModuleName:      types.ModuleName,
+			CoinsSpentInMsg: spendable,
 		}
 
-		return simulation.NewOperationMsg(msg, true, ""), nil, nil
+		return simulation.GenAndDeliverTxWithRandFees(txCtx)
 	}
 }
 
 // SimulateMsgFundCommunityPool simulates MsgFundCommunityPool execution where
 // a random account sends a random amount of its funds to the community pool.
-func SimulateMsgFundCommunityPool(ak types.AccountKeeper, k keeper.Keeper, sk stakingkeeper.Keeper) simulation.Operation {
+func SimulateMsgFundCommunityPool(ak types.AccountKeeper, bk types.BankKeeper, k keeper.Keeper, sk stakingkeeper.Keeper) simtypes.Operation {
 	return func(
-		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simulation.Account, chainID string,
-	) (simulation.OperationMsg, []simulation.FutureOperation, error) {
+		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
+	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 
-		funder, _ := simulation.RandomAcc(r, accs)
+		funder, _ := simtypes.RandomAcc(r, accs)
 
 		account := ak.GetAccount(ctx, funder.Address)
-		coins := account.SpendableCoins(ctx.BlockTime())
+		spendable := bk.SpendableCoins(ctx, account.GetAddress())
 
-		fundAmount := simulation.RandSubsetCoins(r, coins)
+		fundAmount := simtypes.RandSubsetCoins(r, spendable)
 		if fundAmount.Empty() {
-			return simulation.NoOpMsg(types.ModuleName), nil, nil
+			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgFundCommunityPool, "fund amount is empty"), nil, nil
 		}
 
 		var (
@@ -234,30 +222,28 @@ func SimulateMsgFundCommunityPool(ak types.AccountKeeper, k keeper.Keeper, sk st
 			err  error
 		)
 
-		coins, hasNeg := coins.SafeSub(fundAmount)
+		coins, hasNeg := spendable.SafeSub(fundAmount)
 		if !hasNeg {
-			fees, err = simulation.RandomFees(r, ctx, coins)
+			fees, err = simtypes.RandomFees(r, ctx, coins)
 			if err != nil {
-				return simulation.NoOpMsg(types.ModuleName), nil, err
+				return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgFundCommunityPool, "unable to generate fees"), nil, err
 			}
 		}
 
 		msg := types.NewMsgFundCommunityPool(fundAmount, funder.Address)
-		tx := helpers.GenTx(
-			[]sdk.Msg{msg},
-			fees,
-			helpers.DefaultGenTxGas,
-			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
-			funder.PrivKey,
-		)
 
-		_, _, err = app.Deliver(tx)
-		if err != nil {
-			return simulation.NoOpMsg(types.ModuleName), nil, err
+		txCtx := simulation.OperationInput{
+			App:           app,
+			TxGen:         simappparams.MakeTestEncodingConfig().TxConfig,
+			Cdc:           nil,
+			Msg:           msg,
+			MsgType:       msg.Type(),
+			Context:       ctx,
+			SimAccount:    funder,
+			AccountKeeper: ak,
+			ModuleName:    types.ModuleName,
 		}
 
-		return simulation.NewOperationMsg(msg, true, ""), nil, nil
+		return simulation.GenAndDeliverTx(txCtx, fees)
 	}
 }
