@@ -1,0 +1,73 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Decentr - gRPC Gateway docs",
+    "description": "A REST interface for state queries",
+    "version": "1.0.0"
+  },
+  "apis": [
+    {
+      "url": "./tmp-swagger-gen/token/query.swagger.json",
+      "tags": {
+        "rename": {
+          "Query": "Token"
+        }
+      },
+      "operationIds": {
+        "rename": [
+          {
+            "type": "regex",
+            "from": "(.*)",
+            "to": "Token$1"
+          }
+        ]
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/community/query.swagger.json",
+      "tags": {
+        "rename": {
+          "Query": "Community"
+        }
+      },
+      "operationIds": {
+        "rename": [
+          {
+            "type": "regex",
+            "from": "(.*)",
+            "to": "Community$1"
+          }
+        ]
+      }
+    },
+    {
+      "url": "./tmp-swagger-gen/Operations/query.swagger.json",
+      "tags": {
+        "rename": {
+          "Query": "Operations"
+        }
+      },
+      "operationIds": {
+        "rename": [
+          {
+            "type": "regex",
+            "from": "(.*)",
+            "to": "Operations$1"
+          }
+        ]
+      }
+    },
+    {
+      "url": "./misc/swagger/cosmos.yml",
+      "dereference": {
+        "circular": "ignore"
+      },
+      "paths": {
+        "exclude": [
+          "^/cosmos/authz/.*",
+          "^/cosmos/feegrant/.*"
+        ]
+      }
+    }
+  ],
+}

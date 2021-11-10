@@ -58,18 +58,34 @@ start:
 	bash init.sh
 
 ### proto ###
+docker_buf := docker run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+buildtools=decentr/buildtools:v0.1
+containerProtoGen=decentr-buildtools-protogen
+containerProtoSwaggerGen=decentr-buildtools-protoswaggergen
+containerProtoFmt=decentr-buildtools-protofmt
 
 proto-all: proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	./scripts/protocgen.sh
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(buildtools) \
+		sh ./scripts/protocgen.sh; fi
+
+proto-swagger-gen:
+	@echo "Generating Protobuf Swagger"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoSwaggerGen}$$"; then docker start -a $(containerProtoSwaggerGen); else docker run --name $(containerProtoSwaggerGen) -v $(CURDIR):/workspace --workdir /workspace $(buildtools) \
+		sh ./scripts/protoc-swagger-gen.sh; fi
+
+proto-format:
+	@echo "Formatting Protobuf files"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoFmt}$$"; then docker start -a $(containerProtoFmt); else docker run --name $(containerProtoFmt) -v $(CURDIR):/workspace --workdir /workspace tendermintdev/docker-build-proto \
+		find ./ -path "./proto/decentr/*" -name *.proto -exec clang-format -style=file -i {} \; ; fi
 
 proto-lint:
-	@buf lint --error-format=json | jq
+	@$(docker_buf) lint --error-format=json
 
 proto-check-breaking:
-	@buf breaking --against $(HTTPS_GIT)#branch=master
+	@$(docker_buf) breaking --against $(HTTPS_GIT)
 
 proto-update-deps:
 	rm -rf proto/3rdparty
@@ -79,4 +95,4 @@ proto-update-deps:
 	mv cosmos-sdk/proto/cosmos ./proto/3rdparty/cosmos
 	rm -rf cosmos-sdk
 
-.PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps
+.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps

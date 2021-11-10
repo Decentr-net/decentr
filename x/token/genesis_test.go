@@ -34,7 +34,7 @@ func TestGenesis(t *testing.T) {
 				},
 				Balances: map[string]sdk.DecProto{},
 				Deltas:   map[string]sdk.DecProto{},
-				BanList:  []string{},
+				BanList:  []sdk.AccAddress{},
 			},
 			accumulatedDelta: sdk.ZeroDec(),
 		},
@@ -50,7 +50,7 @@ func TestGenesis(t *testing.T) {
 				Deltas: map[string]sdk.DecProto{
 					addr.String(): {sdk.NewDec(1)},
 				},
-				BanList: []string{banned.String()},
+				BanList: []sdk.AccAddress{banned},
 			},
 			exported: types.GenesisState{
 				Params: &types.Params{
@@ -62,7 +62,7 @@ func TestGenesis(t *testing.T) {
 				Deltas: map[string]sdk.DecProto{
 					addr.String(): {sdk.NewDec(1)},
 				},
-				BanList: []string{banned.String()},
+				BanList: []sdk.AccAddress{banned},
 			},
 			accumulatedDelta: sdk.OneDec(),
 		},

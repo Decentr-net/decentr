@@ -33,11 +33,7 @@ func InitGenesis(ctx sdk.Context, keeper keeper.Keeper, genState types.GenesisSt
 	}
 
 	for _, v := range genState.BanList {
-		address, err := sdk.AccAddressFromBech32(v)
-		if err != nil {
-			panic(fmt.Errorf("invalid address %s in ban list : %w", v, err))
-		}
-		keeper.SetBan(ctx, address, true)
+		keeper.SetBan(ctx, v, true)
 	}
 }
 
@@ -46,7 +42,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	params := k.GetParams(ctx)
 	balances := map[string]sdk.DecProto{}
 	deltas := map[string]sdk.DecProto{}
-	banlist := make([]string, 0)
+	banlist := make([]sdk.AccAddress, 0)
 
 	k.IterateBalance(ctx, func(address sdk.AccAddress, balance sdk.Dec) (stop bool) {
 		balances[address.String()] = sdk.DecProto{balance}
@@ -57,7 +53,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 		return false
 	})
 	k.IterateBanList(ctx, func(address sdk.AccAddress) (stop bool) {
-		banlist = append(banlist, address.String())
+		banlist = append(banlist, address)
 		return false
 	})
 

@@ -8,53 +8,59 @@ option go_package = "github.com/Decentr-net/decentr/x/community/types";
 
 // Msg defines the Msg service.
 service Msg {
-    rpc CreatePost(MsgCreatePost) returns (MsgCreatePostResponse);
-    rpc DeletePost(MsgDeletePost) returns (MsgDeletePostResponse);
-    rpc SetLike(MsgSetLike) returns (MsgSetLikeResponse);
-    rpc Follow(MsgFollow) returns (MsgFollowResponse);
-    rpc Unfollow(MsgUnfollow) returns (MsgUnfollowResponse);
+  rpc CreatePost(MsgCreatePost) returns (MsgCreatePostResponse);
+  rpc DeletePost(MsgDeletePost) returns (MsgDeletePostResponse);
+  rpc SetLike(MsgSetLike) returns (MsgSetLikeResponse);
+  rpc Follow(MsgFollow) returns (MsgFollowResponse);
+  rpc Unfollow(MsgUnfollow) returns (MsgUnfollowResponse);
 }
 
 message MsgCreatePost {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    Post post = 1 [(gogoproto.nullable) = false];
+  Post post = 1 [ (gogoproto.nullable) = false ];
 }
 message MsgCreatePostResponse {}
 
 message MsgDeletePost {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    string post_owner = 1;
-    string post_uuid = 2;
-    string owner = 3;
+  bytes post_owner = 1 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string post_uuid = 2;
+  bytes owner = 3 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 message MsgDeletePostResponse {}
 
 message MsgSetLike {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    Like like = 1 [(gogoproto.nullable) = false];
+  Like like = 1 [ (gogoproto.nullable) = false ];
 }
 message MsgSetLikeResponse {}
 
 message MsgFollow {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    string owner = 1;
-    string whom = 2;
+  bytes owner = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes whom = 2 [ (gogoproto.casttype) =
+                       "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 message MsgFollowResponse {}
 
 message MsgUnfollow {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    string owner = 1;
-    string whom = 2;
+  bytes owner = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes whom = 2 [ (gogoproto.casttype) =
+                       "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 message MsgUnfollowResponse {}

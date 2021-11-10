@@ -67,7 +67,7 @@ func request_Query_IsAccountBanned_0(ctx context.Context, marshaler runtime.Mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
 	}
 
-	protoReq.Address, err = runtime.String(val)
+	protoReq.Address, err = runtime.Bytes(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
@@ -94,7 +94,7 @@ func local_request_Query_IsAccountBanned_0(ctx context.Context, marshaler runtim
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
 	}
 
-	protoReq.Address, err = runtime.String(val)
+	protoReq.Address, err = runtime.Bytes(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
@@ -242,9 +242,9 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_MinGasPrice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"decentr", "operations", "v1", "min-gas-price"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_MinGasPrice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"decentr", "operations", "min-gas-price"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_IsAccountBanned_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"decentr", "operations", "v1", "is-account-banned", "address"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_IsAccountBanned_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"decentr", "operations", "is-account-banned", "address"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

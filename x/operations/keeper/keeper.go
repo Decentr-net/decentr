@@ -50,7 +50,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 func (k Keeper) IsSupervisor(ctx sdk.Context, address sdk.AccAddress) bool {
 	for _, v := range k.GetParams(ctx).Supervisors {
-		if address.String() == v {
+		if address.Equals(v) {
 			return true
 		}
 	}

@@ -22,14 +22,13 @@ func (p Post) Address() string {
 }
 
 func (p Post) Validate() error {
-	if _, err := sdk.AccAddressFromBech32(p.Owner); err != nil {
+	if err := sdk.VerifyAddressFormat(p.Owner); err != nil {
 		return fmt.Errorf("invalid owner: %w", err)
 	}
 
 	if _, err := uuid.FromString(p.Uuid); err != nil {
 		return fmt.Errorf("invalid uuid: %w", err)
 	}
-
 	if p.Category < Category_CATEGORY_UNDEFINED || p.Category > Category_CATEGORY_SPORTS {
 		return fmt.Errorf("invalid category: %d", p.Category)
 	}
@@ -50,15 +49,15 @@ func (p Post) Validate() error {
 }
 
 func (l Like) Validate() error {
-	if _, err := sdk.AccAddressFromBech32(l.Owner); err != nil {
+	if err := sdk.VerifyAddressFormat(l.Owner); err != nil {
 		return fmt.Errorf("invalid owner: %w", err)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(l.PostOwner); err != nil {
+	if err := sdk.VerifyAddressFormat(l.PostOwner); err != nil {
 		return fmt.Errorf("invalid post_owner: %w", err)
 	}
 
-	if l.Owner == l.PostOwner {
+	if l.Owner.Equals(l.PostOwner) {
 		return fmt.Errorf("invalid post_owner: self-like")
 	}
 
@@ -73,7 +72,7 @@ func (l Like) Validate() error {
 	return nil
 }
 
-func ValidateFollowers(who string, whom []string) error {
+func ValidateFollowers(who string, whom []sdk.AccAddress) error {
 	if _, err := sdk.AccAddressFromBech32(who); err != nil {
 		return fmt.Errorf("invalid follower: %w", err)
 	}
@@ -82,9 +81,9 @@ func ValidateFollowers(who string, whom []string) error {
 		return fmt.Errorf("invalid followee: empty array")
 	}
 
-	for _, v := range whom {
-		if _, err := sdk.AccAddressFromBech32(v); err != nil {
-			return fmt.Errorf("invalid followee: %w", err)
+	for i, v := range whom {
+		if err := sdk.VerifyAddressFormat(v); err != nil {
+			return fmt.Errorf("invalid followee #%d: %w", i+1, err)
 		}
 	}
 

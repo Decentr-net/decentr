@@ -74,7 +74,7 @@ func NewIsAccountBannedCmd() *cobra.Command {
 			queryClient := types.NewQueryClient(clientCtx)
 
 			out, err := queryClient.IsAccountBanned(cmd.Context(), &types.IsAccountBannedRequest{
-				Address: address.String(),
+				Address: address,
 			})
 			if err != nil {
 				return err

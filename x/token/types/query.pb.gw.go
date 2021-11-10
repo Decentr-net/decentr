@@ -49,7 +49,7 @@ func request_Query_Balance_0(ctx context.Context, marshaler runtime.Marshaler, c
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
 	}
 
-	protoReq.Address, err = runtime.String(val)
+	protoReq.Address, err = runtime.Bytes(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
@@ -76,7 +76,7 @@ func local_request_Query_Balance_0(ctx context.Context, marshaler runtime.Marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "address")
 	}
 
-	protoReq.Address, err = runtime.String(val)
+	protoReq.Address, err = runtime.Bytes(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "address", err)
@@ -242,9 +242,9 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Query_Balance_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"decentr", "token", "v1", "balance", "address"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_Balance_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"decentr", "token", "balance", "address"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Pool_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"decentr", "token", "v1", "pool"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_Pool_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"decentr", "token", "pool"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

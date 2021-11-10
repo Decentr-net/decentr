@@ -24,8 +24,7 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 
 	for who, addressList := range genState.Following {
 		owner, _ := sdk.AccAddressFromBech32(who)
-		for _, v := range addressList.Address {
-			whom, _ := sdk.AccAddressFromBech32(v)
+		for _, whom := range addressList.Address {
 			k.Follow(ctx, owner, whom)
 		}
 	}
@@ -49,7 +48,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	following := map[string]types.GenesisState_AddressList{}
 	k.IterateFollowings(ctx, func(who, whom sdk.AccAddress) (stop bool) {
 		l := following[who.String()]
-		l.Address = append(l.Address, whom.String())
+		l.Address = append(l.Address, whom)
 		following[who.String()] = l
 		return false
 	})

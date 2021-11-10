@@ -22,10 +22,7 @@ func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
-		m.Owner = ""
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgDistributeRewards) {
-		m.Owner = "1"
+		m.Owner = nil
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = nil
@@ -40,12 +37,7 @@ func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = []Reward{
-			{Receiver: "", Reward: sdk.DecProto{sdk.OneDec()}},
-		}
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgDistributeRewards) {
-		m.Rewards = []Reward{
-			{Receiver: "1", Reward: sdk.DecProto{sdk.OneDec()}},
+			{Receiver: nil, Reward: sdk.DecProto{sdk.OneDec()}},
 		}
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
@@ -72,16 +64,10 @@ func TestMsgResetAccount_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Owner = ""
+		m.Owner = nil
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Address = ""
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Owner = "1"
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Address = "1"
+		m.Address = nil
 	}).ValidateBasic())
 }
 
@@ -96,16 +82,10 @@ func TestMsgBanAccount_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgBanAccount) {
-		m.Owner = ""
+		m.Owner = nil
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgBanAccount) {
-		m.Address = ""
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgBanAccount) {
-		m.Owner = "1"
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgBanAccount) {
-		m.Address = "1"
+		m.Address = nil
 	}).ValidateBasic())
 }
 
@@ -120,10 +100,7 @@ func TestMsgMint_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgMint) {
-		m.Owner = ""
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgMint) {
-		m.Owner = "1"
+		m.Owner = nil
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgMint) {
 		m.Coin.Denom = ""
@@ -150,10 +127,7 @@ func TestMsgBurn_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgBurn) {
-		m.Owner = ""
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgBurn) {
-		m.Owner = "1"
+		m.Owner = nil
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgBurn) {
 		m.Coin.Denom = ""

@@ -9,35 +9,37 @@ option go_package = "github.com/Decentr-net/decentr/x/token/types";
 
 // Query defines the gRPC querier service.
 service Query {
-    rpc Balance(BalanceRequest) returns (BalanceResponse) {
-        option (google.api.http).get = "/decentr/token/v1/balance/{address}";
-    }
+  rpc Balance(BalanceRequest) returns (BalanceResponse) {
+    option (google.api.http).get = "/decentr/token/balance/{address}";
+  }
 
-    rpc Pool(PoolRequest) returns (PoolResponse) {
-        option (google.api.http).get = "/decentr/token/v1/pool";
-    }
+  rpc Pool(PoolRequest) returns (PoolResponse) {
+    option (google.api.http).get = "/decentr/token/pool";
+  }
 }
 
 message BalanceRequest {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    string address = 1;
+  bytes address = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 
 message BalanceResponse {
-    cosmos.base.v1beta1.DecProto balance = 1 [(gogoproto.nullable) = false];
-    cosmos.base.v1beta1.DecProto balance_delta = 2 [(gogoproto.nullable) = false];
-    bool is_banned = 3;
+  cosmos.base.v1beta1.DecProto balance = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecProto balance_delta = 2
+      [ (gogoproto.nullable) = false ];
+  bool is_banned = 3;
 }
 
 message PoolRequest {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 }
 
 message PoolResponse {
-    cosmos.base.v1beta1.DecCoin size = 1 [(gogoproto.nullable) = false];
-    cosmos.base.v1beta1.DecProto total_delta = 2 [(gogoproto.nullable) = false];
-    uint64 next_distribution_height = 3;
+  cosmos.base.v1beta1.DecCoin size = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.DecProto total_delta = 2 [ (gogoproto.nullable) = false ];
+  uint64 next_distribution_height = 3;
 }

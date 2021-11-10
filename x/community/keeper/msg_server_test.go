@@ -23,7 +23,7 @@ func TestMsgServer_CreatePost(t *testing.T) {
 
 	_, err := s.CreatePost(sdk.WrapSDKContext(ctx), &types.MsgCreatePost{
 		Post: types.Post{
-			Owner:        owner.String(),
+			Owner:        owner,
 			Uuid:         id.String(),
 			Title:        "gr8 title",
 			PreviewImage: "",
@@ -35,7 +35,7 @@ func TestMsgServer_CreatePost(t *testing.T) {
 
 	_, err = s.CreatePost(sdk.WrapSDKContext(ctx), &types.MsgCreatePost{
 		Post: types.Post{
-			Owner:        owner.String(),
+			Owner:        owner,
 			Uuid:         id.String(),
 			Title:        "gr8 title",
 			PreviewImage: "",
@@ -57,7 +57,7 @@ func TestMsgServer_DeletePost(t *testing.T) {
 	createPost := func() {
 		_, err := s.CreatePost(sdk.WrapSDKContext(ctx), &types.MsgCreatePost{
 			Post: types.Post{
-				Owner:        owner.String(),
+				Owner:        owner,
 				Uuid:         id.String(),
 				Title:        "gr8 title",
 				PreviewImage: "",
@@ -71,8 +71,8 @@ func TestMsgServer_DeletePost(t *testing.T) {
 
 	t.Run("forbidden", func(t *testing.T) {
 		_, err := s.DeletePost(sdk.WrapSDKContext(ctx), &types.MsgDeletePost{
-			Owner:     NewAccAddress().String(),
-			PostOwner: owner.String(),
+			Owner:     NewAccAddress(),
+			PostOwner: owner,
 			PostUuid:  id.String(),
 		})
 		require.Error(t, err)
@@ -81,8 +81,8 @@ func TestMsgServer_DeletePost(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		_, err := s.DeletePost(sdk.WrapSDKContext(ctx), &types.MsgDeletePost{
-			Owner:     owner.String(),
-			PostOwner: owner.String(),
+			Owner:     owner,
+			PostOwner: owner,
 			PostUuid:  id.String(),
 		})
 		require.Error(t, err)
@@ -92,8 +92,8 @@ func TestMsgServer_DeletePost(t *testing.T) {
 	t.Run("deleted by owner", func(t *testing.T) {
 		createPost()
 		_, err := s.DeletePost(sdk.WrapSDKContext(ctx), &types.MsgDeletePost{
-			Owner:     owner.String(),
-			PostOwner: owner.String(),
+			Owner:     owner,
+			PostOwner: owner,
 			PostUuid:  id.String(),
 		})
 		require.NoError(t, err)
@@ -104,13 +104,13 @@ func TestMsgServer_DeletePost(t *testing.T) {
 		createPost()
 		moderator := NewAccAddress()
 		set.keeper.SetParams(ctx, types.Params{
-			Moderators: []string{moderator.String()},
+			Moderators: []sdk.AccAddress{moderator},
 			FixedGas:   types.DefaultFixedGasParams(),
 		})
 
 		_, err := s.DeletePost(sdk.WrapSDKContext(ctx), &types.MsgDeletePost{
-			Owner:     moderator.String(),
-			PostOwner: owner.String(),
+			Owner:     moderator,
+			PostOwner: owner,
 			PostUuid:  id.String(),
 		})
 		require.NoError(t, err)
@@ -127,7 +127,7 @@ func TestMsgServer_SetLike(t *testing.T) {
 	createPost := func() {
 		_, err := s.CreatePost(sdk.WrapSDKContext(ctx), &types.MsgCreatePost{
 			Post: types.Post{
-				Owner:        owner.String(),
+				Owner:        owner,
 				Uuid:         id.String(),
 				Title:        "gr8 title",
 				PreviewImage: "",
@@ -142,8 +142,8 @@ func TestMsgServer_SetLike(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		_, err := s.SetLike(sdk.WrapSDKContext(ctx), &types.MsgSetLike{
 			Like: types.Like{
-				Owner:     NewAccAddress().String(),
-				PostOwner: owner.String(),
+				Owner:     NewAccAddress(),
+				PostOwner: NewAccAddress(),
 				PostUuid:  id.String(),
 			},
 		})
@@ -154,8 +154,8 @@ func TestMsgServer_SetLike(t *testing.T) {
 	t.Run("self like", func(t *testing.T) {
 		_, err := s.SetLike(sdk.WrapSDKContext(ctx), &types.MsgSetLike{
 			Like: types.Like{
-				Owner:     owner.String(),
-				PostOwner: owner.String(),
+				Owner:     owner,
+				PostOwner: owner,
 				PostUuid:  id.String(),
 			},
 		})
@@ -170,8 +170,8 @@ func TestMsgServer_SetLike(t *testing.T) {
 		createPost()
 		_, err := s.SetLike(sdk.WrapSDKContext(ctx), &types.MsgSetLike{
 			Like: types.Like{
-				Owner:     likeOwner.String(),
-				PostOwner: owner.String(),
+				Owner:     likeOwner,
+				PostOwner: owner,
 				PostUuid:  id.String(),
 				Weight:    types.LikeWeight_LIKE_WEIGHT_UP,
 			},
@@ -181,8 +181,8 @@ func TestMsgServer_SetLike(t *testing.T) {
 
 		_, err = s.SetLike(sdk.WrapSDKContext(ctx), &types.MsgSetLike{
 			Like: types.Like{
-				Owner:     likeOwner.String(),
-				PostOwner: owner.String(),
+				Owner:     likeOwner,
+				PostOwner: owner,
 				PostUuid:  id.String(),
 				Weight:    types.LikeWeight_LIKE_WEIGHT_DOWN,
 			},
@@ -199,8 +199,8 @@ func TestMsgServer_Follow(t *testing.T) {
 	t.Run("self like", func(t *testing.T) {
 		address := NewAccAddress()
 		_, err := s.Follow(sdk.WrapSDKContext(ctx), &types.MsgFollow{
-			Owner: address.String(),
-			Whom:  address.String(),
+			Owner: address,
+			Whom:  address,
 		})
 
 		require.Error(t, err)
@@ -211,8 +211,8 @@ func TestMsgServer_Follow(t *testing.T) {
 		who, whom := NewAccAddress(), NewAccAddress()
 		set.keeper.Follow(ctx, who, whom)
 		_, err := s.Follow(sdk.WrapSDKContext(ctx), &types.MsgFollow{
-			Owner: who.String(),
-			Whom:  whom.String(),
+			Owner: who,
+			Whom:  whom,
 		})
 
 		require.Error(t, err)
@@ -221,8 +221,8 @@ func TestMsgServer_Follow(t *testing.T) {
 
 	t.Run("correct", func(t *testing.T) {
 		_, err := s.Follow(sdk.WrapSDKContext(ctx), &types.MsgFollow{
-			Owner: NewAccAddress().String(),
-			Whom:  NewAccAddress().String(),
+			Owner: NewAccAddress(),
+			Whom:  NewAccAddress(),
 		})
 
 		require.NoError(t, err)
@@ -237,8 +237,8 @@ func TestMsgServer_Unfollow(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		_, err := s.Unfollow(sdk.WrapSDKContext(ctx), &types.MsgUnfollow{
-			Owner: who.String(),
-			Whom:  whom.String(),
+			Owner: who,
+			Whom:  whom,
 		})
 
 		require.Error(t, err)
@@ -248,8 +248,8 @@ func TestMsgServer_Unfollow(t *testing.T) {
 	t.Run("correct", func(t *testing.T) {
 		set.keeper.Follow(ctx, who, whom)
 		_, err := s.Unfollow(sdk.WrapSDKContext(ctx), &types.MsgUnfollow{
-			Owner: who.String(),
-			Whom:  whom.String(),
+			Owner: who,
+			Whom:  whom,
 		})
 
 		require.NoError(t, err)

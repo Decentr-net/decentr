@@ -31,7 +31,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Posts: []Post{
 					{
 						Uuid:         postUUID.String(),
-						Owner:        addr.String(),
+						Owner:        addr,
 						Title:        "Title",
 						PreviewImage: "",
 						Category:     0,
@@ -40,8 +40,8 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 				Likes: []Like{
 					{
-						Owner:     NewAccAddress().String(),
-						PostOwner: addr.String(),
+						Owner:     NewAccAddress(),
+						PostOwner: addr,
 						PostUuid:  postUUID.String(),
 						Weight:    0,
 					},
@@ -56,7 +56,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Posts: []Post{
 					{
 						Uuid:         postUUID.String(),
-						Owner:        addr.String(),
+						Owner:        addr,
 						Title:        "Title",
 						PreviewImage: "",
 						Category:     0,
@@ -65,8 +65,8 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 				Likes: []Like{
 					{
-						Owner:     addr.String(),
-						PostOwner: addr.String(),
+						Owner:     addr,
+						PostOwner: addr,
 						PostUuid:  postUUID.String(),
 						Weight:    0,
 					},
@@ -81,7 +81,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Posts: []Post{
 					{
 						Uuid:         postUUID.String(),
-						Owner:        addr.String(),
+						Owner:        addr,
 						Title:        "Title",
 						PreviewImage: "",
 						Category:     0,
@@ -90,8 +90,8 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 				Likes: []Like{
 					{
-						Owner:     addr.String(),
-						PostOwner: NewAccAddress().String(),
+						Owner:     addr,
+						PostOwner: NewAccAddress(),
 						PostUuid:  postUUID.String(),
 						Weight:    0,
 					},

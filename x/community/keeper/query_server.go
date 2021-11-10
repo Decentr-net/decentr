@@ -30,18 +30,13 @@ func NewQueryServer(keeper Keeper) types.QueryServer {
 func (s queryServer) GetPost(goCtx context.Context, r *types.GetPostRequest) (*types.GetPostResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, err := sdk.AccAddressFromBech32(r.PostOwner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid post_owner")
-	}
-
 	id, err := uuid.FromString(r.PostUuid)
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid post_uuid")
 	}
 
 	return &types.GetPostResponse{
-		Post: s.keeper.GetPost(ctx, postKey(owner, id)),
+		Post: s.keeper.GetPost(ctx, postKey(r.PostOwner, id)),
 	}, nil
 }
 
@@ -56,12 +51,7 @@ func (s queryServer) ListUserPosts(goCtx context.Context, r *types.ListUserPosts
 		r.Pagination.Limit = defaultLimit
 	}
 
-	owner, err := sdk.AccAddressFromBech32(r.Owner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid post_owner")
-	}
-
-	posts, next, total := s.keeper.ListUserPosts(ctx, owner, r.Pagination)
+	posts, next, total := s.keeper.ListUserPosts(ctx, r.Owner, r.Pagination)
 
 	return &types.ListUserPostsResponse{
 		Posts: posts,
@@ -87,22 +77,17 @@ func (s queryServer) ListFollowed(goCtx context.Context, r *types.ListFollowedRe
 		return nil, sdkerrors.ErrInvalidRequest.Wrap("invalid pagination: only one of offset or key can be set")
 	}
 
-	owner, err := sdk.AccAddressFromBech32(r.Owner)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
-	}
-
 	if r.Pagination.Limit == 0 {
 		r.Pagination.Limit = defaultLimit
 	}
 
-	followed, next, total := s.keeper.ListFollowed(ctx, owner, r.Pagination)
+	followed, next, total := s.keeper.ListFollowed(ctx, r.Owner, r.Pagination)
 
 	return &types.ListFollowedResponse{
-		Followed: func() []string {
-			out := make([]string, len(followed))
+		Followed: func() []sdk.AccAddress {
+			out := make([]sdk.AccAddress, len(followed))
 			for i, v := range followed {
-				out[i] = v.String()
+				out[i] = v
 			}
 			return out
 		}(),

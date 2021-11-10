@@ -6,49 +6,54 @@ import "gogoproto/gogo.proto";
 option go_package = "github.com/Decentr-net/decentr/x/community/types";
 
 message Params {
-    repeated string moderators = 1;
-    FixedGasParams fixed_gas = 2 [(gogoproto.nullable) = false];
+  repeated bytes moderators = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  FixedGasParams fixed_gas = 2 [ (gogoproto.nullable) = false ];
 }
 
 message FixedGasParams {
-    uint64 create_post = 1;
-    uint64 delete_post = 2;
-    uint64 set_like =3;
-    uint64 follow = 4;
-    uint64 unfollow = 5;
+  uint64 create_post = 1;
+  uint64 delete_post = 2;
+  uint64 set_like = 3;
+  uint64 follow = 4;
+  uint64 unfollow = 5;
 }
 
 enum Category {
-    CATEGORY_UNDEFINED = 0;
-    CATEGORY_WORLD_NEWS = 1;
-    CATEGORY_TRAVEL_AND_TOURISM = 2;
-    CATEGORY_SCIENCE_AND_TECHNOLOGY = 3;
-    CATEGORY_STRANGE_WORLD = 4;
-    CATEGORY_ARTS_AND_ENTERTAINMENT = 5;
-    CATEGORY_WRITERS_AND_WRITING = 6;
-    CATEGORY_HEALTH_AND_FITNESS = 7;
-    CATEGORY_CRYPTO_AND_BLOCKCHAIN = 8;
-    CATEGORY_SPORTS = 9;
+  CATEGORY_UNDEFINED = 0;
+  CATEGORY_WORLD_NEWS = 1;
+  CATEGORY_TRAVEL_AND_TOURISM = 2;
+  CATEGORY_SCIENCE_AND_TECHNOLOGY = 3;
+  CATEGORY_STRANGE_WORLD = 4;
+  CATEGORY_ARTS_AND_ENTERTAINMENT = 5;
+  CATEGORY_WRITERS_AND_WRITING = 6;
+  CATEGORY_HEALTH_AND_FITNESS = 7;
+  CATEGORY_CRYPTO_AND_BLOCKCHAIN = 8;
+  CATEGORY_SPORTS = 9;
 }
 
 message Post {
-    string owner = 1;
-    string uuid = 2;
-    string title = 3;
-    string preview_image = 4;
-    Category category = 5;
-    string text = 6;
+  bytes owner = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string uuid = 2;
+  string title = 3;
+  string preview_image = 4;
+  Category category = 5;
+  string text = 6;
 }
 
 enum LikeWeight {
-    LIKE_WEIGHT_ZERO = 0;
-    LIKE_WEIGHT_UP = 1;
-    LIKE_WEIGHT_DOWN = -1;
+  LIKE_WEIGHT_ZERO = 0;
+  LIKE_WEIGHT_UP = 1;
+  LIKE_WEIGHT_DOWN = -1;
 }
 
 message Like {
-    string owner = 1;
-    string post_owner = 2;
-    string post_uuid = 3;
-    LikeWeight weight = 4;
+  bytes owner = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes post_owner = 2 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string post_uuid = 3;
+  LikeWeight weight = 4;
 }

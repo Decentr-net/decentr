@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	DefaultSupervisors = []string(nil)
+	DefaultSupervisors = []sdk.AccAddress(nil)
 	DefaultMinGasPrice = sdk.NewDecCoinFromDec(config.DefaultBondDenom, sdk.MustNewDecFromStr("0.025"))
 )
 
@@ -67,16 +67,17 @@ func validateMinGasPrice(i interface{}) error {
 }
 
 func validateSupervisors(i interface{}) error {
-	owners, ok := i.([]string)
+	s, ok := i.([]sdk.AccAddress)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	for _, owner := range owners {
-		if _, err := sdk.AccAddressFromBech32(owner); err != nil {
-			return fmt.Errorf("%s is an invalid supervisor address, err=%w", owner, err)
+	for i, v := range s {
+		if err := sdk.VerifyAddressFormat(v); err != nil {
+			return fmt.Errorf("invalid supervisor %d", i+1)
 		}
 	}
+
 	return nil
 }
 

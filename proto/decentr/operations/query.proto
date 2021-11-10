@@ -9,32 +9,34 @@ option go_package = "github.com/Decentr-net/decentr/x/operations/types";
 
 // Query defines the gRPC querier service.
 service Query {
-    // MinGasPrice returns set gas price
-    rpc MinGasPrice(MinGasPriceRequest) returns (MinGasPriceResponse) {
-        option (google.api.http).get = "/decentr/operations/v1/min-gas-price";
-    }
+  // MinGasPrice returns set gas price
+  rpc MinGasPrice(MinGasPriceRequest) returns (MinGasPriceResponse) {
+    option (google.api.http).get = "/decentr/operations/min-gas-price";
+  }
 
-    // IsAccountBanned
-    rpc IsAccountBanned(IsAccountBannedRequest) returns (IsAccountBannedResponse) {
-        option (google.api.http).get = "/decentr/operations/v1/is-account-banned/{address}";
-    }
+  // IsAccountBanned
+  rpc IsAccountBanned(IsAccountBannedRequest)
+      returns (IsAccountBannedResponse) {
+    option (google.api.http).get =
+        "/decentr/operations/is-account-banned/{address}";
+  }
 }
 
 message MinGasPriceRequest {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 }
 message MinGasPriceResponse {
-    cosmos.base.v1beta1.DecCoin min_gas_price = 1 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.DecCoin min_gas_price = 1
+      [ (gogoproto.nullable) = false ];
 }
 
 message IsAccountBannedRequest {
-    option (gogoproto.equal)           = false;
-    option (gogoproto.goproto_getters) = false;
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
 
-    // address is the address to query balances for.
-    string address = 1;
+  // address is the address to query balances for.
+  bytes address = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
-message IsAccountBannedResponse {
-    bool is_banned = 1;
-}
+message IsAccountBannedResponse { bool is_banned = 1; }

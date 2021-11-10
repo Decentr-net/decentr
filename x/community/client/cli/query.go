@@ -84,7 +84,7 @@ func NewGetPostCmd() *cobra.Command {
 			queryClient := types.NewQueryClient(clientCtx)
 
 			out, err := queryClient.GetPost(cmd.Context(), &types.GetPostRequest{
-				PostOwner: owner.String(),
+				PostOwner: owner,
 				PostUuid:  id.String(),
 			})
 			if err != nil {
@@ -131,7 +131,7 @@ func NewListUserPostsCmd() *cobra.Command {
 			queryClient := types.NewQueryClient(clientCtx)
 
 			out, err := queryClient.ListUserPosts(cmd.Context(), &types.ListUserPostsRequest{
-				Owner: owner.String(),
+				Owner: owner,
 				Pagination: query.PageRequest{
 					Offset: offset,
 					Limit:  limit,
@@ -181,7 +181,7 @@ func NewListFollowedCmd() *cobra.Command {
 			queryClient := types.NewQueryClient(clientCtx)
 
 			out, err := queryClient.ListFollowed(cmd.Context(), &types.ListFollowedRequest{
-				Owner: owner.String(),
+				Owner: owner,
 				Pagination: query.PageRequest{
 					Offset: offset,
 					Limit:  limit,

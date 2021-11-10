@@ -25,7 +25,7 @@ func TestQueryServer_IsAccountBanned(t *testing.T) {
 
 	addr := NewAccAddress()
 	req := types.IsAccountBannedRequest{
-		Address: addr.String(),
+		Address: addr,
 	}
 
 	resp, err := s.IsAccountBanned(sdk.WrapSDKContext(ctx), &req)

@@ -17,7 +17,7 @@ import (
 func TestQueryServer_Moderators(t *testing.T) {
 	set, ctx := setupKeeper(t)
 	p := types.Params{
-		Moderators: []string{NewAccAddress().String(), NewAccAddress().String()},
+		Moderators: []sdk.AccAddress{NewAccAddress(), NewAccAddress()},
 		FixedGas:   types.FixedGasParams{},
 	}
 	set.keeper.SetParams(ctx, p)
@@ -31,7 +31,7 @@ func TestQueryServer_Moderators(t *testing.T) {
 func TestQueryServer_GetPost(t *testing.T) {
 	set, ctx := setupKeeper(t)
 	p := types.Post{
-		Owner:        NewAccAddress().String(),
+		Owner:        NewAccAddress(),
 		Uuid:         uuid.Must(uuid.NewV1()).String(),
 		Title:        "title",
 		PreviewImage: "http://decentr.xyz/preview.png",
@@ -48,15 +48,6 @@ func TestQueryServer_GetPost(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, p, resp.Post)
-	})
-
-	t.Run("invalid owner", func(t *testing.T) {
-		_, err := s.GetPost(sdk.WrapSDKContext(ctx), &types.GetPostRequest{
-			PostOwner: "",
-			PostUuid:  p.Uuid,
-		})
-		require.Error(t, err)
-		require.True(t, sdkerrors.IsOf(err, sdkerrors.ErrInvalidAddress))
 	})
 
 	t.Run("invalid uuid", func(t *testing.T) {
@@ -76,7 +67,7 @@ func TestQueryServer_ListUserPosts(t *testing.T) {
 	posts := make([]types.Post, 10)
 	for i := range posts {
 		p := types.Post{
-			Owner:        owner.String(),
+			Owner:        owner,
 			Uuid:         uuid.Must(uuid.NewV1()).String(),
 			Title:        "title",
 			PreviewImage: "http://decentr.xyz/preview.png",
@@ -89,18 +80,9 @@ func TestQueryServer_ListUserPosts(t *testing.T) {
 
 	s := NewQueryServer(set.keeper)
 
-	t.Run("invalid owner", func(t *testing.T) {
-		_, err := s.ListUserPosts(sdk.WrapSDKContext(ctx), &types.ListUserPostsRequest{
-			Owner:      "",
-			Pagination: query.PageRequest{},
-		})
-		require.Error(t, err)
-		require.True(t, sdkerrors.IsOf(err, sdkerrors.ErrInvalidAddress))
-	})
-
 	t.Run("ok default", func(t *testing.T) {
 		resp, err := s.ListUserPosts(sdk.WrapSDKContext(ctx), &types.ListUserPostsRequest{
-			Owner:      owner.String(),
+			Owner:      owner,
 			Pagination: query.PageRequest{},
 		})
 		require.NoError(t, err)
@@ -109,7 +91,7 @@ func TestQueryServer_ListUserPosts(t *testing.T) {
 
 	t.Run("limited", func(t *testing.T) {
 		resp, err := s.ListUserPosts(sdk.WrapSDKContext(ctx), &types.ListUserPostsRequest{
-			Owner: owner.String(),
+			Owner: owner,
 			Pagination: query.PageRequest{
 				Limit: 1,
 			},
@@ -123,27 +105,17 @@ func TestQueryServer_ListFollowed(t *testing.T) {
 	set, ctx := setupKeeper(t)
 
 	owner := NewAccAddress()
-	followed := make([]string, 10)
+	followed := make([]sdk.AccAddress, 10)
 	for i := range followed {
-		acc := NewAccAddress()
-		set.keeper.Follow(ctx, owner, acc)
-		followed[i] = acc.String()
+		followed[i] = NewAccAddress()
+		set.keeper.Follow(ctx, owner, followed[i])
 	}
 
 	s := NewQueryServer(set.keeper)
 
-	t.Run("invalid owner", func(t *testing.T) {
-		_, err := s.ListFollowed(sdk.WrapSDKContext(ctx), &types.ListFollowedRequest{
-			Owner:      "",
-			Pagination: query.PageRequest{},
-		})
-		require.Error(t, err)
-		require.True(t, sdkerrors.IsOf(err, sdkerrors.ErrInvalidAddress))
-	})
-
 	t.Run("ok default", func(t *testing.T) {
 		resp, err := s.ListFollowed(sdk.WrapSDKContext(ctx), &types.ListFollowedRequest{
-			Owner:      owner.String(),
+			Owner:      owner,
 			Pagination: query.PageRequest{},
 		})
 		require.NoError(t, err)
@@ -152,7 +124,7 @@ func TestQueryServer_ListFollowed(t *testing.T) {
 
 	t.Run("limited", func(t *testing.T) {
 		resp, err := s.ListFollowed(sdk.WrapSDKContext(ctx), &types.ListFollowedRequest{
-			Owner: owner.String(),
+			Owner: owner,
 			Pagination: query.PageRequest{
 				Limit: 1,
 			},
@@ -161,32 +133,3 @@ func TestQueryServer_ListFollowed(t *testing.T) {
 		require.Len(t, resp.Followed, 1)
 	})
 }
-
-//func TestQueryServer_MinGasPrice(t *testing.T) {
-//	set, ctx := setupKeeper(t)
-//	s := NewQueryServer(set.keeper, set.tokenKeeper)
-//
-//	resp, err := s.MinGasPrice(sdk.WrapSDKContext(ctx), nil)
-//	require.NoError(t, err)
-//	require.Equal(t, types.DefaultMinGasPrice, resp.MinGasPrice)
-//}
-//
-//func TestQueryServer_IsAccountBanned(t *testing.T) {
-//	set, ctx := setupKeeper(t)
-//	s := NewQueryServer(set.keeper, set.tokenKeeper)
-//
-//	addr := NewAccAddress()
-//	req := types.IsAccountBannedRequest{
-//		Address: addr.String(),
-//	}
-//
-//	resp, err := s.IsAccountBanned(sdk.WrapSDKContext(ctx), &req)
-//	require.NoError(t, err)
-//	require.False(t, resp.IsBanned)
-//
-//	set.tokenKeeper.SetBan(ctx, addr, true)
-//
-//	resp, err = s.IsAccountBanned(sdk.WrapSDKContext(ctx), &req)
-//	require.NoError(t, err)
-//	require.True(t, resp.IsBanned)
-//}

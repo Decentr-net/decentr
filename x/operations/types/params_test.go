@@ -14,18 +14,17 @@ import (
 func Test_validateSupervisors(t *testing.T) {
 	require.Error(t, validateSupervisors(nil))
 	require.Error(t, validateSupervisors(1))
-	require.NoError(t, validateSupervisors([]string{}))
-	require.Error(t, validateSupervisors([]string{"1"}))
-	require.Error(t, validateSupervisors([]string{
-		"1",
-		NewAccAddress().String()},
+	require.NoError(t, validateSupervisors([]sdk.AccAddress{}))
+	require.Error(t, validateSupervisors([]sdk.AccAddress{
+		nil,
+		NewAccAddress()},
 	))
-	require.NoError(t, validateSupervisors([]string{
-		NewAccAddress().String()},
+	require.NoError(t, validateSupervisors([]sdk.AccAddress{
+		NewAccAddress()},
 	))
-	require.NoError(t, validateSupervisors([]string{
-		NewAccAddress().String(),
-		NewAccAddress().String(),
+	require.NoError(t, validateSupervisors([]sdk.AccAddress{
+		NewAccAddress(),
+		NewAccAddress(),
 	}))
 }
 

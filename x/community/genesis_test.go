@@ -26,7 +26,7 @@ func TestGenesis(t *testing.T) {
 
 	predefined := types.GenesisState{
 		Params: &types.Params{
-			Moderators: []string{addr.String()},
+			Moderators: []sdk.AccAddress{addr},
 			FixedGas: types.FixedGasParams{
 				CreatePost: 1,
 				DeletePost: 2,
@@ -38,7 +38,7 @@ func TestGenesis(t *testing.T) {
 		Posts: []types.Post{
 			{
 				Uuid:         postUUID.String(),
-				Owner:        addr.String(),
+				Owner:        addr,
 				Title:        "Title",
 				PreviewImage: "",
 				Category:     0,
@@ -46,7 +46,7 @@ func TestGenesis(t *testing.T) {
 			},
 			{
 				Uuid:         uuid.Must(uuid.NewV1()).String(),
-				Owner:        addr.String(),
+				Owner:        addr,
 				Title:        "Title",
 				PreviewImage: "",
 				Category:     0,
@@ -55,18 +55,18 @@ func TestGenesis(t *testing.T) {
 		},
 		Likes: []types.Like{
 			{
-				Owner:     NewAccAddress().String(),
-				PostOwner: addr.String(),
+				Owner:     NewAccAddress(),
+				PostOwner: addr,
 				PostUuid:  postUUID.String(),
 				Weight:    1,
 			},
 		},
 		Following: map[string]types.GenesisState_AddressList{
 			NewAccAddress().String(): {
-				[]string{NewAccAddress().String(), NewAccAddress().String()},
+				[]sdk.AccAddress{NewAccAddress(), NewAccAddress()},
 			},
 			NewAccAddress().String(): {
-				[]string{NewAccAddress().String(), NewAccAddress().String()},
+				[]sdk.AccAddress{NewAccAddress(), NewAccAddress()},
 			},
 		},
 	}

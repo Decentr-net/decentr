@@ -84,7 +84,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 func (k Keeper) IsModerator(ctx sdk.Context, address sdk.AccAddress) bool {
 	for _, v := range k.GetParams(ctx).Moderators {
-		if address.String() == v {
+		if address.Equals(v) {
 			return true
 		}
 	}
@@ -95,14 +95,13 @@ func (k Keeper) IsModerator(ctx sdk.Context, address sdk.AccAddress) bool {
 func (k Keeper) SetPost(ctx sdk.Context, p types.Post) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
 
-	owner, _ := sdk.AccAddressFromBech32(p.Owner)
 	id, _ := uuid.FromString(p.Uuid)
 
 	bz, err := p.Marshal()
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal post %s/%s: %w", p.Owner, p.Uuid, err))
 	}
-	store.Set(postKey(owner, id), bz)
+	store.Set(postKey(p.Owner, id), bz)
 }
 
 func (k Keeper) DeletePost(ctx sdk.Context, key []byte) {
@@ -118,7 +117,7 @@ func (k Keeper) DeletePost(ctx sdk.Context, key []byte) {
 func (k Keeper) GetPost(ctx sdk.Context, key []byte) types.Post {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
 
-	if !store.Has(key) {
+	if !k.HasPost(ctx, key) {
 		return types.Post{}
 	}
 
@@ -128,6 +127,10 @@ func (k Keeper) GetPost(ctx sdk.Context, key []byte) types.Post {
 	}
 
 	return p
+}
+
+func (k Keeper) HasPost(ctx sdk.Context, key []byte) bool {
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix).Has(key)
 }
 
 func (k Keeper) ListUserPosts(ctx sdk.Context, owner sdk.AccAddress, p query.PageRequest) (posts []types.Post, nextKey []byte, total uint64) {
@@ -184,8 +187,8 @@ func (k Keeper) GetLike(ctx sdk.Context, key []byte) types.Like {
 	postOwner, postUUID, owner := parseLikeKey(key)
 
 	return types.Like{
-		Owner:     owner.String(),
-		PostOwner: postOwner.String(),
+		Owner:     owner,
+		PostOwner: postOwner,
 		PostUuid:  postUUID.String(),
 		Weight:    types.LikeWeight(int8(store.Get(key)[0])),
 	}
@@ -194,11 +197,9 @@ func (k Keeper) GetLike(ctx sdk.Context, key []byte) types.Like {
 func (k Keeper) SetLike(ctx sdk.Context, l types.Like) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.LikePrefix)
 
-	owner, _ := sdk.AccAddressFromBech32(l.Owner)
-	postOwner, _ := sdk.AccAddressFromBech32(l.PostOwner)
 	postUUID, _ := uuid.FromString(l.PostUuid)
 
-	key := likeKey(postKey(postOwner, postUUID), owner)
+	key := likeKey(postKey(l.PostOwner, postUUID), l.Owner)
 
 	if l.Weight == types.LikeWeight_LIKE_WEIGHT_ZERO {
 		store.Delete(key)

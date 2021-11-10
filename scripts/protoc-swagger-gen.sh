@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Adapted from https://github.com/cosmos/cosmos-sdk/blob/master/scripts/protoc-swagger-gen.sh
+
 set -eo pipefail
 
 mkdir -p ./tmp-swagger-gen
@@ -21,7 +23,7 @@ done
 # combine swagger files
 # uses nodejs package `swagger-combine`.
 # all the individual swagger files need to be configured in `config.json` for merging
-swagger-combine ./client/docs/config.json -o ./client/docs/swagger-ui/swagger.yaml -f yaml --continueOnConflictingPaths true --includeDefinitions true
+swagger-combine ./misc/swagger/swagger-combine.json -o ./docs/static/openapi.yml -f yaml --continueOnConflictingPaths true --includeDefinitions true
 
 # clean swagger files
 rm -rf ./tmp-swagger-gen

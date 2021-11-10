@@ -22,16 +22,16 @@ func TestMsgServer_DistributeRewards(t *testing.T) {
 
 	owner, addr1, addr2 := NewAccAddress(), NewAccAddress(), NewAccAddress()
 	set.keeper.SetParams(ctx, types.Params{
-		Supervisors: []string{owner.String()},
+		Supervisors: []sdk.AccAddress{owner},
 		FixedGas:    types.DefaultFixedGasParams(),
 		MinGasPrice: types.DefaultMinGasPrice,
 	})
 
 	_, err := s.DistributeRewards(sdk.WrapSDKContext(ctx), &types.MsgDistributeRewards{
-		Owner: owner.String(),
+		Owner: owner,
 		Rewards: []types.Reward{
-			{Receiver: addr1.String(), Reward: sdk.DecProto{sdk.NewDec(1)}},
-			{Receiver: addr2.String(), Reward: sdk.DecProto{sdk.NewDec(2)}},
+			{Receiver: addr1, Reward: sdk.DecProto{sdk.NewDec(1)}},
+			{Receiver: addr2, Reward: sdk.DecProto{sdk.NewDec(2)}},
 		},
 	})
 	require.NoError(t, err)
@@ -47,9 +47,9 @@ func TestMsgServer_DistributeRewards_Unauthorized(t *testing.T) {
 	owner, addr1 := NewAccAddress(), NewAccAddress()
 
 	_, err := s.DistributeRewards(sdk.WrapSDKContext(ctx), &types.MsgDistributeRewards{
-		Owner: owner.String(),
+		Owner: owner,
 		Rewards: []types.Reward{
-			{Receiver: addr1.String(), Reward: sdk.DecProto{sdk.NewDec(1)}},
+			{Receiver: addr1, Reward: sdk.DecProto{sdk.NewDec(1)}},
 		},
 	})
 	require.Error(t, err)
@@ -62,14 +62,14 @@ func TestMsgServer_ResetAccount(t *testing.T) {
 
 	owner, address := NewAccAddress(), NewAccAddress()
 	set.keeper.SetParams(ctx, types.Params{
-		Supervisors: []string{owner.String()},
+		Supervisors: []sdk.AccAddress{owner},
 		FixedGas:    types.DefaultFixedGasParams(),
 		MinGasPrice: types.DefaultMinGasPrice,
 	})
 
 	_, err := s.ResetAccount(sdk.WrapSDKContext(ctx), &types.MsgResetAccount{
-		Owner:   owner.String(),
-		Address: address.String(),
+		Owner:   owner,
+		Address: address,
 	})
 	require.NoError(t, err)
 }
@@ -80,13 +80,10 @@ func TestMsgServer_ResetAccount_SelfReset(t *testing.T) {
 
 	address := NewAccAddress()
 	_, err := s.ResetAccount(sdk.WrapSDKContext(ctx), &types.MsgResetAccount{
-		Owner:   address.String(),
-		Address: address.String(),
+		Owner:   address,
+		Address: address,
 	})
 	require.NoError(t, err)
-	// check token
-	// check blog
-	// check likes
 }
 
 func TestMsgServer_ResetAccount_Unauthorized(t *testing.T) {
@@ -96,8 +93,8 @@ func TestMsgServer_ResetAccount_Unauthorized(t *testing.T) {
 	owner, address := NewAccAddress(), NewAccAddress()
 
 	_, err := s.ResetAccount(sdk.WrapSDKContext(ctx), &types.MsgResetAccount{
-		Owner:   owner.String(),
-		Address: address.String(),
+		Owner:   owner,
+		Address: address,
 	})
 	require.Error(t, err)
 	require.True(t, sdkerrors.IsOf(err, sdkerrors.ErrUnauthorized))
@@ -109,22 +106,22 @@ func TestMsgServer_BanAccount(t *testing.T) {
 
 	owner, address := NewAccAddress(), NewAccAddress()
 	set.keeper.SetParams(ctx, types.Params{
-		Supervisors: []string{owner.String()},
+		Supervisors: []sdk.AccAddress{owner},
 		FixedGas:    types.DefaultFixedGasParams(),
 		MinGasPrice: types.DefaultMinGasPrice,
 	})
 
 	_, err := s.BanAccount(sdk.WrapSDKContext(ctx), &types.MsgBanAccount{
-		Owner:   owner.String(),
-		Address: address.String(),
+		Owner:   owner,
+		Address: address,
 		Ban:     true,
 	})
 	require.NoError(t, err)
 	require.True(t, set.tokenKeeper.IsBanned(ctx, address))
 
 	_, err = s.BanAccount(sdk.WrapSDKContext(ctx), &types.MsgBanAccount{
-		Owner:   owner.String(),
-		Address: address.String(),
+		Owner:   owner,
+		Address: address,
 		Ban:     false,
 	})
 	require.NoError(t, err)
@@ -138,8 +135,8 @@ func TestMsgServer_BanAccount_Unauthorized(t *testing.T) {
 	owner, address := NewAccAddress(), NewAccAddress()
 
 	_, err := s.BanAccount(sdk.WrapSDKContext(ctx), &types.MsgBanAccount{
-		Owner:   owner.String(),
-		Address: address.String(),
+		Owner:   owner,
+		Address: address,
 		Ban:     true,
 	})
 	require.Error(t, err)
@@ -153,14 +150,14 @@ func TestMsgServer_Mint(t *testing.T) {
 
 	owner := NewAccAddress()
 	set.keeper.SetParams(ctx, types.Params{
-		Supervisors: []string{owner.String()},
+		Supervisors: []sdk.AccAddress{owner},
 		FixedGas:    types.DefaultFixedGasParams(),
 		MinGasPrice: types.DefaultMinGasPrice,
 	})
 
 	coin := sdk.NewCoin(config.DefaultBondDenom, sdk.NewInt(1000))
 	_, err := s.Mint(sdk.WrapSDKContext(ctx), &types.MsgMint{
-		Owner: owner.String(),
+		Owner: owner,
 		Coin:  coin,
 	})
 	require.NoError(t, err)
@@ -174,7 +171,7 @@ func TestMsgServer_Mint_Unauthorized(t *testing.T) {
 	s := NewMsgServer(set.keeper, set.bankKeeper, set.tokenKeeper, set.communityKeeper)
 
 	_, err := s.Mint(sdk.WrapSDKContext(ctx), &types.MsgMint{
-		Owner: NewAccAddress().String(),
+		Owner: NewAccAddress(),
 		Coin:  sdk.NewCoin(config.DefaultBondDenom, sdk.NewInt(1000)),
 	})
 	require.Error(t, err)
@@ -193,13 +190,13 @@ func TestMsgServer_Burn(t *testing.T) {
 	require.NoError(t, bk.SendCoinsFromModuleToAccount(ctx, types.ModuleName, owner, sdk.Coins{coin}))
 
 	set.keeper.SetParams(ctx, types.Params{
-		Supervisors: []string{owner.String()},
+		Supervisors: []sdk.AccAddress{owner},
 		FixedGas:    types.DefaultFixedGasParams(),
 		MinGasPrice: types.DefaultMinGasPrice,
 	})
 
 	_, err := s.Burn(sdk.WrapSDKContext(ctx), &types.MsgBurn{
-		Owner: owner.String(),
+		Owner: owner,
 		Coin:  coin,
 	})
 	require.NoError(t, err)
@@ -213,7 +210,7 @@ func TestMsgServer_Burn_Unauthorized(t *testing.T) {
 	s := NewMsgServer(set.keeper, set.bankKeeper, set.tokenKeeper, set.communityKeeper)
 
 	_, err := s.Burn(sdk.WrapSDKContext(ctx), &types.MsgBurn{
-		Owner: NewAccAddress().String(),
+		Owner: NewAccAddress(),
 		Coin:  sdk.NewCoin(config.DefaultBondDenom, sdk.NewInt(1000)),
 	})
 	require.Error(t, err)

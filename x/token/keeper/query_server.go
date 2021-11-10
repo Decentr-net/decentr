@@ -3,11 +3,9 @@ package keeper
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
 	"github.com/Decentr-net/decentr/config"
 	"github.com/Decentr-net/decentr/x/token/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var _ types.QueryServer = queryServer{}
@@ -29,15 +27,10 @@ func NewQueryServer(keeper Keeper, distributionKeeper types.DistributionKeeper) 
 func (s queryServer) Balance(goCtx context.Context, r *types.BalanceRequest) (*types.BalanceResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	address, err := sdk.AccAddressFromBech32(r.Address)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid address")
-	}
-
 	return &types.BalanceResponse{
-		Balance:      sdk.DecProto{s.keeper.GetBalance(ctx, address)},
-		BalanceDelta: sdk.DecProto{s.keeper.GetBalanceDelta(ctx, address)},
-		IsBanned:     s.keeper.IsBanned(ctx, address),
+		Balance:      sdk.DecProto{s.keeper.GetBalance(ctx, r.Address)},
+		BalanceDelta: sdk.DecProto{s.keeper.GetBalanceDelta(ctx, r.Address)},
+		IsBanned:     s.keeper.IsBanned(ctx, r.Address),
 	}, nil
 }
 

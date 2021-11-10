@@ -12,7 +12,7 @@ func NewMsgCreatePost(title string, category Category, previewImage string, text
 	return MsgCreatePost{
 		Post: Post{
 			Uuid:         uuid.Must(uuid.NewV1()).String(),
-			Owner:        owner.String(),
+			Owner:        owner,
 			Title:        title,
 			Category:     category,
 			PreviewImage: previewImage,
@@ -43,19 +43,15 @@ func (m MsgCreatePost) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgCreatePost) GetSigners() []sdk.AccAddress {
-	owner, err := sdk.AccAddressFromBech32(m.Post.Owner)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{owner}
+	return []sdk.AccAddress{m.Post.Owner}
 }
 
 // NewMsgDeletePost is a constructor function for MsgDeletePost
 func NewMsgDeletePost(owner, postOwner sdk.AccAddress, postUUID uuid.UUID) MsgDeletePost {
 	return MsgDeletePost{
-		Owner:     owner.String(),
+		Owner:     owner,
 		PostUuid:  postUUID.String(),
-		PostOwner: postOwner.String(),
+		PostOwner: postOwner,
 	}
 }
 
@@ -67,16 +63,16 @@ func (m MsgDeletePost) Type() string { return "delete_post" }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgDeletePost) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid owner address: %s", err)
-	}
-
-	if _, err := sdk.AccAddressFromBech32(m.PostOwner); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid post_owner address: %s", err)
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
 	}
 
 	if _, err := uuid.FromString(m.PostUuid); err != nil {
 		return sdkerrors.ErrInvalidRequest.Wrapf("invalid post_uuid: %s", err)
+	}
+
+	if err := sdk.VerifyAddressFormat(m.PostOwner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid post_owner address: %s", err)
 	}
 
 	return nil
@@ -89,20 +85,16 @@ func (m MsgDeletePost) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgDeletePost) GetSigners() []sdk.AccAddress {
-	owner, err := sdk.AccAddressFromBech32(m.Owner)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{owner}
+	return []sdk.AccAddress{m.Owner}
 }
 
 // NewMsgSetLike is a constructor function for MsgSetLike
 func NewMsgSetLike(postOwner sdk.AccAddress, postUUID uuid.UUID, owner sdk.AccAddress, weight LikeWeight) MsgSetLike {
 	return MsgSetLike{
 		Like: Like{
-			PostOwner: postOwner.String(),
+			PostOwner: postOwner,
 			PostUuid:  postUUID.String(),
-			Owner:     owner.String(),
+			Owner:     owner,
 			Weight:    weight,
 		},
 	}
@@ -130,18 +122,14 @@ func (m MsgSetLike) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgSetLike) GetSigners() []sdk.AccAddress {
-	owner, err := sdk.AccAddressFromBech32(m.Like.Owner)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{owner}
+	return []sdk.AccAddress{m.Like.Owner}
 }
 
 // NewMsgFollow is a constructor function for MsgFollow
 func NewMsgFollow(owner, whom sdk.AccAddress) MsgFollow {
 	return MsgFollow{
-		Owner: owner.String(),
-		Whom:  whom.String(),
+		Owner: owner,
+		Whom:  whom,
 	}
 }
 
@@ -153,12 +141,12 @@ func (m MsgFollow) Type() string { return "follow" }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgFollow) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid owner address: %s", err)
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(m.Whom); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid whom address: %s", err)
+	if err := sdk.VerifyAddressFormat(m.Whom); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid whom address: %s", err)
 	}
 
 	return nil
@@ -171,18 +159,14 @@ func (m MsgFollow) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgFollow) GetSigners() []sdk.AccAddress {
-	owner, err := sdk.AccAddressFromBech32(m.Owner)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{owner}
+	return []sdk.AccAddress{m.Owner}
 }
 
 // NewMsgUnfollow is a constructor function for MsgUnfollow
 func NewMsgUnfollow(owner, whom sdk.AccAddress) MsgUnfollow {
 	return MsgUnfollow{
-		Owner: owner.String(),
-		Whom:  whom.String(),
+		Owner: owner,
+		Whom:  whom,
 	}
 }
 
@@ -194,12 +178,12 @@ func (m MsgUnfollow) Type() string { return "unfollow" }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgUnfollow) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Owner); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid owner address: %s", err)
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(m.Whom); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid whom address: %s", err)
+	if err := sdk.VerifyAddressFormat(m.Whom); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid whom address: %s", err)
 	}
 
 	return nil
@@ -212,9 +196,5 @@ func (m MsgUnfollow) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgUnfollow) GetSigners() []sdk.AccAddress {
-	owner, err := sdk.AccAddressFromBech32(m.Owner)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{owner}
+	return []sdk.AccAddress{m.Owner}
 }

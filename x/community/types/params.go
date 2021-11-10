@@ -12,7 +12,7 @@ const (
 )
 
 var (
-	DefaultModerators = []string(nil)
+	DefaultModerators = []sdk.AccAddress(nil)
 )
 
 var (
@@ -41,14 +41,14 @@ func DefaultParams() Params {
 }
 
 func validateModerators(i interface{}) error {
-	owners, ok := i.([]string)
+	moderators, ok := i.([]sdk.AccAddress)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	for _, owner := range owners {
-		if _, err := sdk.AccAddressFromBech32(owner); err != nil {
-			return fmt.Errorf("%s is an invalid moderator address, err=%w", owner, err)
+	for i, v := range moderators {
+		if err := sdk.VerifyAddressFormat(v); err != nil {
+			return fmt.Errorf("invalid moderator #%d: %w", i+1, err)
 		}
 	}
 	return nil

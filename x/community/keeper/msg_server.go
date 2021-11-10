@@ -34,10 +34,9 @@ func NewMsgServer(
 func (s msgServer) CreatePost(goCtx context.Context, msg *types.MsgCreatePost) (*types.MsgCreatePostResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Post.Owner)
 	id, _ := uuid.FromString(msg.Post.Uuid)
 
-	if p := s.keeper.GetPost(ctx, postKey(owner, id)); p != (types.Post{}) {
+	if s.keeper.HasPost(ctx, postKey(msg.Post.Owner, id)) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrConflict, "post %s already exists", msg.Post.Address())
 	}
 
@@ -49,18 +48,16 @@ func (s msgServer) CreatePost(goCtx context.Context, msg *types.MsgCreatePost) (
 func (s msgServer) DeletePost(goCtx context.Context, msg *types.MsgDeletePost) (*types.MsgDeletePostResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	if msg.Owner != msg.PostOwner {
-		owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-		if !s.keeper.IsModerator(ctx, owner) {
+	if !msg.Owner.Equals(msg.PostOwner) {
+		if !s.keeper.IsModerator(ctx, msg.Owner) {
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a moderator or post owner", msg.Owner)
 		}
 	}
 
-	owner, _ := sdk.AccAddressFromBech32(msg.PostOwner)
 	id, _ := uuid.FromString(msg.PostUuid)
-	key := postKey(owner, id)
+	key := postKey(msg.PostOwner, id)
 
-	if p := s.keeper.GetPost(ctx, key); p == (types.Post{}) {
+	if !s.keeper.HasPost(ctx, postKey(msg.PostOwner, id)) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "post %s/%s not found", msg.PostOwner, msg.PostUuid)
 	}
 
@@ -72,20 +69,18 @@ func (s msgServer) DeletePost(goCtx context.Context, msg *types.MsgDeletePost) (
 func (s msgServer) SetLike(goCtx context.Context, msg *types.MsgSetLike) (*types.MsgSetLikeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	postOwner, _ := sdk.AccAddressFromBech32(msg.Like.PostOwner)
 	postUUID, _ := uuid.FromString(msg.Like.PostUuid)
-	owner, _ := sdk.AccAddressFromBech32(msg.Like.Owner)
 
-	if owner.Equals(postOwner) {
+	if msg.Like.Owner.Equals(msg.Like.PostOwner) {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "self-like is disabled")
 	}
 
-	if p := s.keeper.GetPost(ctx, postKey(postOwner, postUUID)); p == (types.Post{}) {
+	if !s.keeper.HasPost(ctx, postKey(msg.Like.PostOwner, postUUID)) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "post %s/%s not found", msg.Like.PostOwner, msg.Like.PostUuid)
 	}
 
-	diff := msg.Like.Weight - s.keeper.GetLike(ctx, likeKey(postKey(postOwner, postUUID), owner)).Weight
-	s.tokenKeeper.IncTokens(ctx, postOwner, sdk.NewDec(int64(diff)))
+	diff := msg.Like.Weight - s.keeper.GetLike(ctx, likeKey(postKey(msg.Like.PostOwner, postUUID), msg.Like.Owner)).Weight
+	s.tokenKeeper.IncTokens(ctx, msg.Like.PostOwner, sdk.NewDec(int64(diff)))
 
 	s.keeper.SetLike(ctx, msg.Like)
 
@@ -95,18 +90,15 @@ func (s msgServer) SetLike(goCtx context.Context, msg *types.MsgSetLike) (*types
 func (s msgServer) Follow(goCtx context.Context, msg *types.MsgFollow) (*types.MsgFollowResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-	whom, _ := sdk.AccAddressFromBech32(msg.Whom)
-
-	if owner.Equals(whom) {
+	if msg.Owner.Equals(msg.Whom) {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "self-follow is disabled")
 	}
 
-	if s.keeper.IsFollowed(ctx, owner, whom) {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrConflict, "%s already follows %s", owner, whom)
+	if s.keeper.IsFollowed(ctx, msg.Owner, msg.Whom) {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrConflict, "%s already follows %s", msg.Owner, msg.Whom)
 	}
 
-	s.keeper.Follow(ctx, owner, whom)
+	s.keeper.Follow(ctx, msg.Owner, msg.Whom)
 
 	return &types.MsgFollowResponse{}, nil
 }
@@ -114,14 +106,11 @@ func (s msgServer) Follow(goCtx context.Context, msg *types.MsgFollow) (*types.M
 func (s msgServer) Unfollow(goCtx context.Context, msg *types.MsgUnfollow) (*types.MsgUnfollowResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-	whom, _ := sdk.AccAddressFromBech32(msg.Whom)
-
-	if !s.keeper.IsFollowed(ctx, owner, whom) {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "%s is not following %s", owner, whom)
+	if !s.keeper.IsFollowed(ctx, msg.Owner, msg.Whom) {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "%s is not following %s", msg.Owner, msg.Whom)
 	}
 
-	s.keeper.Unfollow(ctx, owner, whom)
+	s.keeper.Unfollow(ctx, msg.Owner, msg.Whom)
 
 	return &types.MsgUnfollowResponse{}, nil
 }

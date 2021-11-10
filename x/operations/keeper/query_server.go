@@ -5,7 +5,6 @@ import (
 
 	"github.com/Decentr-net/decentr/x/operations/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var _ types.QueryServer = queryServer{}
@@ -35,12 +34,7 @@ func (s queryServer) MinGasPrice(goCtx context.Context, _ *types.MinGasPriceRequ
 func (s queryServer) IsAccountBanned(goCtx context.Context, r *types.IsAccountBannedRequest) (*types.IsAccountBannedResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	address, err := sdk.AccAddressFromBech32(r.Address)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid address")
-	}
-
 	return &types.IsAccountBannedResponse{
-		IsBanned: s.tokenKeeper.IsBanned(ctx, address),
+		IsBanned: s.tokenKeeper.IsBanned(ctx, r.Address),
 	}, nil
 }

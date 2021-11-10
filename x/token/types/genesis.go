@@ -13,7 +13,7 @@ func DefaultGenesis() *GenesisState {
 		Params:   &p,
 		Balances: map[string]sdk.DecProto{},
 		Deltas:   map[string]sdk.DecProto{},
-		BanList:  []string{},
+		BanList:  []sdk.AccAddress{},
 	}
 }
 
@@ -49,7 +49,7 @@ func (gs GenesisState) Validate() error {
 	}
 
 	for _, v := range gs.BanList {
-		if _, err := sdk.AccAddressFromBech32(v); err != nil {
+		if err := sdk.VerifyAddressFormat(v); err != nil {
 			return fmt.Errorf("invalid banned address '%s': %w", v, err)
 		}
 	}

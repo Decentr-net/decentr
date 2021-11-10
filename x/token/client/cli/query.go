@@ -46,7 +46,7 @@ func NewBalanceCmd() *cobra.Command {
 			queryClient := types.NewQueryClient(clientCtx)
 
 			out, err := queryClient.Balance(cmd.Context(), &types.BalanceRequest{
-				Address: address.String(),
+				Address: address,
 			})
 			if err != nil {
 				return err

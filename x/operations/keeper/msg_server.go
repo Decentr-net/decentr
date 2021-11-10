@@ -37,15 +37,12 @@ func NewMsgServer(
 func (s msgServer) DistributeRewards(goCtx context.Context, msg *types.MsgDistributeRewards) (*types.MsgDistributeRewardsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-
-	if !s.keeper.IsSupervisor(ctx, owner) {
+	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	for _, v := range msg.Rewards {
-		address, _ := sdk.AccAddressFromBech32(v.Receiver)
-		s.tokenKeeper.IncTokens(ctx, address, v.Reward.Dec)
+		s.tokenKeeper.IncTokens(ctx, v.Receiver, v.Reward.Dec)
 	}
 
 	return &types.MsgDistributeRewardsResponse{}, nil
@@ -54,16 +51,13 @@ func (s msgServer) DistributeRewards(goCtx context.Context, msg *types.MsgDistri
 func (s msgServer) ResetAccount(goCtx context.Context, msg *types.MsgResetAccount) (*types.MsgResetAccountResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-	address, _ := sdk.AccAddressFromBech32(msg.Address)
-
-	if !s.keeper.IsSupervisor(ctx, owner) && !owner.Equals(address) {
+	if !s.keeper.IsSupervisor(ctx, msg.Owner) && !msg.Owner.Equals(msg.Address) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not an owner or supervisor", msg.Owner)
 	}
 
 	// reset account in other modules
-	s.tokenKeeper.ResetAccount(ctx, address)
-	s.communityKeeper.ResetAccount(ctx, address)
+	s.tokenKeeper.ResetAccount(ctx, msg.Address)
+	s.communityKeeper.ResetAccount(ctx, msg.Address)
 
 	return &types.MsgResetAccountResponse{}, nil
 }
@@ -71,13 +65,11 @@ func (s msgServer) ResetAccount(goCtx context.Context, msg *types.MsgResetAccoun
 func (s msgServer) BanAccount(goCtx context.Context, msg *types.MsgBanAccount) (*types.MsgBanAccountResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-	if !s.keeper.IsSupervisor(ctx, owner) {
+	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
-	address, _ := sdk.AccAddressFromBech32(msg.Address)
-	s.tokenKeeper.SetBan(ctx, address, msg.Ban)
+	s.tokenKeeper.SetBan(ctx, msg.Address, msg.Ban)
 
 	return &types.MsgBanAccountResponse{}, nil
 }
@@ -85,8 +77,7 @@ func (s msgServer) BanAccount(goCtx context.Context, msg *types.MsgBanAccount) (
 func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMintResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-	if !s.keeper.IsSupervisor(ctx, owner) {
+	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
@@ -95,7 +86,7 @@ func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 		return nil, err
 	}
 	if err := s.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, types.ModuleName, owner, sdk.NewCoins(msg.Coin)); err != nil {
+		ctx, types.ModuleName, msg.Owner, sdk.NewCoins(msg.Coin)); err != nil {
 		return nil, err
 	}
 
@@ -105,14 +96,13 @@ func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 func (s msgServer) Burn(goCtx context.Context, msg *types.MsgBurn) (*types.MsgBurnResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	owner, _ := sdk.AccAddressFromBech32(msg.Owner)
-	if !s.keeper.IsSupervisor(ctx, owner) {
+	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	// send tokens to module and burn it
 	if err := s.bankKeeper.SendCoinsFromAccountToModule(
-		ctx, owner, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
+		ctx, msg.Owner, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
 		return nil, err
 	}
 	if err := s.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {

@@ -57,7 +57,7 @@ func NewDistributeRewardsCmd() *cobra.Command {
 
 			msg := types.NewMsgDistributeRewards(clientCtx.GetFromAddress(), []types.Reward{
 				{
-					Receiver: receiver.String(),
+					Receiver: receiver,
 					Reward:   sdk.DecProto{reward},
 				},
 			})
