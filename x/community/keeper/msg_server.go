@@ -34,7 +34,10 @@ func NewMsgServer(
 func (s msgServer) CreatePost(goCtx context.Context, msg *types.MsgCreatePost) (*types.MsgCreatePostResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	id, _ := uuid.FromString(msg.Post.Uuid)
+	id, err := uuid.FromString(msg.Post.Uuid)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid post_uuid: %s", err.Error())
+	}
 
 	if s.keeper.HasPost(ctx, postKey(msg.Post.Owner, id)) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrConflict, "post %s already exists", msg.Post.Address())
@@ -54,7 +57,11 @@ func (s msgServer) DeletePost(goCtx context.Context, msg *types.MsgDeletePost) (
 		}
 	}
 
-	id, _ := uuid.FromString(msg.PostUuid)
+	id, err := uuid.FromString(msg.PostUuid)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid post_uuid: %s", err.Error())
+	}
+
 	key := postKey(msg.PostOwner, id)
 
 	if !s.keeper.HasPost(ctx, postKey(msg.PostOwner, id)) {
@@ -69,7 +76,10 @@ func (s msgServer) DeletePost(goCtx context.Context, msg *types.MsgDeletePost) (
 func (s msgServer) SetLike(goCtx context.Context, msg *types.MsgSetLike) (*types.MsgSetLikeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	postUUID, _ := uuid.FromString(msg.Like.PostUuid)
+	postUUID, err := uuid.FromString(msg.Like.PostUuid)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid post_uuid: %s", err.Error())
+	}
 
 	if msg.Like.Owner.Equals(msg.Like.PostOwner) {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "self-like is disabled")

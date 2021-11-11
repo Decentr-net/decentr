@@ -49,7 +49,12 @@ func NewFixedGasTxDecorator(pk operationskeeper.Keeper, ck communitykeeper.Keepe
 	}
 }
 
-func (fgm FixedGasTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (fgm FixedGasTxDecorator) AnteHandle(
+	ctx sdk.Context,
+	tx sdk.Tx,
+	simulate bool,
+	next sdk.AnteHandler,
+) (newCtx sdk.Context, err error) {
 	for _, msg := range tx.GetMsgs() {
 		if fixedGas, ok := fgm.config[reflect.TypeOf(msg)]; ok {
 			limit := ctx.GasMeter().Limit()

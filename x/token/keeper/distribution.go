@@ -43,7 +43,7 @@ func DistributeRewards(ctx sdk.Context, k Keeper, distributionKeeper types.Distr
 
 		if err := ctx.EventManager().EmitTypedEvent(&types.EventRewardDistribution{
 			Address: address,
-			Delta:   sdk.DecProto{delta},
+			Delta:   sdk.DecProto{Dec: delta},
 			Reward:  coins[0],
 		}); err != nil {
 			panic(fmt.Errorf("failed to emit event for %s: %w", address, err))

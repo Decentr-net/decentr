@@ -27,12 +27,17 @@ func NewQueryServer(keeper Keeper) types.QueryServer {
 	}
 }
 
-func (s queryServer) GetPost(goCtx context.Context, r *types.GetPostRequest) (*types.GetPostResponse, error) {
+func (s queryServer) GetPost(
+	goCtx context.Context,
+	r *types.GetPostRequest,
+) (*types.GetPostResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	id, err := uuid.FromString(r.PostUuid)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid post_uuid")
+		return nil, sdkerrors.Wrap(
+			sdkerrors.ErrInvalidRequest, "invalid post_uuid",
+		)
 	}
 
 	return &types.GetPostResponse{
@@ -40,7 +45,10 @@ func (s queryServer) GetPost(goCtx context.Context, r *types.GetPostRequest) (*t
 	}, nil
 }
 
-func (s queryServer) ListUserPosts(goCtx context.Context, r *types.ListUserPostsRequest) (*types.ListUserPostsResponse, error) {
+func (s queryServer) ListUserPosts(
+	goCtx context.Context,
+	r *types.ListUserPostsRequest,
+) (*types.ListUserPostsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	if r.Pagination.Key != nil && r.Pagination.Offset != 0 {
@@ -70,7 +78,10 @@ func (s queryServer) Moderators(goCtx context.Context, _ *types.ModeratorsReques
 	}, nil
 }
 
-func (s queryServer) ListFollowed(goCtx context.Context, r *types.ListFollowedRequest) (*types.ListFollowedResponse, error) {
+func (s queryServer) ListFollowed(
+	goCtx context.Context,
+	r *types.ListFollowedRequest,
+) (*types.ListFollowedResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	if r.Pagination.Key != nil && r.Pagination.Offset != 0 {
@@ -84,13 +95,7 @@ func (s queryServer) ListFollowed(goCtx context.Context, r *types.ListFollowedRe
 	followed, next, total := s.keeper.ListFollowed(ctx, r.Owner, r.Pagination)
 
 	return &types.ListFollowedResponse{
-		Followed: func() []sdk.AccAddress {
-			out := make([]sdk.AccAddress, len(followed))
-			for i, v := range followed {
-				out[i] = v
-			}
-			return out
-		}(),
+		Followed: followed,
 		Pagination: query.PageResponse{
 			NextKey: next,
 			Total:   total,

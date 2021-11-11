@@ -23,7 +23,10 @@ func NewQueryServer(keeper Keeper, tokenKeeper types.TokenKeeper) types.QuerySer
 	}
 }
 
-func (s queryServer) MinGasPrice(goCtx context.Context, _ *types.MinGasPriceRequest) (*types.MinGasPriceResponse, error) {
+func (s queryServer) MinGasPrice(
+	goCtx context.Context,
+	_ *types.MinGasPriceRequest,
+) (*types.MinGasPriceResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	return &types.MinGasPriceResponse{
@@ -31,7 +34,10 @@ func (s queryServer) MinGasPrice(goCtx context.Context, _ *types.MinGasPriceRequ
 	}, nil
 }
 
-func (s queryServer) IsAccountBanned(goCtx context.Context, r *types.IsAccountBannedRequest) (*types.IsAccountBannedResponse, error) {
+func (s queryServer) IsAccountBanned(
+	goCtx context.Context,
+	r *types.IsAccountBannedRequest,
+) (*types.IsAccountBannedResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	return &types.IsAccountBannedResponse{

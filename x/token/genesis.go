@@ -45,11 +45,11 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	banlist := make([]sdk.AccAddress, 0)
 
 	k.IterateBalance(ctx, func(address sdk.AccAddress, balance sdk.Dec) (stop bool) {
-		balances[address.String()] = sdk.DecProto{balance}
+		balances[address.String()] = sdk.DecProto{Dec: balance}
 		return false
 	})
 	k.IterateBalanceDelta(ctx, func(address sdk.AccAddress, delta sdk.Dec) (stop bool) {
-		deltas[address.String()] = sdk.DecProto{delta}
+		deltas[address.String()] = sdk.DecProto{Dec: delta}
 		return false
 	})
 	k.IterateBanList(ctx, func(address sdk.AccAddress) (stop bool) {

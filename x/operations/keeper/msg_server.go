@@ -34,7 +34,10 @@ func NewMsgServer(
 	}
 }
 
-func (s msgServer) DistributeRewards(goCtx context.Context, msg *types.MsgDistributeRewards) (*types.MsgDistributeRewardsResponse, error) {
+func (s msgServer) DistributeRewards(
+	goCtx context.Context,
+	msg *types.MsgDistributeRewards,
+) (*types.MsgDistributeRewardsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
@@ -48,7 +51,10 @@ func (s msgServer) DistributeRewards(goCtx context.Context, msg *types.MsgDistri
 	return &types.MsgDistributeRewardsResponse{}, nil
 }
 
-func (s msgServer) ResetAccount(goCtx context.Context, msg *types.MsgResetAccount) (*types.MsgResetAccountResponse, error) {
+func (s msgServer) ResetAccount(
+	goCtx context.Context,
+	msg *types.MsgResetAccount,
+) (*types.MsgResetAccountResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	if !s.keeper.IsSupervisor(ctx, msg.Owner) && !msg.Owner.Equals(msg.Address) {

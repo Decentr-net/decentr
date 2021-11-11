@@ -95,7 +95,10 @@ func (k Keeper) IsModerator(ctx sdk.Context, address sdk.AccAddress) bool {
 func (k Keeper) SetPost(ctx sdk.Context, p types.Post) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix)
 
-	id, _ := uuid.FromString(p.Uuid)
+	id, err := uuid.FromString(p.Uuid)
+	if err != nil {
+		panic(fmt.Sprintf("invalid uuid in post: %+v", p))
+	}
 
 	bz, err := p.Marshal()
 	if err != nil {
@@ -133,7 +136,11 @@ func (k Keeper) HasPost(ctx sdk.Context, key []byte) bool {
 	return prefix.NewStore(ctx.KVStore(k.storeKey), types.PostPrefix).Has(key)
 }
 
-func (k Keeper) ListUserPosts(ctx sdk.Context, owner sdk.AccAddress, p query.PageRequest) (posts []types.Post, nextKey []byte, total uint64) {
+func (k Keeper) ListUserPosts(
+	ctx sdk.Context,
+	owner sdk.AccAddress,
+	p query.PageRequest,
+) (posts []types.Post, nextKey []byte, total uint64) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), append(types.PostPrefix, owner...))
 
 	var it sdk.Iterator
@@ -197,7 +204,10 @@ func (k Keeper) GetLike(ctx sdk.Context, key []byte) types.Like {
 func (k Keeper) SetLike(ctx sdk.Context, l types.Like) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.LikePrefix)
 
-	postUUID, _ := uuid.FromString(l.PostUuid)
+	postUUID, err := uuid.FromString(l.PostUuid)
+	if err != nil {
+		panic(fmt.Sprintf("invalid uuid in like: %+v", l))
+	}
 
 	key := likeKey(postKey(l.PostOwner, postUUID), l.Owner)
 
@@ -242,7 +252,11 @@ func (k Keeper) IsFollowed(ctx sdk.Context, who, whom sdk.AccAddress) bool {
 	return store.Has(whom)
 }
 
-func (k Keeper) ListFollowed(ctx sdk.Context, owner sdk.AccAddress, p query.PageRequest) (followed []sdk.AccAddress, nextKey []byte, total uint64) {
+func (k Keeper) ListFollowed(
+	ctx sdk.Context,
+	owner sdk.AccAddress,
+	p query.PageRequest,
+) (followed []sdk.AccAddress, nextKey []byte, total uint64) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), append(types.FollowingPrefix, owner...))
 
 	var it sdk.Iterator

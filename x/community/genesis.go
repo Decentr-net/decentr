@@ -1,6 +1,8 @@
 package community
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/Decentr-net/decentr/x/community/keeper"
@@ -23,7 +25,10 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 	}
 
 	for who, addressList := range genState.Following {
-		owner, _ := sdk.AccAddressFromBech32(who)
+		owner, err := sdk.AccAddressFromBech32(who)
+		if err != nil {
+			panic(fmt.Sprintf("invalid owner: %s", err.Error()))
+		}
 		for _, whom := range addressList.Address {
 			k.Follow(ctx, owner, whom)
 		}

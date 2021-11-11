@@ -98,8 +98,8 @@ func NewCreatePostCmd() *cobra.Command {
 	cmd.Flags().String("category", "", "post's category")
 	cmd.Flags().String("preview-image", "", "post's preview image")
 
-	_ = cmd.MarkFlagRequired("title")
-	_ = cmd.MarkFlagRequired("category")
+	_ = cmd.MarkFlagRequired("title")    // nolint
+	_ = cmd.MarkFlagRequired("category") // nolint
 
 	return cmd
 }
@@ -169,8 +169,8 @@ func NewSetLikeCmd() *cobra.Command {
 				return fmt.Errorf("invalid uuid: %w", err)
 			}
 
-			weight := int(types.LikeWeight_LIKE_WEIGHT_UP)
-			if weight, err = cmd.Flags().GetInt("weight"); err != nil {
+			weight, err := cmd.Flags().GetInt("weight")
+			if err != nil {
 				return fmt.Errorf("invalid weight: %w", err)
 			}
 
@@ -190,7 +190,11 @@ func NewSetLikeCmd() *cobra.Command {
 
 	flags.AddTxFlagsToCmd(cmd)
 
-	cmd.Flags().Int("weight", 1, "Weight for like operation. Use 1 to like post, -1 to dislike and 0 to remove your reaction")
+	cmd.Flags().Int(
+		"weight",
+		int(types.LikeWeight_LIKE_WEIGHT_UP),
+		"Weight for like operation. Use 1 to like post, -1 to dislike and 0 to remove your reaction",
+	)
 
 	return cmd
 }

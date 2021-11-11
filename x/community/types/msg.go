@@ -8,7 +8,13 @@ import (
 )
 
 // NewMsgCreatePost is a constructor function for MsgCreatePost
-func NewMsgCreatePost(title string, category Category, previewImage string, text string, owner sdk.AccAddress) MsgCreatePost {
+func NewMsgCreatePost(
+	title string,
+	category Category,
+	previewImage string,
+	text string,
+	owner sdk.AccAddress,
+) MsgCreatePost {
 	return MsgCreatePost{
 		Post: Post{
 			Uuid:         uuid.Must(uuid.NewV1()).String(),

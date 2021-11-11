@@ -16,7 +16,7 @@ func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistribu
 func NewReward(address sdk.AccAddress, reward sdk.Dec) Reward {
 	return Reward{
 		Receiver: address,
-		Reward:   sdk.DecProto{reward},
+		Reward:   sdk.DecProto{Dec: reward},
 	}
 }
 

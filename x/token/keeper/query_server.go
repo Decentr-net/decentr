@@ -28,8 +28,8 @@ func (s queryServer) Balance(goCtx context.Context, r *types.BalanceRequest) (*t
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	return &types.BalanceResponse{
-		Balance:      sdk.DecProto{s.keeper.GetBalance(ctx, r.Address)},
-		BalanceDelta: sdk.DecProto{s.keeper.GetBalanceDelta(ctx, r.Address)},
+		Balance:      sdk.DecProto{Dec: s.keeper.GetBalance(ctx, r.Address)},
+		BalanceDelta: sdk.DecProto{Dec: s.keeper.GetBalanceDelta(ctx, r.Address)},
 		IsBanned:     s.keeper.IsBanned(ctx, r.Address),
 	}, nil
 }
@@ -43,7 +43,7 @@ func (s queryServer) Pool(goCtx context.Context, _ *types.PoolRequest) (*types.P
 		Denom:  config.DefaultBondDenom,
 		Amount: s.distributionKeeper.GetFeePoolCommunityCoins(ctx).AmountOf(config.DefaultBondDenom),
 	}
-	totalDelta := sdk.DecProto{s.keeper.GetAccumulatedDelta(ctx)}
+	totalDelta := sdk.DecProto{Dec: s.keeper.GetAccumulatedDelta(ctx)}
 	nextDistributionHeight := interval * (uint64(ctx.BlockHeight())/interval + 1)
 
 	return &types.PoolResponse{

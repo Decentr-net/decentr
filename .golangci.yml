@@ -4,7 +4,7 @@ linters:
     - deadcode
     - depguard
     - dogsled
-    - dupl
+    # - dupl
     - errcheck
     # - funlen
     # - gochecknoglobals
@@ -15,12 +15,12 @@ linters:
     # - godox
     - gofmt
     - goimports
-    - golint
+    # - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
+    # - interfacer
     - lll
     - misspell
     # - maligned
@@ -29,7 +29,7 @@ linters:
     - scopelint
     - staticcheck
     - structcheck
-    - stylecheck
+    # - stylecheck
     - typecheck
     - unconvert
     # - unparam
@@ -41,7 +41,7 @@ linters:
 
 linters-settings:
   govet:
-    check-shadowing: true
+    check-shadowing: false
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
     # default is false: such cases aren't reported by default.
@@ -58,3 +58,6 @@ linters-settings:
     simple: false
     range-loops: true # Report preallocation suggestions on range loops, true by default
     for-loops: true # Report preallocation suggestions on for loops, false by default
+
+run:
+  tests: false
