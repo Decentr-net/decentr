@@ -6,6 +6,7 @@ COMMIT := $(shell git log -1 --format='%H')
 
 export GO111MODULE = on
 
+ # set appname = decentrd before merge to master
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=decentr \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=decentr \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
@@ -17,13 +18,13 @@ all: install
 
 build: go.sum
 ifeq ($(OS), Windows_NT)
-	go build -mod=readonly $(BUILD_FLAGS) -o build/$(shell go env GOOS)/decentr.exe ./cmd/decentr
+	go build -mod=readonly $(BUILD_FLAGS) -o build/$(shell go env GOOS)/decentrd.exe ./cmd/decentrd
 else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/$(shell go env GOOS)/decentr ./cmd/decentr
+	go build -mod=readonly $(BUILD_FLAGS) -o build/$(shell go env GOOS)/decentrd ./cmd/decentrd
 endif
 
 install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/decentr
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/decentrd
 
 build-linux: go.sum
 	GOOS=linux GOARCH=amd64 $(MAKE) build

@@ -45,6 +45,10 @@ func NewDistributeRewardsCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			receiver, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid receiver: %w", err)
@@ -86,6 +90,10 @@ func NewResetAccountCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid address: %w", err)
@@ -114,6 +122,10 @@ func NewBanAccountCmd() *cobra.Command {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
+			}
+
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
 			}
 
 			address, err := sdk.AccAddressFromBech32(args[0])
@@ -146,6 +158,10 @@ func NewUnbanAccountCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid address: %w", err)
@@ -176,6 +192,10 @@ func NewMintCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			coin, err := sdk.ParseCoinNormalized(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid coin: %w", err)
@@ -204,6 +224,10 @@ func NewBurnCmd() *cobra.Command {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
+			}
+
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
 			}
 
 			coin, err := sdk.ParseCoinNormalized(args[0])

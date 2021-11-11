@@ -55,6 +55,10 @@ func NewCreatePostCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			f := cmd.Flags()
 
 			title, err := f.GetString("title")
@@ -116,6 +120,10 @@ func NewDeletePostCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			owner := clientCtx.GetFromAddress()
 
 			if len(args) > 1 {
@@ -157,6 +165,10 @@ func NewSetLikeCmd() *cobra.Command {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
+			}
+
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
 			}
 
 			owner, err := sdk.AccAddressFromBech32(args[0])
@@ -210,6 +222,10 @@ func NewFollowCmd() *cobra.Command {
 				return err
 			}
 
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
 			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid owner: %w", err)
@@ -241,6 +257,10 @@ func NewUnfollowCmd() *cobra.Command {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
+			}
+
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
 			}
 
 			address, err := sdk.AccAddressFromBech32(args[0])
