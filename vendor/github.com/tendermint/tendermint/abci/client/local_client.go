@@ -1,10 +1,9 @@
 package abcicli
 
 import (
-	"sync"
-
 	types "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/service"
+	tmsync "github.com/tendermint/tendermint/libs/sync"
 )
 
 var _ Client = (*localClient)(nil)
@@ -16,14 +15,20 @@ var _ Client = (*localClient)(nil)
 type localClient struct {
 	service.BaseService
 
-	mtx *sync.Mutex
+	mtx *tmsync.Mutex
 	types.Application
 	Callback
 }
 
-func NewLocalClient(mtx *sync.Mutex, app types.Application) Client {
+var _ Client = (*localClient)(nil)
+
+// NewLocalClient creates a local client, which will be directly calling the
+// methods of the given app.
+//
+// Both Async and Sync methods ignore the given context.Context parameter.
+func NewLocalClient(mtx *tmsync.Mutex, app types.Application) Client {
 	if mtx == nil {
-		mtx = new(sync.Mutex)
+		mtx = new(tmsync.Mutex)
 	}
 	cli := &localClient{
 		mtx:         mtx,
@@ -158,6 +163,50 @@ func (app *localClient) EndBlockAsync(req types.RequestEndBlock) *ReqRes {
 	)
 }
 
+func (app *localClient) ListSnapshotsAsync(req types.RequestListSnapshots) *ReqRes {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.ListSnapshots(req)
+	return app.callback(
+		types.ToRequestListSnapshots(req),
+		types.ToResponseListSnapshots(res),
+	)
+}
+
+func (app *localClient) OfferSnapshotAsync(req types.RequestOfferSnapshot) *ReqRes {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.OfferSnapshot(req)
+	return app.callback(
+		types.ToRequestOfferSnapshot(req),
+		types.ToResponseOfferSnapshot(res),
+	)
+}
+
+func (app *localClient) LoadSnapshotChunkAsync(req types.RequestLoadSnapshotChunk) *ReqRes {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.LoadSnapshotChunk(req)
+	return app.callback(
+		types.ToRequestLoadSnapshotChunk(req),
+		types.ToResponseLoadSnapshotChunk(res),
+	)
+}
+
+func (app *localClient) ApplySnapshotChunkAsync(req types.RequestApplySnapshotChunk) *ReqRes {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.ApplySnapshotChunk(req)
+	return app.callback(
+		types.ToRequestApplySnapshotChunk(req),
+		types.ToResponseApplySnapshotChunk(res),
+	)
+}
+
 //-------------------------------------------------------
 
 func (app *localClient) FlushSync() error {
@@ -237,6 +286,40 @@ func (app *localClient) EndBlockSync(req types.RequestEndBlock) (*types.Response
 	defer app.mtx.Unlock()
 
 	res := app.Application.EndBlock(req)
+	return &res, nil
+}
+
+func (app *localClient) ListSnapshotsSync(req types.RequestListSnapshots) (*types.ResponseListSnapshots, error) {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.ListSnapshots(req)
+	return &res, nil
+}
+
+func (app *localClient) OfferSnapshotSync(req types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error) {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.OfferSnapshot(req)
+	return &res, nil
+}
+
+func (app *localClient) LoadSnapshotChunkSync(
+	req types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error) {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.LoadSnapshotChunk(req)
+	return &res, nil
+}
+
+func (app *localClient) ApplySnapshotChunkSync(
+	req types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error) {
+	app.mtx.Lock()
+	defer app.mtx.Unlock()
+
+	res := app.Application.ApplySnapshotChunk(req)
 	return &res, nil
 }
 

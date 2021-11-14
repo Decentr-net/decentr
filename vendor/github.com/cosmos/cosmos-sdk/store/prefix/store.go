@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
+	"github.com/cosmos/cosmos-sdk/store/listenkv"
 	"github.com/cosmos/cosmos-sdk/store/tracekv"
 	"github.com/cosmos/cosmos-sdk/store/types"
 )
@@ -57,6 +58,11 @@ func (s Store) CacheWrapWithTrace(w io.Writer, tc types.TraceContext) types.Cach
 	return cachekv.NewStore(tracekv.NewStore(s, w, tc))
 }
 
+// CacheWrapWithListeners implements the CacheWrapper interface.
+func (s Store) CacheWrapWithListeners(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+	return cachekv.NewStore(listenkv.NewStore(s, storeKey, listeners))
+}
+
 // Implements KVStore
 func (s Store) Get(key []byte) []byte {
 	res := s.parent.Get(s.key(key))
@@ -97,7 +103,7 @@ func (s Store) Iterator(start, end []byte) types.Iterator {
 	return newPrefixIterator(s.prefix, start, end, iter)
 }
 
-// Implements KVStore
+// ReverseIterator implements KVStore
 // Check https://github.com/tendermint/tendermint/blob/master/libs/db/prefix_db.go#L129
 func (s Store) ReverseIterator(start, end []byte) types.Iterator {
 	newstart := cloneAppend(s.prefix, start)
@@ -117,10 +123,11 @@ func (s Store) ReverseIterator(start, end []byte) types.Iterator {
 var _ types.Iterator = (*prefixIterator)(nil)
 
 type prefixIterator struct {
-	prefix     []byte
-	start, end []byte
-	iter       types.Iterator
-	valid      bool
+	prefix []byte
+	start  []byte
+	end    []byte
+	iter   types.Iterator
+	valid  bool
 }
 
 func newPrefixIterator(prefix, start, end []byte, parent types.Iterator) *prefixIterator {
@@ -134,53 +141,57 @@ func newPrefixIterator(prefix, start, end []byte, parent types.Iterator) *prefix
 }
 
 // Implements Iterator
-func (iter *prefixIterator) Domain() ([]byte, []byte) {
-	return iter.start, iter.end
+func (pi *prefixIterator) Domain() ([]byte, []byte) {
+	return pi.start, pi.end
 }
 
 // Implements Iterator
-func (iter *prefixIterator) Valid() bool {
-	return iter.valid && iter.iter.Valid()
+func (pi *prefixIterator) Valid() bool {
+	return pi.valid && pi.iter.Valid()
 }
 
 // Implements Iterator
-func (iter *prefixIterator) Next() {
-	if !iter.valid {
+func (pi *prefixIterator) Next() {
+	if !pi.valid {
 		panic("prefixIterator invalid, cannot call Next()")
 	}
-	iter.iter.Next()
-	if !iter.iter.Valid() || !bytes.HasPrefix(iter.iter.Key(), iter.prefix) {
-		iter.valid = false
+
+	if pi.iter.Next(); !pi.iter.Valid() || !bytes.HasPrefix(pi.iter.Key(), pi.prefix) {
+		// TODO: shouldn't pi be set to nil instead?
+		pi.valid = false
 	}
 }
 
 // Implements Iterator
-func (iter *prefixIterator) Key() (key []byte) {
-	if !iter.valid {
+func (pi *prefixIterator) Key() (key []byte) {
+	if !pi.valid {
 		panic("prefixIterator invalid, cannot call Key()")
 	}
-	key = iter.iter.Key()
-	key = stripPrefix(key, iter.prefix)
+
+	key = pi.iter.Key()
+	key = stripPrefix(key, pi.prefix)
+
 	return
 }
 
 // Implements Iterator
-func (iter *prefixIterator) Value() []byte {
-	if !iter.valid {
+func (pi *prefixIterator) Value() []byte {
+	if !pi.valid {
 		panic("prefixIterator invalid, cannot call Value()")
 	}
-	return iter.iter.Value()
+
+	return pi.iter.Value()
 }
 
 // Implements Iterator
-func (iter *prefixIterator) Close() {
-	iter.iter.Close()
+func (pi *prefixIterator) Close() error {
+	return pi.iter.Close()
 }
 
 // Error returns an error if the prefixIterator is invalid defined by the Valid
 // method.
-func (iter *prefixIterator) Error() error {
-	if !iter.Valid() {
+func (pi *prefixIterator) Error() error {
+	if !pi.Valid() {
 		return errors.New("invalid prefixIterator")
 	}
 
@@ -192,6 +203,7 @@ func stripPrefix(key []byte, prefix []byte) []byte {
 	if len(key) < len(prefix) || !bytes.Equal(key[:len(prefix)], prefix) {
 		panic("should not happen")
 	}
+
 	return key[len(prefix):]
 }
 

@@ -15,7 +15,6 @@ const UndefinedCodespace = "undefined"
 
 var (
 	// errInternal should never be exposed, but we reserve this code for non-specified errors
-	//nolint
 	errInternal = Register(UndefinedCodespace, 1, "internal")
 
 	// ErrTxDecode is returned if we cannot parse a transaction
@@ -82,9 +81,72 @@ var (
 	// ErrTxTooLarge defines an ABCI typed error where tx is too large.
 	ErrTxTooLarge = Register(RootCodespace, 21, "tx too large")
 
+	// ErrKeyNotFound defines an error when the key doesn't exist
+	ErrKeyNotFound = Register(RootCodespace, 22, "key not found")
+
+	// ErrWrongPassword defines an error when the key password is invalid.
+	ErrWrongPassword = Register(RootCodespace, 23, "invalid account password")
+
+	// ErrorInvalidSigner defines an error when the tx intended signer does not match the given signer.
+	ErrorInvalidSigner = Register(RootCodespace, 24, "tx intended signer does not match the given signer")
+
+	// ErrorInvalidGasAdjustment defines an error for an invalid gas adjustment
+	ErrorInvalidGasAdjustment = Register(RootCodespace, 25, "invalid gas adjustment")
+
+	// ErrInvalidHeight defines an error for an invalid height
+	ErrInvalidHeight = Register(RootCodespace, 26, "invalid height")
+
+	// ErrInvalidVersion defines a general error for an invalid version
+	ErrInvalidVersion = Register(RootCodespace, 27, "invalid version")
+
+	// ErrInvalidChainID defines an error when the chain-id is invalid.
+	ErrInvalidChainID = Register(RootCodespace, 28, "invalid chain-id")
+
+	// ErrInvalidType defines an error an invalid type.
+	ErrInvalidType = Register(RootCodespace, 29, "invalid type")
+
+	// ErrTxTimeoutHeight defines an error for when a tx is rejected out due to an
+	// explicitly set timeout height.
+	ErrTxTimeoutHeight = Register(RootCodespace, 30, "tx timeout height")
+
+	// ErrUnknownExtensionOptions defines an error for unknown extension options.
+	ErrUnknownExtensionOptions = Register(RootCodespace, 31, "unknown extension options")
+
+	// ErrWrongSequence defines an error where the account sequence defined in
+	// the signer info doesn't match the account's actual sequence number.
+	ErrWrongSequence = Register(RootCodespace, 32, "incorrect account sequence")
+
+	// ErrPackAny defines an error when packing a protobuf message to Any fails.
+	ErrPackAny = Register(RootCodespace, 33, "failed packing protobuf message to Any")
+
+	// ErrUnpackAny defines an error when unpacking a protobuf message from Any fails.
+	ErrUnpackAny = Register(RootCodespace, 34, "failed unpacking protobuf message from Any")
+
+	// ErrLogic defines an internal logic error, e.g. an invariant or assertion
+	// that is violated. It is a programmer error, not a user-facing error.
+	ErrLogic = Register(RootCodespace, 35, "internal logic error")
+
+	// ErrConflict defines a conflict error, e.g. when two goroutines try to access
+	// the same resource and one of them fails.
+	ErrConflict = Register(RootCodespace, 36, "conflict")
+
+	// ErrNotSupported is returned when we call a branch of a code which is currently not
+	// supported.
+	ErrNotSupported = Register(RootCodespace, 37, "feature not supported")
+
+	// ErrNotFound defines an error when requested entity doesn't exist in the state.
+	ErrNotFound = Register(RootCodespace, 38, "not found")
+
+	// ErrIO should be used to wrap internal errors caused by external operation.
+	// Examples: not DB domain error, file writing etc...
+	ErrIO = Register(RootCodespace, 39, "Internal IO error")
+
 	// ErrPanic is only set when we recover from a panic, so we know to
 	// redact potentially sensitive system info
 	ErrPanic = Register(UndefinedCodespace, 111222, "panic")
+
+	// ErrAppConfig defines an error occurred if min-gas-prices field in BaseConfig is empty.
+	ErrAppConfig = Register(RootCodespace, 40, "error in app.toml")
 )
 
 // Register returns an error instance that should be used as the base for
@@ -202,6 +264,14 @@ func (e *Error) Is(err error) bool {
 	}
 }
 
+// Wrap extends this error with an additional information.
+// It's a handy function to call Wrap with sdk errors.
+func (e Error) Wrap(desc string) error { return Wrap(e, desc) }
+
+// Wrapf extends this error with an additional information.
+// It's a handy function to call Wrapf with sdk errors.
+func (e Error) Wrapf(desc string, args ...interface{}) error { return Wrapf(e, desc, args...) }
+
 func isNilErr(err error) bool {
 	// Reflect usage is necessary to correctly compare with
 	// a nil implementation of an error.
@@ -256,7 +326,7 @@ type wrappedError struct {
 }
 
 func (e *wrappedError) Error() string {
-	return fmt.Sprintf("%s: %s", e.parent.Error(), e.msg)
+	return fmt.Sprintf("%s: %s", e.msg, e.parent.Error())
 }
 
 func (e *wrappedError) Cause() error {
@@ -265,12 +335,11 @@ func (e *wrappedError) Cause() error {
 
 // Is reports whether any error in e's chain matches a target.
 func (e *wrappedError) Is(target error) bool {
-	if target == nil {
-		return e == target
+	if e == target {
+		return true
 	}
 
 	w := e.Cause()
-
 	for {
 		if w == target {
 			return true
@@ -303,6 +372,17 @@ func Recover(err *error) {
 // WithType is a helper to augment an error with a corresponding type message
 func WithType(err error, obj interface{}) error {
 	return Wrap(err, fmt.Sprintf("%T", obj))
+}
+
+// IsOf checks if a received error is caused by one of the target errors.
+// It extends the errors.Is functionality to a list of errors.
+func IsOf(received error, targets ...error) bool {
+	for _, t := range targets {
+		if errors.Is(received, t) {
+			return true
+		}
+	}
+	return false
 }
 
 // causer is an interface implemented by an error that supports wrapping. Use

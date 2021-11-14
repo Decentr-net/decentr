@@ -1,39 +1,31 @@
 package types
 
 import (
-	"fmt"
+	yaml "gopkg.in/yaml.v2"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // ValidatorGovInfo used for tallying
 type ValidatorGovInfo struct {
-	Address             sdk.ValAddress // address of the validator operator
-	BondedTokens        sdk.Int        // Power of a Validator
-	DelegatorShares     sdk.Dec        // Total outstanding delegator shares
-	DelegatorDeductions sdk.Dec        // Delegator deductions from validator's delegators voting independently
-	Vote                VoteOption     // Vote of the validator
+	Address             sdk.ValAddress      // address of the validator operator
+	BondedTokens        sdk.Int             // Power of a Validator
+	DelegatorShares     sdk.Dec             // Total outstanding delegator shares
+	DelegatorDeductions sdk.Dec             // Delegator deductions from validator's delegators voting independently
+	Vote                WeightedVoteOptions // Vote of the validator
 }
 
 // NewValidatorGovInfo creates a ValidatorGovInfo instance
 func NewValidatorGovInfo(address sdk.ValAddress, bondedTokens sdk.Int, delegatorShares,
-	delegatorDeductions sdk.Dec, vote VoteOption) ValidatorGovInfo {
+	delegatorDeductions sdk.Dec, options WeightedVoteOptions) ValidatorGovInfo {
 
 	return ValidatorGovInfo{
 		Address:             address,
 		BondedTokens:        bondedTokens,
 		DelegatorShares:     delegatorShares,
 		DelegatorDeductions: delegatorDeductions,
-		Vote:                vote,
+		Vote:                options,
 	}
-}
-
-// TallyResult defines a standard tally for a proposal
-type TallyResult struct {
-	Yes        sdk.Int `json:"yes" yaml:"yes"`
-	Abstain    sdk.Int `json:"abstain" yaml:"abstain"`
-	No         sdk.Int `json:"no" yaml:"no"`
-	NoWithVeto sdk.Int `json:"no_with_veto" yaml:"no_with_veto"`
 }
 
 // NewTallyResult creates a new TallyResult instance
@@ -71,9 +63,6 @@ func (tr TallyResult) Equals(comp TallyResult) bool {
 
 // String implements stringer interface
 func (tr TallyResult) String() string {
-	return fmt.Sprintf(`Tally Result:
-  Yes:        %s
-  Abstain:    %s
-  No:         %s
-  NoWithVeto: %s`, tr.Yes, tr.Abstain, tr.No, tr.NoWithVeto)
+	out, _ := yaml.Marshal(tr)
+	return string(out)
 }

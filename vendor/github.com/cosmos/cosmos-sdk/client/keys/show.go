@@ -5,16 +5,15 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	tmcrypto "github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/multisig"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	"github.com/cosmos/cosmos-sdk/crypto/ledger"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerr "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -35,61 +34,63 @@ const (
 // ShowKeysCmd shows key information for a given key name.
 func ShowKeysCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show [name [name...]]",
-		Short: "Show key info for the given name",
-		Long: `Return public details of a single local key. If multiple names are
-provided, then an ephemeral multisig key will be created under the name "multi"
+		Use:   "show [name_or_address [name_or_address...]]",
+		Short: "Retrieve key information by name or address",
+		Long: `Display keys details. If multiple names or addresses are provided,
+then an ephemeral multisig key will be created under the name "multi"
 consisting of all the keys provided by name and multisig threshold.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: runShowCmd,
 	}
-
-	cmd.Flags().String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
-	cmd.Flags().BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
-	cmd.Flags().BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
-	cmd.Flags().BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
-	cmd.Flags().Uint(flagMultiSigThreshold, 1, "K out of N required signatures")
-	cmd.Flags().Bool(flags.FlagIndentResponse, false, "Add indent to JSON response")
+	f := cmd.Flags()
+	f.String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
+	f.BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
+	f.BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
+	f.BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
+	f.Int(flagMultiSigThreshold, 1, "K out of N required signatures")
 
 	return cmd
 }
 
 func runShowCmd(cmd *cobra.Command, args []string) (err error) {
-	var info keys.Info
-
-	kb, err := keys.NewKeyring(sdk.KeyringServiceName(), viper.GetString(flags.FlagKeyringBackend), viper.GetString(flags.FlagHome), cmd.InOrStdin())
+	var info keyring.Info
+	clientCtx, err := client.GetClientQueryContext(cmd)
 	if err != nil {
 		return err
 	}
+
 	if len(args) == 1 {
-		info, err = kb.Get(args[0])
+		info, err = fetchKey(clientCtx.Keyring, args[0])
 		if err != nil {
-			return err
+			return fmt.Errorf("%s is not a valid name or address: %v", args[0], err)
 		}
 	} else {
-		pks := make([]tmcrypto.PubKey, len(args))
-		for i, keyName := range args {
-			info, err := kb.Get(keyName)
+		pks := make([]cryptotypes.PubKey, len(args))
+		for i, keyref := range args {
+			info, err := fetchKey(clientCtx.Keyring, keyref)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s is not a valid name or address: %v", keyref, err)
 			}
 
 			pks[i] = info.GetPubKey()
 		}
 
-		multisigThreshold := viper.GetInt(flagMultiSigThreshold)
+		multisigThreshold, _ := cmd.Flags().GetInt(flagMultiSigThreshold)
 		err = validateMultisigThreshold(multisigThreshold, len(args))
 		if err != nil {
 			return err
 		}
 
-		multikey := multisig.NewPubKeyMultisigThreshold(multisigThreshold, pks)
-		info = keys.NewMultiInfo(defaultMultiSigKeyName, multikey)
+		multikey := multisig.NewLegacyAminoPubKey(multisigThreshold, pks)
+		info, err = keyring.NewMultiInfo(defaultMultiSigKeyName, multikey)
+		if err != nil {
+			return err
+		}
 	}
 
-	isShowAddr := viper.GetBool(FlagAddress)
-	isShowPubKey := viper.GetBool(FlagPublicKey)
-	isShowDevice := viper.GetBool(FlagDevice)
+	isShowAddr, _ := cmd.Flags().GetBool(FlagAddress)
+	isShowPubKey, _ := cmd.Flags().GetBool(FlagPublicKey)
+	isShowDevice, _ := cmd.Flags().GetBool(FlagDevice)
 
 	isOutputSet := false
 	tmp := cmd.Flag(cli.OutputFlag)
@@ -105,29 +106,41 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 		return errors.New("cannot use --output with --address or --pubkey")
 	}
 
-	bechKeyOut, err := getBechKeyOut(viper.GetString(FlagBechPrefix))
+	bechPrefix, _ := cmd.Flags().GetString(FlagBechPrefix)
+	bechKeyOut, err := getBechKeyOut(bechPrefix)
 	if err != nil {
 		return err
 	}
 
+	if isOutputSet {
+		clientCtx.OutputFormat, _ = cmd.Flags().GetString(cli.OutputFlag)
+	}
+
 	switch {
-	case isShowAddr:
-		printKeyAddress(info, bechKeyOut)
-	case isShowPubKey:
-		printPubKey(info, bechKeyOut)
+	case isShowAddr, isShowPubKey:
+		ko, err := bechKeyOut(info)
+		if err != nil {
+			return err
+		}
+		out := ko.Address
+		if isShowPubKey {
+			out = ko.PubKey
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), out)
 	default:
-		printKeyInfo(info, bechKeyOut)
+		printKeyInfo(cmd.OutOrStdout(), info, bechKeyOut, clientCtx.OutputFormat)
 	}
 
 	if isShowDevice {
 		if isShowPubKey {
 			return fmt.Errorf("the device flag (-d) can only be used for addresses not pubkeys")
 		}
-		if viper.GetString(FlagBechPrefix) != "acc" {
+		if bechPrefix != "acc" {
 			return fmt.Errorf("the device flag (-d) can only be used for accounts")
 		}
+
 		// Override and show in the device
-		if info.GetType() != keys.TypeLedger {
+		if info.GetType() != keyring.TypeLedger {
 			return fmt.Errorf("the device flag (-d) can only be used for accounts stored in devices")
 		}
 
@@ -136,10 +149,27 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 			return nil
 		}
 
-		return crypto.LedgerShowAddress(*hdpath, info.GetPubKey())
+		return ledger.ShowAddress(*hdpath, info.GetPubKey(), sdk.GetConfig().GetBech32AccountAddrPrefix())
 	}
 
 	return nil
+}
+
+func fetchKey(kb keyring.Keyring, keyref string) (keyring.Info, error) {
+	// firstly check if the keyref is a key name of a key registered in a keyring.
+	info, err := kb.Key(keyref)
+	// if the key is not there or if we have a problem with a keyring itself then we move to a
+	// fallback: searching for key by address.
+	if err == nil || !sdkerr.IsOf(err, sdkerr.ErrIO, sdkerr.ErrKeyNotFound) {
+		return info, err
+	}
+	accAddr, err := sdk.AccAddressFromBech32(keyref)
+	if err != nil {
+		return info, err
+	}
+
+	info, err = kb.KeyByAddress(accAddr)
+	return info, sdkerr.Wrap(err, "Invalid key")
 }
 
 func validateMultisigThreshold(k, nKeys int) error {
@@ -156,11 +186,11 @@ func validateMultisigThreshold(k, nKeys int) error {
 func getBechKeyOut(bechPrefix string) (bechKeyOutFn, error) {
 	switch bechPrefix {
 	case sdk.PrefixAccount:
-		return keys.Bech32KeyOutput, nil
+		return keyring.MkAccKeyOutput, nil
 	case sdk.PrefixValidator:
-		return keys.Bech32ValKeyOutput, nil
+		return keyring.MkValKeyOutput, nil
 	case sdk.PrefixConsensus:
-		return keys.Bech32ConsKeyOutput, nil
+		return keyring.MkConsKeyOutput, nil
 	}
 
 	return nil, fmt.Errorf("invalid Bech32 prefix encoding provided: %s", bechPrefix)

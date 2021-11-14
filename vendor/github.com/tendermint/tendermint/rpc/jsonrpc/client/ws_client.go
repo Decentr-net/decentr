@@ -10,13 +10,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/pkg/errors"
 	metrics "github.com/rcrowley/go-metrics"
-
-	amino "github.com/tendermint/go-amino"
 
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/libs/service"
+	tmsync "github.com/tendermint/tendermint/libs/sync"
 	types "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 )
 
@@ -33,7 +31,6 @@ const (
 // WSClient is safe for concurrent use by multiple goroutines.
 type WSClient struct { // nolint: maligned
 	conn *websocket.Conn
-	cdc  *amino.Codec
 
 	Address  string // IP:PORT or /path/to/socket
 	Endpoint string // /websocket/url/endpoint
@@ -60,7 +57,7 @@ type WSClient struct { // nolint: maligned
 
 	wg sync.WaitGroup
 
-	mtx            sync.RWMutex
+	mtx            tmsync.RWMutex
 	sentLastPingAt time.Time
 	reconnecting   bool
 	nextReqID      int
@@ -102,7 +99,6 @@ func NewWS(remoteAddr, endpoint string, options ...func(*WSClient)) (*WSClient, 
 	}
 
 	c := &WSClient{
-		cdc:                  amino.NewCodec(),
 		Address:              parsedURL.GetTrimmedHostWithPath(),
 		Dialer:               dialFn,
 		Endpoint:             endpoint,
@@ -235,7 +231,7 @@ func (c *WSClient) Send(ctx context.Context, request types.RPCRequest) error {
 
 // Call enqueues a call request onto the Send queue. Requests are JSON encoded.
 func (c *WSClient) Call(ctx context.Context, method string, params map[string]interface{}) error {
-	request, err := types.MapToRequest(c.cdc, c.nextRequestID(), method, params)
+	request, err := types.MapToRequest(c.nextRequestID(), method, params)
 	if err != nil {
 		return err
 	}
@@ -245,17 +241,13 @@ func (c *WSClient) Call(ctx context.Context, method string, params map[string]in
 // CallWithArrayParams enqueues a call request onto the Send queue. Params are
 // in a form of array (e.g. []interface{}{"abcd"}). Requests are JSON encoded.
 func (c *WSClient) CallWithArrayParams(ctx context.Context, method string, params []interface{}) error {
-	request, err := types.ArrayToRequest(c.cdc, c.nextRequestID(), method, params)
+	request, err := types.ArrayToRequest(c.nextRequestID(), method, params)
 	if err != nil {
 		return err
 	}
 	return c.Send(ctx, request)
 }
 
-func (c *WSClient) Codec() *amino.Codec       { return c.cdc }
-func (c *WSClient) SetCodec(cdc *amino.Codec) { c.cdc = cdc }
-
-///////////////////////////////////////////////////////////////////////////////
 // Private methods
 
 func (c *WSClient) nextRequestID() types.JSONRPCIntID {
@@ -295,8 +287,8 @@ func (c *WSClient) reconnect() error {
 	}()
 
 	for {
-		jitterSeconds := time.Duration(tmrand.Float64() * float64(time.Second)) // 1s == (1e9 ns)
-		backoffDuration := jitterSeconds + ((1 << uint(attempt)) * time.Second)
+		jitter := time.Duration(tmrand.Float64() * float64(time.Second)) // 1s == (1e9 ns)
+		backoffDuration := jitter + ((1 << uint(attempt)) * time.Second)
 
 		c.Logger.Info("reconnecting", "attempt", attempt+1, "backoff_duration", backoffDuration)
 		time.Sleep(backoffDuration)
@@ -315,7 +307,7 @@ func (c *WSClient) reconnect() error {
 		attempt++
 
 		if attempt > c.maxReconnectAttempts {
-			return errors.Wrap(err, "reached maximum reconnect attempts")
+			return fmt.Errorf("reached maximum reconnect attempts: %w", err)
 		}
 	}
 }
@@ -356,7 +348,10 @@ func (c *WSClient) reconnectRoutine() {
 			c.wg.Wait()
 			if err := c.reconnect(); err != nil {
 				c.Logger.Error("failed to reconnect", "err", err, "original_err", originalError)
-				c.Stop()
+				if err = c.Stop(); err != nil {
+					c.Logger.Error("failed to stop conn", "error", err)
+				}
+
 				return
 			}
 			// drain reconnectAfter
@@ -525,7 +520,6 @@ func (c *WSClient) readRoutine() {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
 // Predefined methods
 
 // Subscribe to a query. Note the server must have a "subscribe" route

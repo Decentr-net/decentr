@@ -1,0 +1,11 @@
+syntax = "proto3";
+package operations;
+
+import "operations/operations.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/operations/types";
+
+message GenesisState {
+  // params defines all the paramaters of the module.
+  Params params = 1;
+}

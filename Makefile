@@ -1,42 +1,52 @@
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+COSMOS_PKG_VERSION := $(shell go list -m github.com/cosmos/cosmos-sdk | sed 's:.* ::')
 COMMIT := $(shell git log -1 --format='%H')
 
-CLIENT=decentrcli
-SERVER=decentrd
+export GO111MODULE = on
 
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=decentr \
-	-X github.com/cosmos/cosmos-sdk/version.ServerName=$(SERVER) \
-	-X github.com/cosmos/cosmos-sdk/version.ClientName=$(CLIENT) \
-	-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
-	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) 
+		  -X github.com/cosmos/cosmos-sdk/version.AppName=decentrd \
+		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(ldflags)'
 
 all: install
 
 build: go.sum
-		go build -mod=vendor $(BUILD_FLAGS) -o build/$(SERVER) ./cmd/$(SERVER)
-		go build -mod=vendor $(BUILD_FLAGS) -o build/$(CLIENT) ./cmd/$(CLIENT)
+ifeq ($(OS), Windows_NT)
+	go build -mod=readonly $(BUILD_FLAGS) -o build/$(shell go env GOOS)/decentrd.exe ./cmd/decentrd
+else
+	go build -mod=readonly $(BUILD_FLAGS) -o build/$(shell go env GOOS)/decentrd ./cmd/decentrd
+endif
 
 install: go.sum
-		go install -mod=vendor $(BUILD_FLAGS) ./cmd/$(SERVER)
-		go install -mod=vendor $(BUILD_FLAGS) ./cmd/$(CLIENT)
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/decentrd
 
-.PHONY: linux
-linux: export GOOS := linux
-linux: export GOARCH := amd64
-linux:
-		GOOS=linux GOARCH=amd64 go build -mod=vendor $(BUILD_FLAGS) -o build/$(SERVER)-$(GOOS)-$(GOARCH) ./cmd/$(SERVER)
-		GOOS=linux GOARCH=amd64 go build -mod=vendor $(BUILD_FLAGS) -o build/$(CLIENT)-$(GOOS)-$(GOARCH) ./cmd/$(CLIENT)
+linux: go.sum
+	GOOS=linux GOARCH=amd64 $(MAKE) build
+
+### tools ###
+
+clean:
+	rm -rf build/
 
 go.sum:
-		@echo "--> Ensure dependencies have not been modified"
-		GO111MODULE=on go mod verify
+	@echo "--> Ensure dependencies have not been modified"
+	go mod verify
+
+vendor:
+	go mod tidy
+	go mod vendor
+
+### qa ###
 
 test:
-		go test -mod=readonly $(PACKAGES)
+	@echo "--> Running tests"
+	go test -mod=readonly $(PACKAGES)
+
 
 # look into .golangci.yml for enabling / disabling linters
 lint:
@@ -47,3 +57,42 @@ lint:
 start:
 	bash init.sh
 
+### proto ###
+docker_buf := docker run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
+buildtools=decentr/buildtools:v0.1
+containerProtoGen=decentr-buildtools-protogen
+containerProtoSwaggerGen=decentr-buildtools-protoswaggergen
+containerProtoFmt=decentr-buildtools-protofmt
+
+proto-all: proto-lint proto-gen
+
+proto-gen:
+	@echo "Generating Protobuf files"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(buildtools) \
+		sh ./scripts/protocgen.sh; fi
+
+proto-swagger-gen:
+	@echo "Generating Protobuf Swagger"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoSwaggerGen}$$"; then docker start -a $(containerProtoSwaggerGen); else docker run --name $(containerProtoSwaggerGen) -v $(CURDIR):/workspace --workdir /workspace $(buildtools) \
+		sh ./scripts/protoc-swagger-gen.sh; fi
+
+proto-format:
+	@echo "Formatting Protobuf files"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoFmt}$$"; then docker start -a $(containerProtoFmt); else docker run --name $(containerProtoFmt) -v $(CURDIR):/workspace --workdir /workspace tendermintdev/docker-build-proto \
+		find ./ -path "./proto/decentr/*" -name *.proto -exec clang-format -style=file -i {} \; ; fi
+
+proto-lint:
+	@$(docker_buf) lint --error-format=json
+
+proto-check-breaking:
+	@$(docker_buf) breaking --against $(HTTPS_GIT)
+
+proto-update-deps:
+	rm -rf proto/3rdparty
+	mkdir proto/3rdparty
+	git clone --depth 1 --branch $(COSMOS_PKG_VERSION) git@github.com:cosmos/cosmos-sdk.git
+	mv cosmos-sdk/third_party/proto/* ./proto/3rdparty/
+	mv cosmos-sdk/proto/cosmos ./proto/3rdparty/cosmos
+	rm -rf cosmos-sdk
+
+.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps

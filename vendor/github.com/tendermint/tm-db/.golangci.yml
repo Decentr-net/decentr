@@ -21,7 +21,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - interfacer
+    # - interfacer
     - lll
     - misspell
     - maligned
@@ -39,10 +39,15 @@ linters:
     # - whitespace
     # - wsl
     # - gocognit
+    - nolintlint
 
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
 linters-settings:
   maligned:
-    # print struct with more effective memory layout or not, false by default
     suggest-new: true
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;

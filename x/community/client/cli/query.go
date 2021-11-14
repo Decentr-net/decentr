@@ -2,21 +2,21 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
+
+	"github.com/gofrs/uuid"
+	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/spf13/cobra"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/Decentr-net/decentr/x/community/types"
 )
 
-// GetQueryCmd returns the cli query commands for this module
-func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	// Group community queries under a subcommand
-	communityQueryCmd := &cobra.Command{
+func GetQueryCmd(_ string) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -24,123 +24,177 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	communityQueryCmd.AddCommand(
-		flags.GetCommands(
-			GetCmdPost(queryRoute, cdc),
-			GetCmdModerators(queryRoute, cdc),
-			GetCmdUsersPosts(queryRoute, cdc),
-			GetCmdFollowee(queryRoute, cdc),
-		)...,
+	cmd.AddCommand(
+		NewModeratorsCmd(),
+		NewGetPostCmd(),
+		NewListUserPostsCmd(),
+		NewListFollowedCmd(),
 	)
-
-	return communityQueryCmd
-}
-
-// GetCmdPost queries exact post
-func GetCmdPost(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "post <owner> <uuid>",
-		Short: "Query post",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", queryRoute, args[0], args[1]), nil)
-			if err != nil {
-				return err
-			}
-
-			var out types.Post
-			cdc.MustUnmarshalBinaryBare(bz, &out)
-
-			return cliCtx.PrintOutput(out)
-		},
-	}
-}
-
-// GetCmdFollowee queries users followee
-func GetCmdFollowee(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "followee <owner>",
-		Short: "Query user's followee",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", queryRoute, args[0]), nil)
-			if err != nil {
-				return err
-			}
-
-			var out []sdk.AccAddress
-			cdc.MustUnmarshalBinaryBare(bz, &out)
-
-			return cliCtx.PrintOutput(out)
-		},
-	}
-}
-
-// GetCmdUsersPosts queries users posts
-func GetCmdUsersPosts(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "user-posts <owner> [--from uuid] [--limit int]",
-		Short: "Query user's posts",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			var (
-				f     = cmd.Flags()
-				from  string
-				limit int
-
-				err error
-			)
-
-			if from, err = f.GetString("from-uuid"); err != nil {
-				return err
-			}
-
-			if limit, err = f.GetInt("limit"); err != nil {
-				return err
-			}
-
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/user/%s/%s/%d", queryRoute, args[0], from, limit), nil)
-			if err != nil {
-				return err
-			}
-
-			var out []types.Post
-			cdc.MustUnmarshalBinaryBare(bz, &out)
-
-			return cliCtx.PrintOutput(out)
-		},
-	}
-
-	cmd.Flags().String("from-uuid", "", "list from uuid")
-	cmd.Flags().Int("limit", 20, "limit")
 
 	return cmd
 }
 
-// GetCmdModerators queries for the community moderators
-func GetCmdModerators(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func NewModeratorsCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "moderators",
-		Short: "Returns moderators addresses",
+		Short: "Query the moderators list",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			bz, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", queryRoute), nil)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			var out []string
-			cdc.MustUnmarshalBinaryBare(bz, &out)
+			queryClient := types.NewQueryClient(clientCtx)
 
-			return cliCtx.PrintOutput(out)
+			out, err := queryClient.Moderators(cmd.Context(), &types.ModeratorsRequest{})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(out)
 		},
 	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewGetPostCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "post [owner] [uuid]",
+		Short: "Query post by [owner] and [uuid]",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			owner, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid owner: %w", err)
+			}
+
+			id, err := uuid.FromString(args[1])
+			if err != nil {
+				return fmt.Errorf("invalid uuid: %w", err)
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			out, err := queryClient.GetPost(cmd.Context(), &types.GetPostRequest{
+				PostOwner: owner,
+				PostUuid:  id.String(),
+			})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(out)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewListUserPostsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "user-posts [owner] <offset> <limit>",
+		Short: "Lists post by [owner] with optional <limit>/<offset> pagination",
+		Args:  cobra.RangeArgs(1, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			owner, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid owner: %w", err)
+			}
+
+			var offset, limit uint64
+			if len(args) > 1 {
+				if offset, err = strconv.ParseUint(args[1], 10, 64); err != nil {
+					return fmt.Errorf("invalid offset: %w", err)
+				}
+			}
+
+			if len(args) > 2 {
+				if limit, err = strconv.ParseUint(args[2], 10, 64); err != nil {
+					return fmt.Errorf("invalid offset: %w", err)
+				}
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			out, err := queryClient.ListUserPosts(cmd.Context(), &types.ListUserPostsRequest{
+				Owner: owner,
+				Pagination: query.PageRequest{
+					Offset: offset,
+					Limit:  limit,
+				},
+			})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(out)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewListFollowedCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "followed [owner] <offset> <limit>",
+		Short: "Lists followed by [owner] account addresses with optional <limit>/<offset> pagination",
+		Args:  cobra.RangeArgs(1, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			owner, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid owner: %w", err)
+			}
+
+			var offset, limit uint64
+			if len(args) > 1 {
+				if offset, err = strconv.ParseUint(args[1], 10, 64); err != nil {
+					return fmt.Errorf("invalid offset: %w", err)
+				}
+			}
+
+			if len(args) > 2 {
+				if limit, err = strconv.ParseUint(args[2], 10, 64); err != nil {
+					return fmt.Errorf("invalid offset: %w", err)
+				}
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			out, err := queryClient.ListFollowed(cmd.Context(), &types.ListFollowedRequest{
+				Owner: owner,
+				Pagination: query.PageRequest{
+					Offset: offset,
+					Limit:  limit,
+				},
+			})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(out)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
 }

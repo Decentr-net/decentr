@@ -5,8 +5,8 @@ import (
 )
 
 // TODO: better system than "unsafe" prefix
-// NOTE: Amino is registered in rpc/core/types/codec.go.
 
+// Routes is a map of available routes.
 var Routes = map[string]*rpc.RPCFunc{
 	// subscribe/unsubscribe are reserved for websocket events.
 	"subscribe":       rpc.NewWSRPCFunc(Subscribe, "query"),
@@ -19,12 +19,15 @@ var Routes = map[string]*rpc.RPCFunc{
 	"net_info":             rpc.NewRPCFunc(NetInfo, ""),
 	"blockchain":           rpc.NewRPCFunc(BlockchainInfo, "minHeight,maxHeight"),
 	"genesis":              rpc.NewRPCFunc(Genesis, ""),
+	"genesis_chunked":      rpc.NewRPCFunc(GenesisChunked, "chunk"),
 	"block":                rpc.NewRPCFunc(Block, "height"),
 	"block_by_hash":        rpc.NewRPCFunc(BlockByHash, "hash"),
 	"block_results":        rpc.NewRPCFunc(BlockResults, "height"),
 	"commit":               rpc.NewRPCFunc(Commit, "height"),
+	"check_tx":             rpc.NewRPCFunc(CheckTx, "tx"),
 	"tx":                   rpc.NewRPCFunc(Tx, "hash,prove"),
 	"tx_search":            rpc.NewRPCFunc(TxSearch, "query,prove,page,per_page,order_by"),
+	"block_search":         rpc.NewRPCFunc(BlockSearch, "query,page,per_page,order_by"),
 	"validators":           rpc.NewRPCFunc(Validators, "height,page,per_page"),
 	"dump_consensus_state": rpc.NewRPCFunc(DumpConsensusState, ""),
 	"consensus_state":      rpc.NewRPCFunc(ConsensusState, ""),
@@ -45,14 +48,10 @@ var Routes = map[string]*rpc.RPCFunc{
 	"broadcast_evidence": rpc.NewRPCFunc(BroadcastEvidence, "evidence"),
 }
 
+// AddUnsafeRoutes adds unsafe routes.
 func AddUnsafeRoutes() {
 	// control API
 	Routes["dial_seeds"] = rpc.NewRPCFunc(UnsafeDialSeeds, "seeds")
-	Routes["dial_peers"] = rpc.NewRPCFunc(UnsafeDialPeers, "peers,persistent")
+	Routes["dial_peers"] = rpc.NewRPCFunc(UnsafeDialPeers, "peers,persistent,unconditional,private")
 	Routes["unsafe_flush_mempool"] = rpc.NewRPCFunc(UnsafeFlushMempool, "")
-
-	// profiler API
-	Routes["unsafe_start_cpu_profiler"] = rpc.NewRPCFunc(UnsafeStartCPUProfiler, "filename")
-	Routes["unsafe_stop_cpu_profiler"] = rpc.NewRPCFunc(UnsafeStopCPUProfiler, "")
-	Routes["unsafe_write_heap_profile"] = rpc.NewRPCFunc(UnsafeWriteHeapProfile, "filename")
 }

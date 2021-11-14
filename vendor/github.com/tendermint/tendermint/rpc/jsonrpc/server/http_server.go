@@ -4,6 +4,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"golang.org/x/net/netutil"
 
 	"github.com/tendermint/tendermint/libs/log"
@@ -89,52 +89,47 @@ func ServeTLS(
 	return err
 }
 
+// WriteRPCResponseHTTPError marshals res as JSON (with indent) and writes it
+// to w.
+//
+// source: https://www.jsonrpc.org/historical/json-rpc-over-http.html
 func WriteRPCResponseHTTPError(
 	w http.ResponseWriter,
 	httpCode int,
 	res types.RPCResponse,
-) {
+) error {
+	if res.Error == nil {
+		panic("tried to write http error response without RPC error")
+	}
+
 	jsonBytes, err := json.MarshalIndent(res, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("json marshal: %w", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpCode)
-	if _, err := w.Write(jsonBytes); err != nil {
-		panic(err)
-	}
+	_, err = w.Write(jsonBytes)
+	return err
 }
 
-func WriteRPCResponseHTTP(w http.ResponseWriter, res types.RPCResponse) {
-	jsonBytes, err := json.MarshalIndent(res, "", "  ")
+// WriteRPCResponseHTTP marshals res as JSON (with indent) and writes it to w.
+func WriteRPCResponseHTTP(w http.ResponseWriter, res ...types.RPCResponse) error {
+	var v interface{}
+	if len(res) == 1 {
+		v = res[0]
+	} else {
+		v = res
+	}
+
+	jsonBytes, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("json marshal: %w", err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	if _, err := w.Write(jsonBytes); err != nil {
-		panic(err)
-	}
-}
-
-// WriteRPCResponseArrayHTTP will do the same as WriteRPCResponseHTTP, except it
-// can write arrays of responses for batched request/response interactions via
-// the JSON RPC.
-func WriteRPCResponseArrayHTTP(w http.ResponseWriter, res []types.RPCResponse) {
-	if len(res) == 1 {
-		WriteRPCResponseHTTP(w, res[0])
-	} else {
-		jsonBytes, err := json.MarshalIndent(res, "", "  ")
-		if err != nil {
-			panic(err)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		if _, err := w.Write(jsonBytes); err != nil {
-			panic(err)
-		}
-	}
+	_, err = w.Write(jsonBytes)
+	return err
 }
 
 //-----------------------------------------------------------------------------
@@ -172,7 +167,9 @@ func RecoverAndLogHandler(handler http.Handler, logger log.Logger) http.Handler 
 
 				// If RPCResponse
 				if res, ok := e.(types.RPCResponse); ok {
-					WriteRPCResponseHTTP(rww, res)
+					if wErr := WriteRPCResponseHTTP(rww, res); wErr != nil {
+						logger.Error("failed to write response", "res", res, "err", wErr)
+					}
 				} else {
 					// Panics can contain anything, attempt to normalize it as an error.
 					var err error
@@ -186,15 +183,12 @@ func RecoverAndLogHandler(handler http.Handler, logger log.Logger) http.Handler 
 					default:
 					}
 
-					logger.Error(
-						"Panic in RPC HTTP handler", "err", e, "stack",
-						string(debug.Stack()),
-					)
-					WriteRPCResponseHTTPError(
-						rww,
-						http.StatusInternalServerError,
-						types.RPCInternalError(types.JSONRPCIntID(-1), err),
-					)
+					logger.Error("panic in RPC HTTP handler", "err", e, "stack", string(debug.Stack()))
+
+					res := types.RPCInternalError(types.JSONRPCIntID(-1), err)
+					if wErr := WriteRPCResponseHTTPError(rww, http.StatusInternalServerError, res); wErr != nil {
+						logger.Error("failed to write response", "res", res, "err", wErr)
+					}
 				}
 			}
 
@@ -203,9 +197,11 @@ func RecoverAndLogHandler(handler http.Handler, logger log.Logger) http.Handler 
 			if rww.Status == -1 {
 				rww.Status = 200
 			}
-			logger.Info("Served RPC HTTP response",
-				"method", r.Method, "url", r.URL,
-				"status", rww.Status, "duration", durationMS,
+			logger.Debug("served RPC HTTP response",
+				"method", r.Method,
+				"url", r.URL,
+				"status", rww.Status,
+				"duration", durationMS,
 				"remoteAddr", r.RemoteAddr,
 			)
 		}()
@@ -245,7 +241,7 @@ func (h maxBytesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Listen(addr string, config *Config) (listener net.Listener, err error) {
 	parts := strings.SplitN(addr, "://", 2)
 	if len(parts) != 2 {
-		return nil, errors.Errorf(
+		return nil, fmt.Errorf(
 			"invalid listening address %s (use fully formed addresses, including the tcp:// or unix:// prefix)",
 			addr,
 		)
@@ -253,7 +249,7 @@ func Listen(addr string, config *Config) (listener net.Listener, err error) {
 	proto, addr := parts[0], parts[1]
 	listener, err = net.Listen(proto, addr)
 	if err != nil {
-		return nil, errors.Errorf("failed to listen on %v: %v", addr, err)
+		return nil, fmt.Errorf("failed to listen on %v: %v", addr, err)
 	}
 	if config.MaxOpenConnections > 0 {
 		listener = netutil.LimitListener(listener, config.MaxOpenConnections)

@@ -3,6 +3,7 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,8 +15,9 @@ import (
 
 	"github.com/tendermint/tendermint/types"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -41,6 +43,17 @@ func NewResponseWithHeight(height int64, result json.RawMessage) ResponseWithHei
 	}
 }
 
+// ParseResponseWithHeight returns the raw result from a JSON-encoded
+// ResponseWithHeight object.
+func ParseResponseWithHeight(cdc *codec.LegacyAmino, bz []byte) ([]byte, error) {
+	r := ResponseWithHeight{}
+	if err := cdc.UnmarshalJSON(bz, &r); err != nil {
+		return nil, err
+	}
+
+	return r.Result, nil
+}
+
 // GasEstimateResponse defines a response definition for tx gas estimation.
 type GasEstimateResponse struct {
 	GasEstimate uint64 `json:"gas_estimate"`
@@ -54,6 +67,7 @@ type BaseReq struct {
 	ChainID       string       `json:"chain_id"`
 	AccountNumber uint64       `json:"account_number"`
 	Sequence      uint64       `json:"sequence"`
+	TimeoutHeight uint64       `json:"timeout_height"`
 	Fees          sdk.Coins    `json:"fees"`
 	GasPrices     sdk.DecCoins `json:"gas_prices"`
 	Gas           string       `json:"gas"`
@@ -66,7 +80,6 @@ func NewBaseReq(
 	from, memo, chainID string, gas, gasAdjustment string, accNumber, seq uint64,
 	fees sdk.Coins, gasPrices sdk.DecCoins, simulate bool,
 ) BaseReq {
-
 	return BaseReq{
 		From:          strings.TrimSpace(from),
 		Memo:          strings.TrimSpace(memo),
@@ -119,12 +132,11 @@ func (br BaseReq) ValidateBasic(w http.ResponseWriter) bool {
 	return true
 }
 
-// ReadRESTReq reads and unmarshals a Request's body to the the BaseReq stuct.
-// Writes an error response to ResponseWriter and returns true if errors occurred.
-func ReadRESTReq(w http.ResponseWriter, r *http.Request, cdc *codec.Codec, req interface{}) bool {
+// ReadRESTReq reads and unmarshals a Request's body to the the BaseReq struct.
+// Writes an error response to ResponseWriter and returns false if errors occurred.
+func ReadRESTReq(w http.ResponseWriter, r *http.Request, cdc *codec.LegacyAmino, req interface{}) bool {
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+	if CheckBadRequestError(w, err) {
 		return false
 	}
 
@@ -148,21 +160,50 @@ func NewErrorResponse(code int, err string) ErrorResponse {
 	return ErrorResponse{Code: code, Error: err}
 }
 
+// CheckError takes care of writing an error response if err is not nil.
+// Returns false when err is nil; it returns true otherwise.
+func CheckError(w http.ResponseWriter, status int, err error) bool {
+	if err != nil {
+		WriteErrorResponse(w, status, err.Error())
+		return true
+	}
+
+	return false
+}
+
+// CheckBadRequestError attaches an error message to an HTTP 400 BAD REQUEST response.
+// Returns false when err is nil; it returns true otherwise.
+func CheckBadRequestError(w http.ResponseWriter, err error) bool {
+	return CheckError(w, http.StatusBadRequest, err)
+}
+
+// CheckInternalServerError attaches an error message to an HTTP 500 INTERNAL SERVER ERROR response.
+// Returns false when err is nil; it returns true otherwise.
+func CheckInternalServerError(w http.ResponseWriter, err error) bool {
+	return CheckError(w, http.StatusInternalServerError, err)
+}
+
+// CheckNotFoundError attaches an error message to an HTTP 404 NOT FOUND response.
+// Returns false when err is nil; it returns true otherwise.
+func CheckNotFoundError(w http.ResponseWriter, err error) bool {
+	return CheckError(w, http.StatusNotFound, err)
+}
+
 // WriteErrorResponse prepares and writes a HTTP error
 // given a status code and an error message.
 func WriteErrorResponse(w http.ResponseWriter, status int, err string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_, _ = w.Write(codec.Cdc.MustMarshalJSON(NewErrorResponse(0, err)))
+	_, _ = w.Write(legacy.Cdc.MustMarshalJSON(NewErrorResponse(0, err)))
 }
 
 // WriteSimulationResponse prepares and writes an HTTP
 // response for transactions simulations.
-func WriteSimulationResponse(w http.ResponseWriter, cdc *codec.Codec, gas uint64) {
+func WriteSimulationResponse(w http.ResponseWriter, cdc *codec.LegacyAmino, gas uint64) {
 	gasEst := GasEstimateResponse{GasEstimate: gas}
+
 	resp, err := cdc.MarshalJSON(gasEst)
-	if err != nil {
-		WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+	if CheckInternalServerError(w, err) {
 		return
 	}
 
@@ -171,28 +212,14 @@ func WriteSimulationResponse(w http.ResponseWriter, cdc *codec.Codec, gas uint64
 	_, _ = w.Write(resp)
 }
 
-// ParseInt64OrReturnBadRequest converts s to a int64 value.
-func ParseInt64OrReturnBadRequest(w http.ResponseWriter, s string) (n int64, ok bool) {
-	var err error
-
-	n, err = strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		err := fmt.Errorf("'%s' is not a valid int64", s)
-		WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-		return n, false
-	}
-
-	return n, true
-}
-
 // ParseUint64OrReturnBadRequest converts s to a uint64 value.
 func ParseUint64OrReturnBadRequest(w http.ResponseWriter, s string) (n uint64, ok bool) {
 	var err error
 
 	n, err = strconv.ParseUint(s, 10, 64)
 	if err != nil {
-		err := fmt.Errorf("'%s' is not a valid uint64", s)
-		WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("'%s' is not a valid uint64", s))
+
 		return n, false
 	}
 
@@ -207,8 +234,7 @@ func ParseFloat64OrReturnBadRequest(w http.ResponseWriter, s string, defaultIfEm
 	}
 
 	n, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+	if CheckBadRequestError(w, err) {
 		return n, false
 	}
 
@@ -217,33 +243,32 @@ func ParseFloat64OrReturnBadRequest(w http.ResponseWriter, s string, defaultIfEm
 
 // ParseQueryHeightOrReturnBadRequest sets the height to execute a query if set by the http request.
 // It returns false if there was an error parsing the height.
-func ParseQueryHeightOrReturnBadRequest(w http.ResponseWriter, cliCtx context.CLIContext, r *http.Request) (context.CLIContext, bool) {
+func ParseQueryHeightOrReturnBadRequest(w http.ResponseWriter, clientCtx client.Context, r *http.Request) (client.Context, bool) {
 	heightStr := r.FormValue("height")
 	if heightStr != "" {
 		height, err := strconv.ParseInt(heightStr, 10, 64)
-		if err != nil {
-			WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return cliCtx, false
+		if CheckBadRequestError(w, err) {
+			return clientCtx, false
 		}
 
 		if height < 0 {
 			WriteErrorResponse(w, http.StatusBadRequest, "height must be equal or greater than zero")
-			return cliCtx, false
+			return clientCtx, false
 		}
 
 		if height > 0 {
-			cliCtx = cliCtx.WithHeight(height)
+			clientCtx = clientCtx.WithHeight(height)
 		}
 	} else {
-		cliCtx = cliCtx.WithHeight(0)
+		clientCtx = clientCtx.WithHeight(0)
 	}
 
-	return cliCtx, true
+	return clientCtx, true
 }
 
 // PostProcessResponseBare post processes a body similar to PostProcessResponse
 // except it does not wrap the body and inject the height.
-func PostProcessResponseBare(w http.ResponseWriter, cliCtx context.CLIContext, body interface{}) {
+func PostProcessResponseBare(w http.ResponseWriter, ctx client.Context, body interface{}) {
 	var (
 		resp []byte
 		err  error
@@ -254,14 +279,8 @@ func PostProcessResponseBare(w http.ResponseWriter, cliCtx context.CLIContext, b
 		resp = b
 
 	default:
-		if cliCtx.Indent {
-			resp, err = cliCtx.Codec.MarshalJSONIndent(body, "", "  ")
-		} else {
-			resp, err = cliCtx.Codec.MarshalJSON(body)
-		}
-
-		if err != nil {
-			WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+		resp, err = ctx.LegacyAmino.MarshalJSON(body)
+		if CheckInternalServerError(w, err) {
 			return
 		}
 	}
@@ -273,47 +292,35 @@ func PostProcessResponseBare(w http.ResponseWriter, cliCtx context.CLIContext, b
 // PostProcessResponse performs post processing for a REST response. The result
 // returned to clients will contain two fields, the height at which the resource
 // was queried at and the original result.
-func PostProcessResponse(w http.ResponseWriter, cliCtx context.CLIContext, resp interface{}) {
-	var result []byte
+func PostProcessResponse(w http.ResponseWriter, ctx client.Context, resp interface{}) {
+	var (
+		result []byte
+		err    error
+	)
 
-	if cliCtx.Height < 0 {
+	if ctx.Height < 0 {
 		WriteErrorResponse(w, http.StatusInternalServerError, fmt.Errorf("negative height in response").Error())
 		return
 	}
+
+	// LegacyAmino used intentionally for REST
+	marshaler := ctx.LegacyAmino
 
 	switch res := resp.(type) {
 	case []byte:
 		result = res
 
 	default:
-		var err error
-		if cliCtx.Indent {
-			result, err = cliCtx.Codec.MarshalJSONIndent(resp, "", "  ")
-		} else {
-			result, err = cliCtx.Codec.MarshalJSON(resp)
-		}
-
-		if err != nil {
-			WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+		result, err = marshaler.MarshalJSON(resp)
+		if CheckInternalServerError(w, err) {
 			return
 		}
 	}
 
-	wrappedResp := NewResponseWithHeight(cliCtx.Height, result)
+	wrappedResp := NewResponseWithHeight(ctx.Height, result)
 
-	var (
-		output []byte
-		err    error
-	)
-
-	if cliCtx.Indent {
-		output, err = cliCtx.Codec.MarshalJSONIndent(wrappedResp, "", "  ")
-	} else {
-		output, err = cliCtx.Codec.MarshalJSON(wrappedResp)
-	}
-
-	if err != nil {
-		WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+	output, err := marshaler.MarshalJSON(wrappedResp)
+	if CheckInternalServerError(w, err) {
 		return
 	}
 
@@ -326,27 +333,35 @@ func PostProcessResponse(w http.ResponseWriter, cliCtx context.CLIContext, resp 
 // default limit can be provided.
 func ParseHTTPArgsWithLimit(r *http.Request, defaultLimit int) (tags []string, page, limit int, err error) {
 	tags = make([]string, 0, len(r.Form))
+
 	for key, values := range r.Form {
 		if key == "page" || key == "limit" {
 			continue
 		}
+
 		var value string
 		value, err = url.QueryUnescape(values[0])
+
 		if err != nil {
 			return tags, page, limit, err
 		}
 
 		var tag string
+
 		switch key {
 		case types.TxHeightKey:
 			tag = fmt.Sprintf("%s=%s", key, value)
+
 		case TxMinHeightKey:
 			tag = fmt.Sprintf("%s>=%s", types.TxHeightKey, value)
+
 		case TxMaxHeightKey:
 			tag = fmt.Sprintf("%s<=%s", types.TxHeightKey, value)
+
 		default:
 			tag = fmt.Sprintf("%s='%s'", key, value)
 		}
+
 		tags = append(tags, tag)
 	}
 
@@ -381,4 +396,54 @@ func ParseHTTPArgsWithLimit(r *http.Request, defaultLimit int) (tags []string, p
 // arguments pairs. It separates page and limit used for pagination.
 func ParseHTTPArgs(r *http.Request) (tags []string, page, limit int, err error) {
 	return ParseHTTPArgsWithLimit(r, DefaultLimit)
+}
+
+// ParseQueryParamBool parses the given param to a boolean. It returns false by
+// default if the string is not parseable to bool.
+func ParseQueryParamBool(r *http.Request, param string) bool {
+	if value, err := strconv.ParseBool(r.FormValue(param)); err == nil {
+		return value
+	}
+
+	return false
+}
+
+// GetRequest defines a wrapper around an HTTP GET request with a provided URL.
+// An error is returned if the request or reading the body fails.
+func GetRequest(url string) ([]byte, error) {
+	res, err := http.Get(url) // nolint:gosec
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = res.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+// PostRequest defines a wrapper around an HTTP POST request with a provided URL and data.
+// An error is returned if the request or reading the body fails.
+func PostRequest(url string, contentType string, data []byte) ([]byte, error) {
+	res, err := http.Post(url, contentType, bytes.NewBuffer(data)) // nolint:gosec
+	if err != nil {
+		return nil, fmt.Errorf("error while sending post request: %w", err)
+	}
+
+	bz, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	if err = res.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }

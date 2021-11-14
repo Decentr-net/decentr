@@ -84,7 +84,7 @@ func NewMnemonic(entropy []byte) (string, error) {
 // suitable for creating another mnemonic.
 // An error is returned if the mnemonic is invalid.
 func MnemonicToByteArray(mnemonic string) ([]byte, error) {
-	if IsMnemonicValid(mnemonic) == false {
+	if !IsMnemonicValid(mnemonic) {
 		return nil, fmt.Errorf("Invalid mnemonic")
 	}
 	mnemonicSlice := strings.Split(mnemonic, " ")
@@ -100,7 +100,7 @@ func MnemonicToByteArray(mnemonic string) ([]byte, error) {
 	modulo := big.NewInt(2048)
 	for _, v := range mnemonicSlice {
 		index, found := ReverseWordMap[v]
-		if found == false {
+		if !found {
 			return nil, fmt.Errorf("Word `%v` not found in reverse map", v)
 		}
 		add := big.NewInt(int64(index))
@@ -176,9 +176,7 @@ func NewSeed(mnemonic string, password string) []byte {
 // Currently only supports data up to 32 bytes
 func addChecksum(data []byte) []byte {
 	// Get first byte of sha256
-	hasher := sha256.New()
-	hasher.Write(data)
-	hash := hasher.Sum(nil)
+	hash := sha256.Sum256(data)
 	firstChecksumByte := hash[0]
 
 	// len() is in bytes so we divide by 4
@@ -231,25 +229,16 @@ func IsMnemonicValid(mnemonic string) bool {
 	numOfWords := len(words)
 
 	// The number of words should be 12, 15, 18, 21 or 24
-	if numOfWords%3 != 0 || numOfWords < 12 || numOfWords > 24 {
+	if numOfWords < 12 || numOfWords > 24 || numOfWords%3 != 0 {
 		return false
 	}
 
 	// Check if all words belong in the wordlist
 	for i := 0; i < numOfWords; i++ {
-		if !contains(WordList, words[i]) {
+		if _, ok := ReverseWordMap[words[i]]; !ok {
 			return false
 		}
 	}
 
 	return true
-}
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }

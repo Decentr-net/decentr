@@ -7,12 +7,12 @@ import (
 	"net"
 	"os"
 	"runtime"
-	"sync"
 
 	"github.com/tendermint/tendermint/abci/types"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmnet "github.com/tendermint/tendermint/libs/net"
 	"github.com/tendermint/tendermint/libs/service"
+	tmsync "github.com/tendermint/tendermint/libs/sync"
 )
 
 // var maxNumberConnections = 2
@@ -25,11 +25,11 @@ type SocketServer struct {
 	addr     string
 	listener net.Listener
 
-	connsMtx   sync.Mutex
+	connsMtx   tmsync.Mutex
 	conns      map[int]net.Conn
 	nextConnID int
 
-	appMtx sync.Mutex
+	appMtx tmsync.Mutex
 	app    types.Application
 }
 
@@ -224,6 +224,18 @@ func (s *SocketServer) handleRequest(req *types.Request, responses chan<- *types
 	case *types.Request_EndBlock:
 		res := s.app.EndBlock(*r.EndBlock)
 		responses <- types.ToResponseEndBlock(res)
+	case *types.Request_ListSnapshots:
+		res := s.app.ListSnapshots(*r.ListSnapshots)
+		responses <- types.ToResponseListSnapshots(res)
+	case *types.Request_OfferSnapshot:
+		res := s.app.OfferSnapshot(*r.OfferSnapshot)
+		responses <- types.ToResponseOfferSnapshot(res)
+	case *types.Request_LoadSnapshotChunk:
+		res := s.app.LoadSnapshotChunk(*r.LoadSnapshotChunk)
+		responses <- types.ToResponseLoadSnapshotChunk(res)
+	case *types.Request_ApplySnapshotChunk:
+		res := s.app.ApplySnapshotChunk(*r.ApplySnapshotChunk)
+		responses <- types.ToResponseApplySnapshotChunk(res)
 	default:
 		responses <- types.ToResponseException("Unknown request")
 	}

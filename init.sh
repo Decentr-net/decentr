@@ -1,29 +1,28 @@
-rm -rf ~/.decentrd
-rm -rf ~/.decentrcli
+decentrd init test --chain-id=local
 
-decentrd init test --chain-id=testnet
+decentrd config output json
+decentrd config trust-node true
+decentrd config chain-id local
+decentrd config keyring-backend test
 
-decentrcli config output json
-decentrcli config indent true
-decentrcli config trust-node true
-decentrcli config chain-id testnet
-decentrcli config keyring-backend test
+decentrd keys add jack
+decentrd keys add alice
 
-decentrcli keys add jack
-decentrcli keys add alice
+jack=$(decentrd keys show jack -a)
+alice=$(decentrd keys show alice -a)
 
-decentrd add-genesis-account "$(decentrcli keys show jack -a)" 1000000000udec
-decentrd add-genesis-account "$(decentrcli keys show alice -a)" 1000000000udec
-decentrd add-genesis-community-moderators "$(decentrcli keys show jack -a)"
-decentrd add-genesis-supervisors "$(decentrcli keys show jack -a)"
+decentrd add-genesis-account "$jack" 1000000000udec
+decentrd add-genesis-account "$alice" 1000000000udec
+decentrd add-genesis-moderator "$jack"
+decentrd add-genesis-supervisor "$jack"
 
-decentrd gentx --name jack --keyring-backend test --amount 1000000udec
+decentrd --keyring-backend=test --chain-id=local gentx jack 1000000udec
 
 echo "Collecting genesis txs..."
 decentrd collect-gentxs
 
 # Replace all "stake" denom with "udec"
-sed -i -e 's/"stake"/"udec"/g' ~/.decentrd/config/genesis.json
+sed -i -e 's/"stake"/"udec"/g' ~/.decentr/config/genesis.json
 
 echo "Validating genesis file..."
 decentrd validate-genesis

@@ -1,13 +1,13 @@
 # Decentr
-![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue) 
-[![testnet version](https://img.shields.io/badge/testnet%20version-v1.4.7-blue.svg)](https://shields.io/) 
-[![mainnet version](https://img.shields.io/badge/mainnet%20version-v1.4.6-brightgreen.svg)](https://shields.io/) 
+![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue)
+[![testnet version](https://img.shields.io/badge/testnet%20version-v1.4.6-blue.svg)](https://shields.io/)
+[![mainnet version](https://img.shields.io/badge/mainnet%20version-v1.4.6-brightgreen.svg)](https://shields.io/)
 ![latest version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=latest%20version&color=yellow)
 
 Decentr blockchain
 
-## Run Node Quick Start
-This assumes that you're running Linux or MacOS and have installed [Go 1.15+](https://golang.org/dl/).  This guide helps you:
+## Run Local Node Quick Start
+This assumes that you're running Linux or MacOS and have installed [Go 1.16+](https://golang.org/dl/).  This guide helps you:
 
 * build and install Decentr
 * allow you to name your node
@@ -20,7 +20,6 @@ This assumes that you're running Linux or MacOS and have installed [Go 1.15+](ht
 If you already have a previous version of Decentr installed:
 ```
 rm -rf ~/.decentrd
-rm -rf ~/.decentrcli
 ```
 
 ### Mainnet
@@ -59,7 +58,7 @@ wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/De
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
-decentrcli status
+decentrd status
 ```
 
 Welcome to the Decentr Mainnet!
@@ -70,7 +69,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
-git clone -b v1.4.7 https://github.com/Decentr-net/decentr
+git clone -b v1.5.0 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
@@ -89,14 +88,14 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "36d036d0fe2d3c95950f77abdf4ff53a732f38e3@ares.testnet.decentr.xyz:26656,fcc45b026e948d7c81f46fdb650871c8bdc1378a@hera.testnet.decentr.xyz:26656,744449aff5e8797c9c403c56d0f5e6d2be52604b@hermes.testnet.decentr.xyz:26656,e5b6b3ba0bca1ea8427911843df24568feb53afc@poseidon.testnet.decentr.xyz:26656,a4771cec2e881ead305c68c1b3f8de7403786944@zeus.testnet.decentr.xyz:26656"
+seeds = "95a70f0119af52e54697fa7feb8b09b4e7c7ec21@ares.testnet.decentr.xyz:26656,b6d499b2b0146627b9bf6f33a9a7e4013312c6d1@hera.testnet.decentr.xyz:26656,576d044b24cc449366850a95f7616f03ab8d14b3@hermes.testnet.decentr.xyz:26656,c98511455134b4450ebb20fce57308a9fb300b89@poseidon.testnet.decentr.xyz:26656,acc5524b4ff34591357a28d5fccf4efb5ad883c5@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.4.7/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/2.0/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
@@ -105,6 +104,40 @@ decentrcli status
 
 Welcome to the Decentr Testnet!
 
+## Dev tools
+
+### Requirements
+To build project you should have:
+- go >= 1.16
+- docker
+
+### Guide
+
+To fetch last proto 3rd party
+```
+make proto-update-deps
+```
+
+To generate go models from proto
+```
+make proto-gen
+```
+
+To generate swagger from proto
+```
+make proto-swagger-gen
+```
+
+### Scripts
+- [scripts/protocgen.sh](scripts/protocgen.sh)
+generates goproto
+- [scripts/protoc-swagger-gen.sh](scripts/protoc-swagger-gen.sh)
+  generates swagger  
+- [Dockerfile](scripts/Dockerfile)
+  decentr docker image
+- [buildtools.Dockerfile](scripts/buildtools.Dockerfile)
+  docker image used in makefile (contains proto compilers and swagger-combine)
+  
 ## Follow us!
 Your data is value. Decentr makes your data payable and tradeable online.
 * [Medium](https://medium.com/@DecentrNet)

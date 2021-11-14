@@ -1,0 +1,82 @@
+syntax = "proto3";
+package community;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "community/community.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/community/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+    option (google.api.http).get =
+        "/decentr/community/posts/{post_owner}/{post_uuid}";
+  }
+
+  rpc ListUserPosts(ListUserPostsRequest) returns (ListUserPostsResponse) {
+    option (google.api.http).get = "/decentr/community/posts/{owner}";
+  }
+
+  rpc Moderators(ModeratorsRequest) returns (ModeratorsResponse) {
+    option (google.api.http).get = "/decentr/community/moderators";
+  }
+
+  rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse) {
+    option (google.api.http).get =
+        "/decentr/community/followers/{owner}/followed";
+  }
+}
+
+message GetPostRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bytes post_owner = 1 [ (gogoproto.casttype) =
+                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string post_uuid = 2;
+}
+message GetPostResponse { Post post = 1 [ (gogoproto.nullable) = false ]; }
+
+message ListUserPostsRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bytes owner = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.query.v1beta1.PageRequest pagination = 2
+      [ (gogoproto.nullable) = false ];
+}
+message ListUserPostsResponse {
+  repeated Post posts = 1 [ (gogoproto.nullable) = false ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2
+      [ (gogoproto.nullable) = false ];
+}
+
+message ModeratorsRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+}
+message ModeratorsResponse {
+  repeated bytes moderators = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+message ListFollowedRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bytes owner = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.query.v1beta1.PageRequest pagination = 2
+      [ (gogoproto.nullable) = false ];
+}
+message ListFollowedResponse {
+  repeated bytes followed = 1
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2
+      [ (gogoproto.nullable) = false ];
+}

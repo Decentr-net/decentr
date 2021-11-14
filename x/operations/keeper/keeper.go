@@ -1,30 +1,59 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	"fmt"
+
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/Decentr-net/decentr/x/operations/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-// Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
+	cdc      codec.BinaryCodec
+	storeKey sdk.StoreKey
 
-	supplyKeeper  types.SupplyKeeper
-	paramSubspace params.Subspace
+	paramSpace paramtypes.Subspace
 }
 
-// NewKeeper creates new instances of the PDV Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSpace params.Subspace, sk types.SupplyKeeper) Keeper {
-	ps := paramSpace.WithKeyTable(types.ParamKeyTable())
-
-	return Keeper{
-		cdc:           cdc,
-		storeKey:      storeKey,
-		paramSubspace: ps,
-		supplyKeeper:  sk,
+func NewKeeper(
+	cdc codec.BinaryCodec,
+	storeKey sdk.StoreKey,
+	paramSpace paramtypes.Subspace,
+) *Keeper {
+	// set KeyTable if it has not already been set
+	if !paramSpace.HasKeyTable() {
+		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
 	}
+
+	return &Keeper{
+		cdc:        cdc,
+		storeKey:   storeKey,
+		paramSpace: paramSpace,
+	}
+}
+
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
+	k.paramSpace.SetParamSet(ctx, &params)
+}
+
+func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
+	k.paramSpace.GetParamSet(ctx, &params)
+	return
+}
+
+func (k Keeper) IsSupervisor(ctx sdk.Context, address sdk.AccAddress) bool {
+	for _, v := range k.GetParams(ctx).Supervisors {
+		if address.Equals(v) {
+			return true
+		}
+	}
+
+	return false
 }

@@ -2,16 +2,13 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
-// RegisterCodec registers concrete types on codec
-func RegisterCodec(cdc *codec.Codec) {
+func RegisterCodec(_ *codec.LegacyAmino) {
 }
 
-// ModuleCdc is the codec for the module
-var ModuleCdc = codec.New()
-
-func init() {
-	RegisterCodec(ModuleCdc)
-	ModuleCdc.Seal()
+func RegisterInterfaces(_ cdctypes.InterfaceRegistry) {
 }
+
+var ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())

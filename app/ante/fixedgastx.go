@@ -1,39 +1,45 @@
 package ante
 
 import (
-	"github.com/Decentr-net/decentr/x/community"
-	"github.com/Decentr-net/decentr/x/operations"
+	"fmt"
+	"reflect"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	communitykeeper "github.com/Decentr-net/decentr/x/community/keeper"
+	communitytypes "github.com/Decentr-net/decentr/x/community/types"
+	operationskeeper "github.com/Decentr-net/decentr/x/operations/keeper"
+	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
 )
 
 type FixedGasTxDecorator struct {
-	config map[string]func(ctx sdk.Context) sdk.Gas
+	config map[reflect.Type]func(ctx sdk.Context) sdk.Gas
 }
 
-func NewFixedGasTxDecorator(pk operations.Keeper, ck community.Keeper) FixedGasTxDecorator {
-	config := map[string]func(ctx sdk.Context) sdk.Gas{
-		operations.MsgResetAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
+func NewFixedGasTxDecorator(pk operationskeeper.Keeper, ck communitykeeper.Keeper) FixedGasTxDecorator {
+	config := map[reflect.Type]func(ctx sdk.Context) sdk.Gas{
+		reflect.TypeOf(operationstypes.MsgResetAccount{}): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetParams(ctx).FixedGas.ResetAccount
 		},
-		operations.MsgBanAccount{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(operationstypes.MsgBanAccount{}): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetParams(ctx).FixedGas.BanAccount
 		},
-		operations.MsgDistributeRewards{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(operationstypes.MsgDistributeRewards{}): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetParams(ctx).FixedGas.DistributeRewards
 		},
-		community.MsgCreatePost{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(communitytypes.MsgCreatePost{}): func(ctx sdk.Context) sdk.Gas {
 			return ck.GetParams(ctx).FixedGas.CreatePost
 		},
-		community.MsgDeletePost{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(communitytypes.MsgDeletePost{}): func(ctx sdk.Context) sdk.Gas {
 			return ck.GetParams(ctx).FixedGas.DeletePost
 		},
-		community.MsgSetLike{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(communitytypes.MsgSetLike{}): func(ctx sdk.Context) sdk.Gas {
 			return ck.GetParams(ctx).FixedGas.SetLike
 		},
-		community.MsgFollow{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(communitytypes.MsgFollow{}): func(ctx sdk.Context) sdk.Gas {
 			return ck.GetParams(ctx).FixedGas.Follow
 		},
-		community.MsgUnfollow{}.Type(): func(ctx sdk.Context) sdk.Gas {
+		reflect.TypeOf(communitytypes.MsgUnfollow{}): func(ctx sdk.Context) sdk.Gas {
 			return ck.GetParams(ctx).FixedGas.Unfollow
 		},
 	}
@@ -43,9 +49,14 @@ func NewFixedGasTxDecorator(pk operations.Keeper, ck community.Keeper) FixedGasT
 	}
 }
 
-func (fgm FixedGasTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+func (fgm FixedGasTxDecorator) AnteHandle(
+	ctx sdk.Context,
+	tx sdk.Tx,
+	simulate bool,
+	next sdk.AnteHandler,
+) (newCtx sdk.Context, err error) {
 	for _, msg := range tx.GetMsgs() {
-		if fixedGas, ok := fgm.config[msg.Type()]; ok {
+		if fixedGas, ok := fgm.config[reflect.TypeOf(msg)]; ok {
 			limit := ctx.GasMeter().Limit()
 
 			// pass infinite gas meter since fixedGas requires gas to read parameters from keeper
@@ -100,10 +111,17 @@ func (g *fixedGasMeter) GasConsumedToLimit() sdk.Gas {
 func (g *fixedGasMeter) ConsumeGas(_ sdk.Gas, _ string) {
 }
 
+func (g *fixedGasMeter) RefundGas(_ sdk.Gas, _ string) {
+}
+
 func (g *fixedGasMeter) IsPastLimit() bool {
 	return g.consumed > g.limit
 }
 
 func (g *fixedGasMeter) IsOutOfGas() bool {
 	return g.consumed >= g.limit
+}
+
+func (g *fixedGasMeter) String() string {
+	return fmt.Sprintf("FixedGasMeter:\n  consumed: %d", g.consumed)
 }

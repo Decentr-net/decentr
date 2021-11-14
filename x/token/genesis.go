@@ -1,103 +1,66 @@
 package token
 
 import (
-	"github.com/Decentr-net/decentr/x/token/types"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/decentr/x/token/keeper"
+	"github.com/Decentr-net/decentr/x/token/types"
 )
 
-type GenesisState struct {
-	Params   types.Params                          `json:"params"`
-	Balances map[string]sdk.Int                    `json:"balances"`
-	Deltas   map[string]sdk.Int                    `json:"deltas"`
-	History  map[string][]types.RewardDistribution `json:"history"`
-}
-
-func ValidateGenesis(data GenesisState) error {
-	if err := data.Params.Validate(); err != nil {
-		return err
+// InitGenesis initializes the capability module's state from a provided genesis
+// state.
+func InitGenesis(ctx sdk.Context, keeper keeper.Keeper, genState types.GenesisState) {
+	if keeper.SetParams(ctx, types.DefaultParams()); genState.Params != nil {
+		keeper.SetParams(ctx, *genState.Params)
 	}
 
-	for account := range data.Balances {
-		if _, err := sdk.AccAddressFromBech32(account); err != nil {
-			return err
+	for k, v := range genState.Balances {
+		address, err := sdk.AccAddressFromBech32(k)
+		if err != nil {
+			panic(fmt.Errorf("invalid address %s in balances : %w", k, err))
 		}
+		keeper.SetBalance(ctx, address, v.Dec)
 	}
 
-	for account := range data.Deltas {
-		if _, err := sdk.AccAddressFromBech32(account); err != nil {
-			return err
+	for k, v := range genState.Deltas {
+		address, err := sdk.AccAddressFromBech32(k)
+		if err != nil {
+			panic(fmt.Errorf("invalid address %s in deltas : %w", k, err))
 		}
+		keeper.SetBalanceDelta(ctx, address, v.Dec)
 	}
 
-	for account := range data.History {
-		if _, err := sdk.AccAddressFromBech32(account); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func DefaultGenesisState() GenesisState {
-	return GenesisState{
-		Params:   types.DefaultParams(),
-		Balances: make(map[string]sdk.Int),
-		Deltas:   make(map[string]sdk.Int),
-		History:  make(map[string][]types.RewardDistribution),
+	for _, v := range genState.BanList {
+		keeper.SetBan(ctx, v, true)
 	}
 }
 
-func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
-	keeper.SetParams(ctx, data.Params)
+// ExportGenesis returns the capability module's exported genesis.
+func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
+	params := k.GetParams(ctx)
+	balances := map[string]sdk.DecProto{}
+	deltas := map[string]sdk.DecProto{}
+	banlist := make([]sdk.AccAddress, 0)
 
-	for account, balance := range data.Balances {
-		addr, _ := sdk.AccAddressFromBech32(account)
-		keeper.SetBalance(ctx, addr, balance)
-	}
+	k.IterateBalance(ctx, func(address sdk.AccAddress, balance sdk.Dec) (stop bool) {
+		balances[address.String()] = sdk.DecProto{Dec: balance}
+		return false
+	})
+	k.IterateBalanceDelta(ctx, func(address sdk.AccAddress, delta sdk.Dec) (stop bool) {
+		deltas[address.String()] = sdk.DecProto{Dec: delta}
+		return false
+	})
+	k.IterateBanList(ctx, func(address sdk.AccAddress) (stop bool) {
+		banlist = append(banlist, address)
+		return false
+	})
 
-	for account, delta := range data.Deltas {
-		addr, _ := sdk.AccAddressFromBech32(account)
-		keeper.IncBalanceDelta(ctx, addr, delta)
-	}
-
-	for account, history := range data.History {
-		addr, _ := sdk.AccAddressFromBech32(account)
-		for _, v := range history {
-			keeper.AddRewardDistribution(ctx, addr, v.Height, v.Coins)
-		}
-	}
-}
-
-func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
-	balances := make(map[string]sdk.Int)
-	deltas := make(map[string]sdk.Int)
-	history := make(map[string][]types.RewardDistribution)
-
-	it := keeper.GetBalanceIterator(ctx)
-	for ; it.Valid(); it.Next() {
-		owner := sdk.AccAddress(it.Key())
-		balances[owner.String()] = keeper.GetBalance(ctx, it.Key())
-	}
-	it.Close()
-
-	it = keeper.GetDeltasIterator(ctx)
-	for ; it.Valid(); it.Next() {
-		owner := sdk.AccAddress(it.Key())
-		deltas[owner.String()] = keeper.GetBalanceDelta(ctx, it.Key())
-	}
-	it.Close()
-
-	it = keeper.GetRewardsDistributionIterator(ctx)
-	for ; it.Valid(); it.Next() {
-		owner := sdk.AccAddress(it.Key())
-		history[owner.String()] = keeper.GetRewardsDistributionHistory(ctx, it.Key())
-	}
-	it.Close()
-
-	return GenesisState{
-		Params:   keeper.GetParams(ctx),
+	return &types.GenesisState{
+		Params:   &params,
 		Balances: balances,
 		Deltas:   deltas,
-		History:  history,
+		BanList:  banlist,
 	}
 }

@@ -1,22 +1,24 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/cosmos/go-bip39"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/cli"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	"github.com/tendermint/tendermint/types"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -24,8 +26,11 @@ import (
 )
 
 const (
-	flagOverwrite  = "overwrite"
-	flagClientHome = "home-client"
+	// FlagOverwrite defines a flag to overwrite an existing genesis JSON file.
+	FlagOverwrite = "overwrite"
+
+	// FlagSeed defines a flag to initialize the private validator key from a specific seed.
+	FlagRecover = "recover"
 )
 
 type printInfo struct {
@@ -36,9 +41,7 @@ type printInfo struct {
 	AppMessage json.RawMessage `json:"app_message" yaml:"app_message"`
 }
 
-func newPrintInfo(moniker, chainID, nodeID, genTxsDir string,
-	appMessage json.RawMessage) printInfo {
-
+func newPrintInfo(moniker, chainID, nodeID, genTxsDir string, appMessage json.RawMessage) printInfo {
 	return printInfo{
 		Moniker:    moniker,
 		ChainID:    chainID,
@@ -48,35 +51,55 @@ func newPrintInfo(moniker, chainID, nodeID, genTxsDir string,
 	}
 }
 
-func displayInfo(cdc *codec.Codec, info printInfo) error {
-	out, err := codec.MarshalJSONIndent(cdc, info)
+func displayInfo(info printInfo) error {
+	out, err := json.MarshalIndent(info, "", " ")
 	if err != nil {
 		return err
 	}
 
 	_, err = fmt.Fprintf(os.Stderr, "%s\n", string(sdk.MustSortJSON(out)))
+
 	return err
 }
 
 // InitCmd returns a command that initializes all files needed for Tendermint
 // and the respective application.
-func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
-	defaultNodeHome string) *cobra.Command { // nolint: golint
+func InitCmd(mbm module.BasicManager, defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init [moniker]",
 		Short: "Initialize private validator, p2p, genesis, and application configuration files",
 		Long:  `Initialize validators's and node's configuration files.`,
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			config := ctx.Config
-			config.SetRoot(viper.GetString(cli.HomeFlag))
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			cdc := clientCtx.Codec
 
-			chainID := viper.GetString(flags.FlagChainID)
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			config := serverCtx.Config
+			config.SetRoot(clientCtx.HomeDir)
+
+			chainID, _ := cmd.Flags().GetString(flags.FlagChainID)
 			if chainID == "" {
 				chainID = fmt.Sprintf("test-chain-%v", tmrand.Str(6))
 			}
 
-			nodeID, _, err := genutil.InitializeNodeValidatorFiles(config)
+			// Get bip39 mnemonic
+			var mnemonic string
+			recover, _ := cmd.Flags().GetBool(FlagRecover)
+			if recover {
+				inBuf := bufio.NewReader(cmd.InOrStdin())
+				value, err := input.GetString("Enter your bip39 mnemonic", inBuf)
+				if err != nil {
+					return err
+				}
+
+				mnemonic = value
+				if !bip39.IsMnemonicValid(mnemonic) {
+					return errors.New("invalid mnemonic")
+				}
+			}
+
+			nodeID, _, err := genutil.InitializeNodeValidatorFilesFromMnemonic(config, mnemonic)
 			if err != nil {
 				return err
 			}
@@ -84,10 +107,13 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			config.Moniker = args[0]
 
 			genFile := config.GenesisFile()
-			if !viper.GetBool(flagOverwrite) && tmos.FileExists(genFile) {
+			overwrite, _ := cmd.Flags().GetBool(FlagOverwrite)
+
+			if !overwrite && tmos.FileExists(genFile) {
 				return fmt.Errorf("genesis.json file already exists: %v", genFile)
 			}
-			appState, err := codec.MarshalJSONIndent(cdc, mbm.DefaultGenesis())
+
+			appState, err := json.MarshalIndent(mbm.DefaultGenesis(cdc), "", " ")
 			if err != nil {
 				return errors.Wrap(err, "Failed to marshall default genesis state")
 			}
@@ -107,6 +133,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			genDoc.ChainID = chainID
 			genDoc.Validators = nil
 			genDoc.AppState = appState
+
 			if err = genutil.ExportGenesisFile(genDoc, genFile); err != nil {
 				return errors.Wrap(err, "Failed to export gensis file")
 			}
@@ -114,12 +141,13 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			toPrint := newPrintInfo(config.Moniker, chainID, nodeID, "", appState)
 
 			cfg.WriteConfigFile(filepath.Join(config.RootDir, "config", "config.toml"), config)
-			return displayInfo(cdc, toPrint)
+			return displayInfo(toPrint)
 		},
 	}
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
-	cmd.Flags().BoolP(flagOverwrite, "o", false, "overwrite the genesis.json file")
+	cmd.Flags().BoolP(FlagOverwrite, "o", false, "overwrite the genesis.json file")
+	cmd.Flags().Bool(FlagRecover, false, "provide seed phrase to recover existing key instead of creating")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 
 	return cmd

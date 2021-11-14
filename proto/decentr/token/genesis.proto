@@ -1,0 +1,20 @@
+syntax = "proto3";
+package token;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "token/token.proto";
+
+option go_package = "github.com/Decentr-net/decentr/x/token/types";
+
+message GenesisState {
+  // params defines all the paramaters of the module.
+  Params params = 1;
+  map<string, cosmos.base.v1beta1.DecProto> balances = 2
+      [ (gogoproto.nullable) = false ];
+  map<string, cosmos.base.v1beta1.DecProto> deltas = 3
+      [ (gogoproto.nullable) = false ];
+  repeated bytes ban_list = 4
+      [ (gogoproto.casttype) =
+            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}

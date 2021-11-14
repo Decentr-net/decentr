@@ -3,52 +3,69 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
-// Validate genesis command takes
-func ValidateGenesisCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager) *cobra.Command {
+const chainUpgradeGuide = "https://docs.cosmos.network/master/migrations/chain-upgrade-guide-040.html"
+
+// ValidateGenesisCmd takes a genesis file, and makes sure that it is valid.
+func ValidateGenesisCmd(mbm module.BasicManager) *cobra.Command {
 	return &cobra.Command{
 		Use:   "validate-genesis [file]",
 		Args:  cobra.RangeArgs(0, 1),
 		Short: "validates the genesis file at the default location or at the location passed as an arg",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			serverCtx := server.GetServerContextFromCmd(cmd)
+			clientCtx := client.GetClientContextFromCmd(cmd)
+
+			cdc := clientCtx.Codec
 
 			// Load default if passed no args, otherwise load passed file
 			var genesis string
 			if len(args) == 0 {
-				genesis = ctx.Config.GenesisFile()
+				genesis = serverCtx.Config.GenesisFile()
 			} else {
 				genesis = args[0]
 			}
 
-			fmt.Fprintf(os.Stderr, "validating genesis file at %s\n", genesis)
-
-			var genDoc *tmtypes.GenesisDoc
-			if genDoc, err = tmtypes.GenesisDocFromFile(genesis); err != nil {
-				return fmt.Errorf("error loading genesis doc from %s: %s", genesis, err.Error())
+			genDoc, err := validateGenDoc(genesis)
+			if err != nil {
+				return err
 			}
 
 			var genState map[string]json.RawMessage
-			if err = cdc.UnmarshalJSON(genDoc.AppState, &genState); err != nil {
+			if err = json.Unmarshal(genDoc.AppState, &genState); err != nil {
 				return fmt.Errorf("error unmarshalling genesis doc %s: %s", genesis, err.Error())
 			}
 
-			if err = mbm.ValidateGenesis(genState); err != nil {
+			if err = mbm.ValidateGenesis(cdc, clientCtx.TxConfig, genState); err != nil {
 				return fmt.Errorf("error validating genesis file %s: %s", genesis, err.Error())
 			}
-
-			// TODO test to make sure initchain doesn't panic
 
 			fmt.Printf("File at %s is a valid genesis file\n", genesis)
 			return nil
 		},
 	}
+}
+
+// validateGenDoc reads a genesis file and validates that it is a correct
+// Tendermint GenesisDoc. This function does not do any cosmos-related
+// validation.
+func validateGenDoc(importGenesisFile string) (*tmtypes.GenesisDoc, error) {
+	genDoc, err := tmtypes.GenesisDocFromFile(importGenesisFile)
+	if err != nil {
+		return nil, fmt.Errorf("%s. Make sure that"+
+			" you have correctly migrated all Tendermint consensus params, please see the"+
+			" chain migration guide at %s for more info",
+			err.Error(), chainUpgradeGuide,
+		)
+	}
+
+	return genDoc, nil
 }

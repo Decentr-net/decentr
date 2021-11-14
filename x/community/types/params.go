@@ -4,18 +4,15 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 const (
-	// DefaultParamspace for params keeper
 	DefaultParamspace = ModuleName
 )
 
 var (
-	DefaultModerators = make([]string, 0)
-	DefaultFollowers  = make(map[string][]string)
+	DefaultModerators = []sdk.AccAddress(nil)
 )
 
 var (
@@ -23,20 +20,15 @@ var (
 	KeyFixedGas   = []byte("FixedGas")
 )
 
-type Params struct {
-	Moderators []string       `json:"moderators" yaml:"moderators"`
-	FixedGas   FixedGasParams `json:"fixed_gas" yaml:"fixed_gas"`
+// ParamKeyTable for operations module
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
 
-// ParamKeyTable for community module
-func ParamKeyTable() subspace.KeyTable {
-	return subspace.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
-	return subspace.ParamSetPairs{
-		params.NewParamSetPair(KeyModerators, &p.Moderators, validateModerators),
-		params.NewParamSetPair(KeyFixedGas, &p.FixedGas, validateFixedGasParams),
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(KeyModerators, &p.Moderators, validateModerators),
+		paramtypes.NewParamSetPair(KeyFixedGas, &p.FixedGas, validateFixedGasParams),
 	}
 }
 
@@ -49,39 +41,31 @@ func DefaultParams() Params {
 }
 
 func validateModerators(i interface{}) error {
-	moderators, ok := i.([]string)
+	moderators, ok := i.([]sdk.AccAddress)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if len(moderators) == 0 {
-		return fmt.Errorf("can not be empty")
-	}
-
-	for _, moderator := range moderators {
-		if _, err := sdk.AccAddressFromBech32(moderator); err != nil {
-			return fmt.Errorf("%s is an invalid moderator address, err=%w", moderator, err)
+	for i, v := range moderators {
+		if err := sdk.VerifyAddressFormat(v); err != nil {
+			return fmt.Errorf("invalid moderator #%d: %w", i+1, err)
 		}
 	}
 	return nil
 }
 
-type FixedGasParams struct {
-	CreatePost sdk.Gas `json:"create_post" yaml:"create_post"`
-	DeletePost sdk.Gas `json:"delete_post" yaml:"delete_post"`
-	SetLike    sdk.Gas `json:"set_like" yaml:"set_like"`
-	Follow     sdk.Gas `json:"follow" yaml:"follow"`
-	Unfollow   sdk.Gas `json:"unfollow" yaml:"unfollow"`
+func NewFixedGasParams(createPost, deletePost, setLike, follow, unfollow sdk.Gas) FixedGasParams {
+	return FixedGasParams{
+		CreatePost: createPost,
+		DeletePost: deletePost,
+		SetLike:    setLike,
+		Follow:     follow,
+		Unfollow:   unfollow,
+	}
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return FixedGasParams{
-		CreatePost: 1000,
-		DeletePost: 100,
-		SetLike:    100,
-		Follow:     100,
-		Unfollow:   100,
-	}
+	return NewFixedGasParams(100, 100, 100, 100, 100)
 }
 
 func validateFixedGasParams(i interface{}) error {

@@ -1,211 +1,250 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"strconv"
+
+	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/spf13/cobra"
 
 	"github.com/Decentr-net/decentr/x/operations/types"
 )
 
-// GetTxCmd returns the transaction commands for this module
-func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
-	operationsTxCmd := &cobra.Command{
+func GetTxCmd() *cobra.Command {
+	txCmd := &cobra.Command{
 		Use:                        types.ModuleName,
-		Aliases:                    []string{"op"},
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
 
-	operationsTxCmd.AddCommand(flags.PostCommands(
-		GetCmdResetAccount(cdc),
-		GetCmdDistributeReward(cdc),
-		GetCmdBanAccount(cdc),
-		GetCmdUnBanAccount(cdc),
-		GetCmdMint(cdc),
-		GetCmdBurn(cdc),
-	)...)
+	txCmd.AddCommand(
+		NewDistributeRewardsCmd(),
+		NewResetAccountCmd(),
+		NewBanAccountCmd(),
+		NewUnbanAccountCmd(),
+		NewMintCmd(),
+		NewBurnCmd(),
+	)
 
-	return operationsTxCmd
+	return txCmd
 }
 
-func GetCmdDistributeReward(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "distribute-reward <receiver> <id> <reward>",
-		Short:   "distribute-reward",
-		Aliases: []string{"dr"},
-		Args:    cobra.ExactArgs(3),
+func NewDistributeRewardsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "distribute-reward [receiver] [reward]",
+		Short: "Add [reward] to [receiver]",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
 
 			receiver, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("failed to parse receiver: %w", err)
+				return fmt.Errorf("invalid receiver: %w", err)
 			}
 
-			id, err := strconv.ParseUint(args[1], 10, 64)
+			reward, err := sdk.NewDecFromStr(args[1])
 			if err != nil {
-				return fmt.Errorf("failed to parse id: %w", err)
+				return fmt.Errorf("invalid reward: %w", err)
 			}
 
-			reward, err := strconv.ParseUint(args[2], 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse reward: %w", err)
-			}
+			msg := types.NewMsgDistributeRewards(clientCtx.GetFromAddress(), []types.Reward{
+				{
+					Receiver: receiver,
+					Reward:   sdk.DecProto{Dec: reward},
+				},
+			})
 
-			msg := types.NewMsgDistributeRewards(cliCtx.FromAddress, []types.Reward{{
-				Receiver: receiver,
-				ID:       id,
-				Reward:   reward,
-			}})
 			if err := msg.ValidateBasic(); err != nil {
+				return fmt.Errorf("invalid msg: %w", err)
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewResetAccountCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "reset-account [address]",
+		Short: "Remove all account's activity and sets pdv to initial value by [address]",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdResetAccount is the CLI command for sending a ResetAccount transaction
-func GetCmdResetAccount(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "reset-account <account owner>",
-		Short: "reset account",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			accountOwner, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse account owner: %w", err)
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
 			}
-
-			msg := types.NewMsgResetAccount(cliCtx.GetFromAddress(), accountOwner)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdBanAccount is the CLI command for sending a BanAccount transaction
-func GetCmdBanAccount(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "ban-account <address>",
-		Short: "ban account",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("failed to parse address: %w", err)
+				return fmt.Errorf("invalid address: %w", err)
 			}
 
-			msg := types.NewMsgBanAccount(cliCtx.GetFromAddress(), address, true)
+			msg := types.NewMsgResetAccount(clientCtx.GetFromAddress(), address)
 			if err := msg.ValidateBasic(); err != nil {
+				return fmt.Errorf("invalid msg: %w", err)
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewBanAccountCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ban-account [address]",
+		Short: "Ban account by [address]",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdUnBanAccount is the CLI command for sending a BanAccount transaction
-func GetCmdUnBanAccount(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "unban-account <address>",
-		Short: "unban account",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
 
 			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("failed to parse address: %w", err)
+				return fmt.Errorf("invalid address: %w", err)
 			}
 
-			msg := types.NewMsgBanAccount(cliCtx.GetFromAddress(), address, false)
+			msg := types.NewMsgBanAccount(clientCtx.GetFromAddress(), address, true)
 			if err := msg.ValidateBasic(); err != nil {
-				return err
+				return fmt.Errorf("invalid msg: %w", err)
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
 	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
 }
 
-// GetCmdMint is the CLI command for sending a Mint transaction
-func GetCmdMint(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "mint <coin>",
-		Short: "mint coin to the given account",
+func NewUnbanAccountCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "unban-account [address]",
+		Short: "Unban account by [address]",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			coin, err := sdk.ParseCoin(args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
-				return fmt.Errorf("failed to parse coin: %w", err)
-			}
-
-			msg := types.NewMsgMint(cliCtx.GetFromAddress(), coin)
-			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
+			address, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid address: %w", err)
+			}
+
+			msg := types.NewMsgBanAccount(clientCtx.GetFromAddress(), address, false)
+			if err := msg.ValidateBasic(); err != nil {
+				return fmt.Errorf("invalid msg: %w", err)
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
 	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
 }
 
-// GetCmdBurn is the CLI command for sending a Burn transaction
-func GetCmdBurn(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "burn <coin>",
-		Short: "burn coin from the given account",
+func NewMintCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "mint [coin]",
+		Short: "Mint coin to the account in the '--from' flag",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			coin, err := sdk.ParseCoin(args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
-				return fmt.Errorf("failed to parse coin: %w", err)
-			}
-
-			msg := types.NewMsgBurn(cliCtx.GetFromAddress(), coin)
-			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
+			coin, err := sdk.ParseCoinNormalized(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid coin: %w", err)
+			}
+
+			msg := types.NewMsgMint(clientCtx.GetFromAddress(), coin)
+			if err := msg.ValidateBasic(); err != nil {
+				return fmt.Errorf("invalid msg: %w", err)
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
 	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewBurnCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "burn [coin]",
+		Short: "Burn coin from the account in the '--from' flag",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			if clientCtx.GetFromAddress().Empty() {
+				return fmt.Errorf("--from flag should be specified")
+			}
+
+			coin, err := sdk.ParseCoinNormalized(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid coin: %w", err)
+			}
+
+			msg := types.NewMsgBurn(clientCtx.GetFromAddress(), coin)
+			if err := msg.ValidateBasic(); err != nil {
+				return fmt.Errorf("invalid msg: %w", err)
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+
+	return cmd
 }

@@ -3,34 +3,29 @@ package types
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 const (
 	DefaultParamspace = ModuleName
 )
 
-var (
-	DefaultRewardsBlockInterval int64 = 483840 // average block time is 5s, 17280 blocks a day, 28 days
+const (
+	DefaultRewardsBlockInterval = 483840 // average block time is 5s, 17280 blocks a day, 28 days
 )
 
 var (
 	KeyRewardsBlockInterval = []byte("RewardsBlockInterval")
 )
 
-type Params struct {
-	RewardsBlockInterval int64 `json:"rewards_block_interval" yaml:"rewards_block_interval"`
+// ParamKeyTable for operations module
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
 
-// ParamKeyTable for token module
-func ParamKeyTable() subspace.KeyTable {
-	return subspace.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
-	return subspace.ParamSetPairs{
-		params.NewParamSetPair(KeyRewardsBlockInterval, &p.RewardsBlockInterval, validateRewardsBlockInterval),
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(KeyRewardsBlockInterval, &p.RewardsBlockInterval, validateRewardsBlockInterval),
 	}
 }
 
@@ -42,13 +37,13 @@ func DefaultParams() Params {
 }
 
 func validateRewardsBlockInterval(i interface{}) error {
-	v, ok := i.(int64)
+	v, ok := i.(uint64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if v < 1 {
-		return fmt.Errorf("invalid value: should be greater then 0")
+	if v == 0 {
+		return fmt.Errorf("interval is zero")
 	}
 
 	return nil

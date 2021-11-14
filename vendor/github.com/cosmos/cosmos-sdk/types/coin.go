@@ -11,31 +11,19 @@ import (
 //-----------------------------------------------------------------------------
 // Coin
 
-// Coin hold some amount of one currency.
-//
-// CONTRACT: A coin will never hold a negative amount of any denomination.
-//
-// TODO: Make field members private for further safety.
-type Coin struct {
-	Denom string `json:"denom"`
-
-	// To allow the use of unsigned integers (see: #1273) a larger refactor will
-	// need to be made. So we use signed integers for now with safety measures in
-	// place preventing negative values being used.
-	Amount Int `json:"amount"`
-}
-
 // NewCoin returns a new coin with a denomination and amount. It will panic if
-// the amount is negative.
+// the amount is negative or if the denomination is invalid.
 func NewCoin(denom string, amount Int) Coin {
-	if err := validate(denom, amount); err != nil {
-		panic(err)
-	}
-
-	return Coin{
+	coin := Coin{
 		Denom:  denom,
 		Amount: amount,
 	}
+
+	if err := coin.Validate(); err != nil {
+		panic(err)
+	}
+
+	return coin
 }
 
 // NewInt64Coin returns a new coin with a denomination and amount. It will panic
@@ -49,26 +37,23 @@ func (coin Coin) String() string {
 	return fmt.Sprintf("%v%v", coin.Amount, coin.Denom)
 }
 
-// validate returns an error if the Coin has a negative amount or if
+// Validate returns an error if the Coin has a negative amount or if
 // the denom is invalid.
-func validate(denom string, amount Int) error {
-	if err := ValidateDenom(denom); err != nil {
+func (coin Coin) Validate() error {
+	if err := ValidateDenom(coin.Denom); err != nil {
 		return err
 	}
 
-	if amount.IsNegative() {
-		return fmt.Errorf("negative coin amount: %v", amount)
+	if coin.Amount.IsNegative() {
+		return fmt.Errorf("negative coin amount: %v", coin.Amount)
 	}
 
 	return nil
 }
 
-// IsValid returns true if the Coin has a non-negative amount and the denom is vaild.
+// IsValid returns true if the Coin has a non-negative amount and the denom is valid.
 func (coin Coin) IsValid() bool {
-	if err := validate(coin.Denom, coin.Amount); err != nil {
-		return false
-	}
-	return true
+	return coin.Validate() == nil
 }
 
 // IsZero returns if this represents no money
@@ -105,7 +90,7 @@ func (coin Coin) IsEqual(other Coin) bool {
 	return coin.Amount.Equal(other.Amount)
 }
 
-// Adds amounts of two coins with same denom. If the coins differ in denom then
+// Add adds amounts of two coins with same denom. If the coins differ in denom then
 // it panics.
 func (coin Coin) Add(coinB Coin) Coin {
 	if coin.Denom != coinB.Denom {
@@ -115,7 +100,12 @@ func (coin Coin) Add(coinB Coin) Coin {
 	return Coin{coin.Denom, coin.Amount.Add(coinB.Amount)}
 }
 
-// Subtracts amounts of two coins with same denom. If the coins differ in denom
+// AddAmount adds an amount to the Coin.
+func (coin Coin) AddAmount(amount Int) Coin {
+	return Coin{coin.Denom, coin.Amount.Add(amount)}
+}
+
+// Sub subtracts amounts of two coins with same denom. If the coins differ in denom
 // then it panics.
 func (coin Coin) Sub(coinB Coin) Coin {
 	if coin.Denom != coinB.Denom {
@@ -123,6 +113,16 @@ func (coin Coin) Sub(coinB Coin) Coin {
 	}
 
 	res := Coin{coin.Denom, coin.Amount.Sub(coinB.Amount)}
+	if res.IsNegative() {
+		panic("negative coin amount")
+	}
+
+	return res
+}
+
+// SubAmount subtracts an amount from the Coin.
+func (coin Coin) SubAmount(amount Int) Coin {
+	res := Coin{coin.Denom, coin.Amount.Sub(amount)}
 	if res.IsNegative() {
 		panic("negative coin amount")
 	}
@@ -144,32 +144,35 @@ func (coin Coin) IsNegative() bool {
 	return coin.Amount.Sign() == -1
 }
 
+// IsNil returns true if the coin amount is nil and false otherwise.
+func (coin Coin) IsNil() bool {
+	return coin.Amount.i == nil
+}
+
 //-----------------------------------------------------------------------------
 // Coins
 
 // Coins is a set of Coin, one per currency
 type Coins []Coin
 
-// NewCoins constructs a new coin set.
+// NewCoins constructs a new coin set. The provided coins will be sanitized by removing
+// zero coins and sorting the coin set. A panic will occur if the coin set is not valid.
 func NewCoins(coins ...Coin) Coins {
-	// remove zeroes
-	newCoins := removeZeroCoins(Coins(coins))
+	newCoins := sanitizeCoins(coins)
+	if err := newCoins.Validate(); err != nil {
+		panic(fmt.Errorf("invalid coin set %s: %w", newCoins, err))
+	}
+
+	return newCoins
+}
+
+func sanitizeCoins(coins []Coin) Coins {
+	newCoins := removeZeroCoins(coins)
 	if len(newCoins) == 0 {
 		return Coins{}
 	}
 
-	newCoins.Sort()
-
-	// detect duplicate Denoms
-	if dupIndex := findDup(newCoins); dupIndex != -1 {
-		panic(fmt.Errorf("find duplicate denom: %s", newCoins[dupIndex]))
-	}
-
-	if !newCoins.IsValid() {
-		panic(fmt.Errorf("invalid coin set: %s", newCoins))
-	}
-
-	return newCoins
+	return newCoins.Sort()
 }
 
 type coinsJSON Coins
@@ -196,41 +199,68 @@ func (coins Coins) String() string {
 	return out[:len(out)-1]
 }
 
-// IsValid asserts the Coins are sorted, have positive amount,
-// and Denom does not contain upper case characters.
-func (coins Coins) IsValid() bool {
+// Validate checks that the Coins are sorted, have positive amount, with a valid and unique
+// denomination (i.e no duplicates). Otherwise, it returns an error.
+func (coins Coins) Validate() error {
 	switch len(coins) {
 	case 0:
-		return true
+		return nil
+
 	case 1:
 		if err := ValidateDenom(coins[0].Denom); err != nil {
-			return false
+			return err
 		}
-		return coins[0].IsPositive()
+		if !coins[0].IsPositive() {
+			return fmt.Errorf("coin %s amount is not positive", coins[0])
+		}
+		return nil
+
 	default:
 		// check single coin case
-		if !(Coins{coins[0]}).IsValid() {
-			return false
+		if err := (Coins{coins[0]}).Validate(); err != nil {
+			return err
 		}
 
 		lowDenom := coins[0].Denom
+		seenDenoms := make(map[string]bool)
+		seenDenoms[lowDenom] = true
+
 		for _, coin := range coins[1:] {
-			if strings.ToLower(coin.Denom) != coin.Denom {
-				return false
+			if seenDenoms[coin.Denom] {
+				return fmt.Errorf("duplicate denomination %s", coin.Denom)
+			}
+			if err := ValidateDenom(coin.Denom); err != nil {
+				return err
 			}
 			if coin.Denom <= lowDenom {
-				return false
+				return fmt.Errorf("denomination %s is not sorted", coin.Denom)
 			}
 			if !coin.IsPositive() {
-				return false
+				return fmt.Errorf("coin %s amount is not positive", coin.Denom)
 			}
 
 			// we compare each coin against the last denom
 			lowDenom = coin.Denom
+			seenDenoms[coin.Denom] = true
 		}
 
-		return true
+		return nil
 	}
+}
+
+func (coins Coins) isSorted() bool {
+	for i := 1; i < len(coins); i++ {
+		if coins[i-1].Denom > coins[i].Denom {
+			return false
+		}
+	}
+	return true
+}
+
+// IsValid calls Validate and returns true when the Coins are sorted, have positive amount, with a
+// valid and unique denomination (i.e no duplicates).
+func (coins Coins) IsValid() bool {
+	return coins.Validate() == nil
 }
 
 // Add adds two sets of coins.
@@ -244,6 +274,7 @@ func (coins Coins) IsValid() bool {
 //
 // CONTRACT: Add will never return Coins where one Coin has a non-positive
 // amount. In otherwords, IsValid will always return true.
+// The function panics if `coins` or  `coinsB` are not sorted (ascending).
 func (coins Coins) Add(coinsB ...Coin) Coins {
 	return coins.safeAdd(coinsB)
 }
@@ -253,7 +284,17 @@ func (coins Coins) Add(coinsB ...Coin) Coins {
 // other set is returned. Otherwise, the coins are compared in order of their
 // denomination and addition only occurs when the denominations match, otherwise
 // the coin is simply added to the sum assuming it's not zero.
+// The function panics if `coins` or  `coinsB` are not sorted (ascending).
 func (coins Coins) safeAdd(coinsB Coins) Coins {
+	// probably the best way will be to make Coins and interface and hide the structure
+	// definition (type alias)
+	if !coins.isSorted() {
+		panic("Coins (self) must be sorted")
+	}
+	if !coinsB.isSorted() {
+		panic("Wrong argument: coins must be sorted")
+	}
+
 	sum := ([]Coin)(nil)
 	indexA, indexB := 0, 0
 	lenA, lenB := len(coins), len(coinsB)
@@ -338,6 +379,7 @@ func (coins Coins) Sub(coinsB Coins) Coins {
 
 // SafeSub performs the same arithmetic as Sub but returns a boolean if any
 // negative coin amount was returned.
+// The function panics if `coins` or  `coinsB` are not sorted (ascending).
 func (coins Coins) SafeSub(coinsB Coins) (Coins, bool) {
 	diff := coins.safeAdd(coinsB.negative())
 	return diff, diff.IsAnyNegative()
@@ -477,10 +519,15 @@ func (coins Coins) Empty() bool {
 	return len(coins) == 0
 }
 
-// Returns the amount of a denom from coins
+// AmountOf returns the amount of a denom from coins
 func (coins Coins) AmountOf(denom string) Int {
 	mustValidateDenom(denom)
+	return coins.AmountOfNoDenomValidation(denom)
+}
 
+// AmountOfNoDenomValidation returns the amount of a denom from coins
+// without validating the denomination.
+func (coins Coins) AmountOfNoDenomValidation(denom string) Int {
 	switch len(coins) {
 	case 0:
 		return ZeroInt()
@@ -493,15 +540,16 @@ func (coins Coins) AmountOf(denom string) Int {
 		return ZeroInt()
 
 	default:
+		// Binary search the amount of coins remaining
 		midIdx := len(coins) / 2 // 2:1, 3:1, 4:2
 		coin := coins[midIdx]
 		switch {
 		case denom < coin.Denom:
-			return coins[:midIdx].AmountOf(denom)
+			return coins[:midIdx].AmountOfNoDenomValidation(denom)
 		case denom == coin.Denom:
 			return coin.Amount
 		default:
-			return coins[midIdx+1:].AmountOf(denom)
+			return coins[midIdx+1:].AmountOfNoDenomValidation(denom)
 		}
 	}
 }
@@ -542,6 +590,19 @@ func (coins Coins) IsAnyNegative() bool {
 	return false
 }
 
+// IsAnyNil returns true if there is at least one coin whose amount
+// is nil; returns false otherwise. It returns false if the coin set
+// is empty too.
+func (coins Coins) IsAnyNil() bool {
+	for _, coin := range coins {
+		if coin.IsNil() {
+			return true
+		}
+	}
+
+	return false
+}
+
 // negative returns a set of coins with all amount negative.
 //
 // TODO: Remove once unsigned integers are used.
@@ -560,31 +621,43 @@ func (coins Coins) negative() Coins {
 
 // removeZeroCoins removes all zero coins from the given coin set in-place.
 func removeZeroCoins(coins Coins) Coins {
-	i, l := 0, len(coins)
-	for i < l {
+	for i := 0; i < len(coins); i++ {
 		if coins[i].IsZero() {
-			// remove coin
-			coins = append(coins[:i], coins[i+1:]...)
-			l--
-		} else {
-			i++
+			break
+		} else if i == len(coins)-1 {
+			return coins
 		}
 	}
 
-	return coins[:i]
+	var result []Coin
+	if len(coins) > 0 {
+		result = make([]Coin, 0, len(coins)-1)
+	}
+
+	for _, coin := range coins {
+		if !coin.IsZero() {
+			result = append(result, coin)
+		}
+	}
+
+	return result
 }
 
 //-----------------------------------------------------------------------------
 // Sort interface
 
-//nolint
-func (coins Coins) Len() int           { return len(coins) }
+// Len implements sort.Interface for Coins
+func (coins Coins) Len() int { return len(coins) }
+
+// Less implements sort.Interface for Coins
 func (coins Coins) Less(i, j int) bool { return coins[i].Denom < coins[j].Denom }
-func (coins Coins) Swap(i, j int)      { coins[i], coins[j] = coins[j], coins[i] }
+
+// Swap implements sort.Interface for Coins
+func (coins Coins) Swap(i, j int) { coins[i], coins[j] = coins[j], coins[i] }
 
 var _ sort.Interface = Coins{}
 
-// Sort is a helper function to sort the set of coins inplace
+// Sort is a helper function to sort the set of coins in-place
 func (coins Coins) Sort() Coins {
 	sort.Sort(coins)
 	return coins
@@ -594,13 +667,12 @@ func (coins Coins) Sort() Coins {
 // Parsing
 
 var (
-	// Denominations can be 3 ~ 16 characters long.
-	reDnmString = `[a-z][a-z0-9]{2,15}`
-	reAmt       = `[[:digit:]]+`
-	reDecAmt    = `[[:digit:]]*\.[[:digit:]]+`
+	// Denominations can be 3 ~ 128 characters long and support letters, followed by either
+	// a letter, a number or a separator ('/').
+	reDnmString = `[a-zA-Z][a-zA-Z0-9/-]{2,127}`
+	reDecAmt    = `[[:digit:]]+(?:\.[[:digit:]]+)?|\.[[:digit:]]+`
 	reSpc       = `[[:space:]]*`
 	reDnm       *regexp.Regexp
-	reCoin      *regexp.Regexp
 	reDecCoin   *regexp.Regexp
 )
 
@@ -613,7 +685,7 @@ func DefaultCoinDenomRegex() string {
 	return reDnmString
 }
 
-// coinDenomRegex returns the current regex string and can be overwritten through the SetCoinDenomRegex accessor.
+// coinDenomRegex returns the current regex string and can be overwritten for custom validation
 var coinDenomRegex = DefaultCoinDenomRegex
 
 // SetCoinDenomRegex allows for coin's custom validation by overriding the regular
@@ -622,12 +694,10 @@ func SetCoinDenomRegex(reFn func() string) {
 	coinDenomRegex = reFn
 
 	reDnm = regexp.MustCompile(fmt.Sprintf(`^%s$`, coinDenomRegex()))
-	reCoin = regexp.MustCompile(fmt.Sprintf(`^(%s)%s(%s)$`, reAmt, reSpc, coinDenomRegex()))
 	reDecCoin = regexp.MustCompile(fmt.Sprintf(`^(%s)%s(%s)$`, reDecAmt, reSpc, coinDenomRegex()))
 }
 
-// ValidateDenom validates a denomination string returning an error if it is
-// invalid.
+// ValidateDenom is the default validation function for Coin.Denom.
 func ValidateDenom(denom string) error {
 	if !reDnm.MatchString(denom) {
 		return fmt.Errorf("invalid denom: %s", denom)
@@ -641,79 +711,31 @@ func mustValidateDenom(denom string) {
 	}
 }
 
-// ParseCoin parses a cli input for one coin type, returning errors if invalid.
-// This returns an error on an empty string as well.
-func ParseCoin(coinStr string) (coin Coin, err error) {
-	coinStr = strings.TrimSpace(coinStr)
-
-	matches := reCoin.FindStringSubmatch(coinStr)
-	if matches == nil {
-		return Coin{}, fmt.Errorf("invalid coin expression: %s", coinStr)
+// ParseCoinNormalized parses and normalize a cli input for one coin type, returning errors if invalid or on an empty string
+// as well.
+// Expected format: "{amount}{denomination}"
+func ParseCoinNormalized(coinStr string) (coin Coin, err error) {
+	decCoin, err := ParseDecCoin(coinStr)
+	if err != nil {
+		return Coin{}, err
 	}
 
-	denomStr, amountStr := matches[2], matches[1]
-
-	amount, ok := NewIntFromString(amountStr)
-	if !ok {
-		return Coin{}, fmt.Errorf("failed to parse coin amount: %s", amountStr)
-	}
-
-	if err := ValidateDenom(denomStr); err != nil {
-		return Coin{}, fmt.Errorf("invalid denom cannot contain upper case characters or spaces: %s", err)
-	}
-
-	return NewCoin(denomStr, amount), nil
+	coin, _ = NormalizeDecCoin(decCoin).TruncateDecimal()
+	return coin, nil
 }
 
-// ParseCoins will parse out a list of coins separated by commas.
-// If nothing is provided, it returns nil Coins.
-// Returned coins are sorted.
-func ParseCoins(coinsStr string) (Coins, error) {
-	coinsStr = strings.TrimSpace(coinsStr)
-	if len(coinsStr) == 0 {
-		return nil, nil
+// ParseCoinsNormalized will parse out a list of coins separated by commas, and normalize them by converting to smallest
+// unit. If the parsing is successuful, the provided coins will be sanitized by removing zero coins and sorting the coin
+// set. Lastly a validation of the coin set is executed. If the check passes, ParseCoinsNormalized will return the
+// sanitized coins.
+// Otherwise it will return an error.
+// If an empty string is provided to ParseCoinsNormalized, it returns nil Coins.
+// ParseCoinsNormalized supports decimal coins as inputs, and truncate them to int after converted to smallest unit.
+// Expected format: "{amount0}{denomination},...,{amountN}{denominationN}"
+func ParseCoinsNormalized(coinStr string) (Coins, error) {
+	coins, err := ParseDecCoins(coinStr)
+	if err != nil {
+		return Coins{}, err
 	}
-
-	coinStrs := strings.Split(coinsStr, ",")
-	coins := make(Coins, len(coinStrs))
-	for i, coinStr := range coinStrs {
-		coin, err := ParseCoin(coinStr)
-		if err != nil {
-			return nil, err
-		}
-
-		coins[i] = coin
-	}
-
-	// sort coins for determinism
-	coins.Sort()
-
-	// validate coins before returning
-	if !coins.IsValid() {
-		return nil, fmt.Errorf("parseCoins invalid: %#v", coins)
-	}
-
-	return coins, nil
-}
-
-type findDupDescriptor interface {
-	GetDenomByIndex(int) string
-	Len() int
-}
-
-// findDup works on the assumption that coins is sorted
-func findDup(coins findDupDescriptor) int {
-	if coins.Len() <= 1 {
-		return -1
-	}
-
-	prevDenom := coins.GetDenomByIndex(0)
-	for i := 1; i < coins.Len(); i++ {
-		if coins.GetDenomByIndex(i) == prevDenom {
-			return i
-		}
-		prevDenom = coins.GetDenomByIndex(i)
-	}
-
-	return -1
+	return NormalizeCoins(coins), nil
 }

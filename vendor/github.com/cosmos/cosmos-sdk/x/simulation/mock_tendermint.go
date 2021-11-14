@@ -8,8 +8,9 @@ import (
 	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type mockValidator struct {
@@ -18,9 +19,8 @@ type mockValidator struct {
 }
 
 func (mv mockValidator) String() string {
-	return fmt.Sprintf("mockValidator{%s:%X power:%v state:%v}",
-		mv.val.PubKey.Type,
-		mv.val.PubKey.Data,
+	return fmt.Sprintf("mockValidator{%s power:%v state:%v}",
+		mv.val.PubKey.String(),
 		mv.val.Power,
 		mv.livenessState)
 }
@@ -28,14 +28,12 @@ func (mv mockValidator) String() string {
 type mockValidators map[string]mockValidator
 
 // get mockValidators from abci validators
-func newMockValidators(r *rand.Rand, abciVals []abci.ValidatorUpdate,
-	params Params) mockValidators {
-
+func newMockValidators(r *rand.Rand, abciVals []abci.ValidatorUpdate, params Params) mockValidators {
 	validators := make(mockValidators)
+
 	for _, validator := range abciVals {
-		str := fmt.Sprintf("%v", validator.PubKey)
-		liveliness := GetMemberOfInitialState(r,
-			params.InitialLivenessWeightings)
+		str := fmt.Sprintf("%X", validator.PubKey.GetEd25519())
+		liveliness := GetMemberOfInitialState(r, params.InitialLivenessWeightings())
 
 		validators[str] = mockValidator{
 			val:           validator,
@@ -50,15 +48,16 @@ func newMockValidators(r *rand.Rand, abciVals []abci.ValidatorUpdate,
 func (vals mockValidators) getKeys() []string {
 	keys := make([]string, len(vals))
 	i := 0
+
 	for key := range vals {
 		keys[i] = key
 		i++
 	}
+
 	sort.Strings(keys)
+
 	return keys
 }
-
-//_________________________________________________________________________________
 
 // randomProposer picks a random proposer from the current validator set
 func (vals mockValidators) randomProposer(r *rand.Rand) tmbytes.HexBytes {
@@ -66,41 +65,47 @@ func (vals mockValidators) randomProposer(r *rand.Rand) tmbytes.HexBytes {
 	if len(keys) == 0 {
 		return nil
 	}
+
 	key := keys[r.Intn(len(keys))]
+
 	proposer := vals[key].val
-	pk, err := tmtypes.PB2TM.PubKey(proposer.PubKey)
-	if err != nil {
+	pk, err := cryptoenc.PubKeyFromProto(proposer.PubKey)
+	if err != nil { //nolint:wsl
 		panic(err)
 	}
+
 	return pk.Address()
 }
 
-// updateValidators mimicks Tendermint's update logic
-// nolint: unparam
-func updateValidators(tb testing.TB, r *rand.Rand, params Params,
-	current map[string]mockValidator, updates []abci.ValidatorUpdate,
-	event func(route, op, evResult string)) map[string]mockValidator {
+// updateValidators mimics Tendermint's update logic.
+func updateValidators(
+	tb testing.TB,
+	r *rand.Rand,
+	params Params,
+	current map[string]mockValidator,
+	updates []abci.ValidatorUpdate,
+	event func(route, op, evResult string),
+) map[string]mockValidator {
 
 	for _, update := range updates {
-		str := fmt.Sprintf("%v", update.PubKey)
+		str := fmt.Sprintf("%X", update.PubKey.GetEd25519())
 
 		if update.Power == 0 {
 			if _, ok := current[str]; !ok {
-				tb.Fatalf("tried to delete a nonexistent validator")
+				tb.Fatalf("tried to delete a nonexistent validator: %s", str)
 			}
+
 			event("end_block", "validator_updates", "kicked")
 			delete(current, str)
-
-		} else if mVal, ok := current[str]; ok {
+		} else if _, ok := current[str]; ok {
 			// validator already exists
-			mVal.val = update
 			event("end_block", "validator_updates", "updated")
 
 		} else {
 			// Set this new validator
 			current[str] = mockValidator{
 				update,
-				GetMemberOfInitialState(r, params.InitialLivenessWeightings),
+				GetMemberOfInitialState(r, params.InitialLivenessWeightings()),
 			}
 			event("end_block", "validator_updates", "added")
 		}
@@ -114,8 +119,7 @@ func updateValidators(tb testing.TB, r *rand.Rand, params Params,
 func RandomRequestBeginBlock(r *rand.Rand, params Params,
 	validators mockValidators, pastTimes []time.Time,
 	pastVoteInfos [][]abci.VoteInfo,
-	event func(route, op, evResult string), header abci.Header) abci.RequestBeginBlock {
-
+	event func(route, op, evResult string), header tmproto.Header) abci.RequestBeginBlock {
 	if len(validators) == 0 {
 		return abci.RequestBeginBlock{
 			Header: header,
@@ -123,9 +127,10 @@ func RandomRequestBeginBlock(r *rand.Rand, params Params,
 	}
 
 	voteInfos := make([]abci.VoteInfo, len(validators))
+
 	for i, key := range validators.getKeys() {
 		mVal := validators[key]
-		mVal.livenessState = params.LivenessTransitionMatrix.NextState(r, mVal.livenessState)
+		mVal.livenessState = params.LivenessTransitionMatrix().NextState(r, mVal.livenessState)
 		signed := true
 
 		if mVal.livenessState == 1 {
@@ -144,10 +149,11 @@ func RandomRequestBeginBlock(r *rand.Rand, params Params,
 			event("begin_block", "signing", "missed")
 		}
 
-		pubkey, err := tmtypes.PB2TM.PubKey(mVal.val.PubKey)
+		pubkey, err := cryptoenc.PubKeyFromProto(mVal.val.PubKey)
 		if err != nil {
 			panic(err)
 		}
+
 		voteInfos[i] = abci.VoteInfo{
 			Validator: abci.Validator{
 				Address: pubkey.Address(),
@@ -169,18 +175,19 @@ func RandomRequestBeginBlock(r *rand.Rand, params Params,
 
 	// TODO: Determine capacity before allocation
 	evidence := make([]abci.Evidence, 0)
-	for r.Float64() < params.EvidenceFraction {
 
+	for r.Float64() < params.EvidenceFraction() {
 		height := header.Height
 		time := header.Time
 		vals := voteInfos
 
-		if r.Float64() < params.PastEvidenceFraction && header.Height > 1 {
+		if r.Float64() < params.PastEvidenceFraction() && header.Height > 1 {
 			height = int64(r.Intn(int(header.Height)-1)) + 1 // Tendermint starts at height 1
 			// array indices offset by one
 			time = pastTimes[height-1]
 			vals = pastVoteInfos[height-1]
 		}
+
 		validator := vals[r.Intn(len(vals))].Validator
 
 		var totalVotingPower int64
@@ -190,13 +197,14 @@ func RandomRequestBeginBlock(r *rand.Rand, params Params,
 
 		evidence = append(evidence,
 			abci.Evidence{
-				Type:             tmtypes.ABCIEvidenceTypeDuplicateVote,
+				Type:             abci.EvidenceType_DUPLICATE_VOTE,
 				Validator:        validator,
 				Height:           height,
 				Time:             time,
 				TotalVotingPower: totalVotingPower,
 			},
 		)
+
 		event("begin_block", "evidence", "ok")
 	}
 

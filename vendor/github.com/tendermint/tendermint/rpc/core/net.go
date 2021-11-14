@@ -1,9 +1,9 @@
 package core
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
+	"strings"
 
 	"github.com/tendermint/tendermint/p2p"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -52,24 +52,88 @@ func UnsafeDialSeeds(ctx *rpctypes.Context, seeds []string) (*ctypes.ResultDialS
 
 // UnsafeDialPeers dials the given peers (comma-separated id@IP:PORT),
 // optionally making them persistent.
-func UnsafeDialPeers(ctx *rpctypes.Context, peers []string, persistent bool) (*ctypes.ResultDialPeers, error) {
+func UnsafeDialPeers(ctx *rpctypes.Context, peers []string, persistent, unconditional, private bool) (
+	*ctypes.ResultDialPeers, error) {
 	if len(peers) == 0 {
 		return &ctypes.ResultDialPeers{}, errors.New("no peers provided")
 	}
-	env.Logger.Info("DialPeers", "peers", peers, "persistent", persistent)
+
+	ids, err := getIDs(peers)
+	if err != nil {
+		return &ctypes.ResultDialPeers{}, err
+	}
+
+	env.Logger.Info("DialPeers", "peers", peers, "persistent",
+		persistent, "unconditional", unconditional, "private", private)
+
 	if persistent {
 		if err := env.P2PPeers.AddPersistentPeers(peers); err != nil {
 			return &ctypes.ResultDialPeers{}, err
 		}
 	}
+
+	if private {
+		if err := env.P2PPeers.AddPrivatePeerIDs(ids); err != nil {
+			return &ctypes.ResultDialPeers{}, err
+		}
+	}
+
+	if unconditional {
+		if err := env.P2PPeers.AddUnconditionalPeerIDs(ids); err != nil {
+			return &ctypes.ResultDialPeers{}, err
+		}
+	}
+
 	if err := env.P2PPeers.DialPeersAsync(peers); err != nil {
 		return &ctypes.ResultDialPeers{}, err
 	}
+
 	return &ctypes.ResultDialPeers{Log: "Dialing peers in progress. See /net_info for details"}, nil
 }
 
 // Genesis returns genesis file.
 // More: https://docs.tendermint.com/master/rpc/#/Info/genesis
 func Genesis(ctx *rpctypes.Context) (*ctypes.ResultGenesis, error) {
+	if len(env.genChunks) > 1 {
+		return nil, errors.New("genesis response is large, please use the genesis_chunked API instead")
+	}
+
 	return &ctypes.ResultGenesis{Genesis: env.GenDoc}, nil
+}
+
+func GenesisChunked(ctx *rpctypes.Context, chunk uint) (*ctypes.ResultGenesisChunk, error) {
+	if env.genChunks == nil {
+		return nil, fmt.Errorf("service configuration error, genesis chunks are not initialized")
+	}
+
+	if len(env.genChunks) == 0 {
+		return nil, fmt.Errorf("service configuration error, there are no chunks")
+	}
+
+	id := int(chunk)
+
+	if id > len(env.genChunks)-1 {
+		return nil, fmt.Errorf("there are %d chunks, %d is invalid", len(env.genChunks)-1, id)
+	}
+
+	return &ctypes.ResultGenesisChunk{
+		TotalChunks: len(env.genChunks),
+		ChunkNumber: id,
+		Data:        env.genChunks[id],
+	}, nil
+}
+
+func getIDs(peers []string) ([]string, error) {
+	ids := make([]string, 0, len(peers))
+
+	for _, peer := range peers {
+
+		spl := strings.Split(peer, "@")
+		if len(spl) != 2 {
+			return nil, p2p.ErrNetAddressNoID{Addr: peer}
+		}
+		ids = append(ids, spl[0])
+
+	}
+	return ids, nil
 }

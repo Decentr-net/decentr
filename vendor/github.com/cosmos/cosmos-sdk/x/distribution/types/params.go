@@ -3,15 +3,10 @@ package types
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-)
-
-const (
-	// default paramspace for params keeper
-	DefaultParamspace = ModuleName
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // Parameter keys
@@ -22,17 +17,9 @@ var (
 	ParamStoreKeyWithdrawAddrEnabled = []byte("withdrawaddrenabled")
 )
 
-// Params defines the set of distribution parameters.
-type Params struct {
-	CommunityTax        sdk.Dec `json:"community_tax" yaml:"community_tax"`
-	BaseProposerReward  sdk.Dec `json:"base_proposer_reward" yaml:"base_proposer_reward"`
-	BonusProposerReward sdk.Dec `json:"bonus_proposer_reward" yaml:"bonus_proposer_reward"`
-	WithdrawAddrEnabled bool    `json:"withdraw_addr_enabled" yaml:"withdraw_addr_enabled"`
-}
-
 // ParamKeyTable returns the parameter key table.
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterParamSet(&Params{})
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
 
 // DefaultParams returns default distribution parameters
@@ -51,12 +38,12 @@ func (p Params) String() string {
 }
 
 // ParamSetPairs returns the parameter set pairs.
-func (p *Params) ParamSetPairs() params.ParamSetPairs {
-	return params.ParamSetPairs{
-		params.NewParamSetPair(ParamStoreKeyCommunityTax, &p.CommunityTax, validateCommunityTax),
-		params.NewParamSetPair(ParamStoreKeyBaseProposerReward, &p.BaseProposerReward, validateBaseProposerReward),
-		params.NewParamSetPair(ParamStoreKeyBonusProposerReward, &p.BonusProposerReward, validateBonusProposerReward),
-		params.NewParamSetPair(ParamStoreKeyWithdrawAddrEnabled, &p.WithdrawAddrEnabled, validateWithdrawAddrEnabled),
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(ParamStoreKeyCommunityTax, &p.CommunityTax, validateCommunityTax),
+		paramtypes.NewParamSetPair(ParamStoreKeyBaseProposerReward, &p.BaseProposerReward, validateBaseProposerReward),
+		paramtypes.NewParamSetPair(ParamStoreKeyBonusProposerReward, &p.BonusProposerReward, validateBonusProposerReward),
+		paramtypes.NewParamSetPair(ParamStoreKeyWithdrawAddrEnabled, &p.WithdrawAddrEnabled, validateWithdrawAddrEnabled),
 	}
 }
 
@@ -64,7 +51,7 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 func (p Params) ValidateBasic() error {
 	if p.CommunityTax.IsNegative() || p.CommunityTax.GT(sdk.OneDec()) {
 		return fmt.Errorf(
-			"community tax should non-negative and less than one: %s", p.CommunityTax,
+			"community tax should be non-negative and less than one: %s", p.CommunityTax,
 		)
 	}
 	if p.BaseProposerReward.IsNegative() {
@@ -77,9 +64,9 @@ func (p Params) ValidateBasic() error {
 			"bonus proposer reward should be positive: %s", p.BonusProposerReward,
 		)
 	}
-	if v := p.BaseProposerReward.Add(p.BonusProposerReward); v.GT(sdk.OneDec()) {
+	if v := p.BaseProposerReward.Add(p.BonusProposerReward).Add(p.CommunityTax); v.GT(sdk.OneDec()) {
 		return fmt.Errorf(
-			"sum of base and bonus proposer reward cannot greater than one: %s", v,
+			"sum of base, bonus proposer rewards, and community tax cannot be greater than one: %s", v,
 		)
 	}
 

@@ -1,3 +1,4 @@
 * text=auto
 
-vendor/* -text -diff
+/vendor/** -text linguist-generated=true linguist-vendored
+/proto/3rdparty/** -text linguist-generated=true linguist-vendored

@@ -7,8 +7,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/bytes"
-
 	"github.com/tendermint/tendermint/p2p"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -21,6 +21,16 @@ type ResultBlockchainInfo struct {
 // Genesis file
 type ResultGenesis struct {
 	Genesis *types.GenesisDoc `json:"genesis"`
+}
+
+// ResultGenesisChunk is the output format for the chunked/paginated
+// interface. These chunks are produced by converting the genesis
+// document to JSON and then splitting the resulting payload into
+// 16 megabyte blocks and then base64 encoding each block.
+type ResultGenesisChunk struct {
+	ChunkNumber int    `json:"chunk"`
+	TotalChunks int    `json:"total"`
+	Data        string `json:"data"`
 }
 
 // Single block (with meta)
@@ -134,8 +144,8 @@ type ResultValidators struct {
 
 // ConsensusParams for given height
 type ResultConsensusParams struct {
-	BlockHeight     int64                 `json:"block_height"`
-	ConsensusParams types.ConsensusParams `json:"consensus_params"`
+	BlockHeight     int64                   `json:"block_height"`
+	ConsensusParams tmproto.ConsensusParams `json:"consensus_params"`
 }
 
 // Info about the consensus state.
@@ -174,6 +184,11 @@ type ResultBroadcastTxCommit struct {
 	Height    int64                  `json:"height"`
 }
 
+// ResultCheckTx wraps abci.ResponseCheckTx.
+type ResultCheckTx struct {
+	abci.ResponseCheckTx
+}
+
 // Result of querying for a tx
 type ResultTx struct {
 	Hash     bytes.HexBytes         `json:"hash"`
@@ -188,6 +203,12 @@ type ResultTx struct {
 type ResultTxSearch struct {
 	Txs        []*ResultTx `json:"txs"`
 	TotalCount int         `json:"total_count"`
+}
+
+// ResultBlockSearch defines the RPC response type for a block search by events.
+type ResultBlockSearch struct {
+	Blocks     []*ResultBlock `json:"blocks"`
+	TotalCount int            `json:"total_count"`
 }
 
 // List of mempool txs

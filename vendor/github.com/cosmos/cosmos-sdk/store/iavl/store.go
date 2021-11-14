@@ -1,19 +1,26 @@
 package iavl
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"sync"
+	"time"
 
-	"github.com/tendermint/iavl"
+	ics23 "github.com/confio/ics23/go"
+	"github.com/cosmos/iavl"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	tmkv "github.com/tendermint/tendermint/libs/kv"
+	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
+	"github.com/cosmos/cosmos-sdk/store/listenkv"
 	"github.com/cosmos/cosmos-sdk/store/tracekv"
 	"github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/cosmos/cosmos-sdk/telemetry"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/kv"
 )
 
 const (
@@ -21,10 +28,11 @@ const (
 )
 
 var (
-	_ types.KVStore       = (*Store)(nil)
-	_ types.CommitStore   = (*Store)(nil)
-	_ types.CommitKVStore = (*Store)(nil)
-	_ types.Queryable     = (*Store)(nil)
+	_ types.KVStore                 = (*Store)(nil)
+	_ types.CommitStore             = (*Store)(nil)
+	_ types.CommitKVStore           = (*Store)(nil)
+	_ types.Queryable               = (*Store)(nil)
+	_ types.StoreWithInitialVersion = (*Store)(nil)
 )
 
 // Store Implements types.KVStore and CommitKVStore.
@@ -34,14 +42,15 @@ type Store struct {
 
 // LoadStore returns an IAVL Store as a CommitKVStore. Internally, it will load the
 // store's version (id) from the provided DB. An error is returned if the version
-// fails to load.
+// fails to load, or if called with a positive version on an empty tree.
 func LoadStore(db dbm.DB, id types.CommitID, lazyLoading bool) (types.CommitKVStore, error) {
 	return LoadStoreWithInitialVersion(db, id, lazyLoading, 0)
 }
 
-// LoadStore returns an IAVL Store as a CommitKVStore setting its initialVersion
+// LoadStoreWithInitialVersion returns an IAVL Store as a CommitKVStore setting its initialVersion
 // to the one given. Internally, it will load the store's version (id) from the
-// provided DB. An error is returned if the version fails to load.
+// provided DB. An error is returned if the version fails to load, or if called with a positive
+// version on an empty tree.
 func LoadStoreWithInitialVersion(db dbm.DB, id types.CommitID, lazyLoading bool, initialVersion uint64) (types.CommitKVStore, error) {
 	tree, err := iavl.NewMutableTreeWithOpts(db, defaultIAVLCacheSize, &iavl.Options{InitialVersion: initialVersion})
 	if err != nil {
@@ -98,6 +107,8 @@ func (st *Store) GetImmutable(version int64) (*Store, error) {
 // Commit commits the current store state and returns a CommitID with the new
 // version and hash.
 func (st *Store) Commit() types.CommitID {
+	defer telemetry.MeasureSince(time.Now(), "store", "iavl", "commit")
+
 	hash, version, err := st.tree.SaveVersion()
 	if err != nil {
 		panic(err)
@@ -109,7 +120,7 @@ func (st *Store) Commit() types.CommitID {
 	}
 }
 
-// Implements Committer.
+// LastCommitID implements Committer.
 func (st *Store) LastCommitID() types.CommitID {
 	return types.CommitID{
 		Version: st.tree.Version(),
@@ -121,6 +132,12 @@ func (st *Store) LastCommitID() types.CommitID {
 // since IAVl accepts pruning options directly.
 func (st *Store) SetPruning(_ types.PruningOptions) {
 	panic("cannot set pruning options on an initialized IAVL store")
+}
+
+// SetPruning panics as pruning options should be provided at initialization
+// since IAVl accepts pruning options directly.
+func (st *Store) GetPruning() types.PruningOptions {
+	panic("cannot get pruning options on an initialized IAVL store")
 }
 
 // VersionExists returns whether or not a given version is stored.
@@ -143,25 +160,34 @@ func (st *Store) CacheWrapWithTrace(w io.Writer, tc types.TraceContext) types.Ca
 	return cachekv.NewStore(tracekv.NewStore(st, w, tc))
 }
 
+// CacheWrapWithListeners implements the CacheWrapper interface.
+func (st *Store) CacheWrapWithListeners(storeKey types.StoreKey, listeners []types.WriteListener) types.CacheWrap {
+	return cachekv.NewStore(listenkv.NewStore(st, storeKey, listeners))
+}
+
 // Implements types.KVStore.
 func (st *Store) Set(key, value []byte) {
+	types.AssertValidKey(key)
 	types.AssertValidValue(value)
 	st.tree.Set(key, value)
 }
 
 // Implements types.KVStore.
 func (st *Store) Get(key []byte) []byte {
+	defer telemetry.MeasureSince(time.Now(), "store", "iavl", "get")
 	_, value := st.tree.Get(key)
 	return value
 }
 
 // Implements types.KVStore.
 func (st *Store) Has(key []byte) (exists bool) {
+	defer telemetry.MeasureSince(time.Now(), "store", "iavl", "has")
 	return st.tree.Has(key)
 }
 
 // Implements types.KVStore.
 func (st *Store) Delete(key []byte) {
+	defer telemetry.MeasureSince(time.Now(), "store", "iavl", "delete")
 	st.tree.Remove(key)
 }
 
@@ -200,6 +226,34 @@ func (st *Store) ReverseIterator(start, end []byte) types.Iterator {
 	return newIAVLIterator(iTree, start, end, false)
 }
 
+// SetInitialVersion sets the initial version of the IAVL tree. It is used when
+// starting a new chain at an arbitrary height.
+func (st *Store) SetInitialVersion(version int64) {
+	st.tree.SetInitialVersion(uint64(version))
+}
+
+// Exports the IAVL store at the given version, returning an iavl.Exporter for the tree.
+func (st *Store) Export(version int64) (*iavl.Exporter, error) {
+	istore, err := st.GetImmutable(version)
+	if err != nil {
+		return nil, fmt.Errorf("iavl export failed for version %v: %w", version, err)
+	}
+	tree, ok := istore.tree.(*immutableTree)
+	if !ok || tree == nil {
+		return nil, fmt.Errorf("iavl export failed: unable to fetch tree for version %v", version)
+	}
+	return tree.Export(), nil
+}
+
+// Import imports an IAVL tree at the given version, returning an iavl.Importer for importing.
+func (st *Store) Import(version int64) (*iavl.Importer, error) {
+	tree, ok := st.tree.(*iavl.MutableTree)
+	if !ok {
+		return nil, errors.New("iavl import failed: unable to find mutable tree")
+	}
+	return tree.Import(version)
+}
+
 // Handle gatest the latest height, if height is 0
 func getHeight(tree Tree, req abci.RequestQuery) int64 {
 	height := req.Height
@@ -222,6 +276,8 @@ func getHeight(tree Tree, req abci.RequestQuery) int64 {
 // if you care to have the latest data to see a tx results, you must
 // explicitly set the height you want to see
 func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
+	defer telemetry.MeasureSince(time.Now(), "store", "iavl", "query")
+
 	if len(req.Data) == 0 {
 		return sdkerrors.QueryResult(sdkerrors.Wrap(sdkerrors.ErrTxDecode, "query cannot be zero length"))
 	}
@@ -242,50 +298,80 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 			break
 		}
 
-		if req.Prove {
-			value, proof, err := tree.GetVersionedWithProof(key, res.Height)
-			if err != nil {
-				res.Log = err.Error()
-				break
-			}
-			if proof == nil {
-				// Proof == nil implies that the store is empty.
-				if value != nil {
-					panic("unexpected value for an empty proof")
-				}
-			}
-			if value != nil {
-				// value was found
-				res.Value = value
-				res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{iavl.NewValueOp(key, proof).ProofOp()}}
-			} else {
-				// value wasn't found
-				res.Value = nil
-				res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{iavl.NewAbsenceOp(key, proof).ProofOp()}}
-			}
-		} else {
-			_, res.Value = tree.GetVersioned(key, res.Height)
+		_, res.Value = tree.GetVersioned(key, res.Height)
+		if !req.Prove {
+			break
 		}
 
+		// Continue to prove existence/absence of value
+		// Must convert store.Tree to iavl.MutableTree with given version to use in CreateProof
+		iTree, err := tree.GetImmutable(res.Height)
+		if err != nil {
+			// sanity check: If value for given version was retrieved, immutable tree must also be retrievable
+			panic(fmt.Sprintf("version exists in store but could not retrieve corresponding versioned tree in store, %s", err.Error()))
+		}
+		mtree := &iavl.MutableTree{
+			ImmutableTree: iTree,
+		}
+
+		// get proof from tree and convert to merkle.Proof before adding to result
+		res.ProofOps = getProofFromTree(mtree, req.Data, res.Value != nil)
+
 	case "/subspace":
-		var KVs []types.KVPair
+		pairs := kv.Pairs{
+			Pairs: make([]kv.Pair, 0),
+		}
 
 		subspace := req.Data
 		res.Key = subspace
 
 		iterator := types.KVStorePrefixIterator(st, subspace)
 		for ; iterator.Valid(); iterator.Next() {
-			KVs = append(KVs, types.KVPair{Key: iterator.Key(), Value: iterator.Value()})
+			pairs.Pairs = append(pairs.Pairs, kv.Pair{Key: iterator.Key(), Value: iterator.Value()})
+		}
+		iterator.Close()
+
+		bz, err := pairs.Marshal()
+		if err != nil {
+			panic(fmt.Errorf("failed to marshal KV pairs: %w", err))
 		}
 
-		iterator.Close()
-		res.Value = cdc.MustMarshalBinaryLengthPrefixed(KVs)
+		res.Value = bz
 
 	default:
 		return sdkerrors.QueryResult(sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unexpected query path: %v", req.Path))
 	}
 
 	return res
+}
+
+// Takes a MutableTree, a key, and a flag for creating existence or absence proof and returns the
+// appropriate merkle.Proof. Since this must be called after querying for the value, this function should never error
+// Thus, it will panic on error rather than returning it
+func getProofFromTree(tree *iavl.MutableTree, key []byte, exists bool) *tmcrypto.ProofOps {
+	var (
+		commitmentProof *ics23.CommitmentProof
+		err             error
+	)
+
+	if exists {
+		// value was found
+		commitmentProof, err = tree.GetMembershipProof(key)
+		if err != nil {
+			// sanity check: If value was found, membership proof must be creatable
+			panic(fmt.Sprintf("unexpected value for empty proof: %s", err.Error()))
+		}
+	} else {
+		// value wasn't found
+		commitmentProof, err = tree.GetNonMembershipProof(key)
+		if err != nil {
+			// sanity check: If value wasn't found, nonmembership proof must be creatable
+			panic(fmt.Sprintf("unexpected error for nonexistence proof: %s", err.Error()))
+		}
+	}
+
+	op := types.NewIavlCommitmentOp(key, commitmentProof)
+	return &tmcrypto.ProofOps{Ops: []tmcrypto.ProofOp{op.ProofOp()}}
 }
 
 //----------------------------------------
@@ -302,7 +388,7 @@ type iavlIterator struct {
 	tree *iavl.ImmutableTree
 
 	// Channel to push iteration values.
-	iterCh chan tmkv.Pair
+	iterCh chan kv.Pair
 
 	// Close this to release goroutine.
 	quitCh chan struct{}
@@ -325,10 +411,10 @@ var _ types.Iterator = (*iavlIterator)(nil)
 func newIAVLIterator(tree *iavl.ImmutableTree, start, end []byte, ascending bool) *iavlIterator {
 	iter := &iavlIterator{
 		tree:      tree,
-		start:     types.Cp(start),
-		end:       types.Cp(end),
+		start:     sdk.CopyBytes(start),
+		end:       sdk.CopyBytes(end),
 		ascending: ascending,
-		iterCh:    make(chan tmkv.Pair), // Set capacity > 0?
+		iterCh:    make(chan kv.Pair), // Set capacity > 0?
 		quitCh:    make(chan struct{}),
 		initCh:    make(chan struct{}),
 	}
@@ -345,7 +431,7 @@ func (iter *iavlIterator) iterateRoutine() {
 			select {
 			case <-iter.quitCh:
 				return true // done with iteration.
-			case iter.iterCh <- tmkv.Pair{Key: key, Value: value}:
+			case iter.iterCh <- kv.Pair{Key: key, Value: value}:
 				return false // yay.
 			}
 		},
@@ -408,11 +494,13 @@ func (iter *iavlIterator) Value() []byte {
 
 // Close closes the IAVL iterator by closing the quit channel and waiting for
 // the iterCh to finish/close.
-func (iter *iavlIterator) Close() {
+func (iter *iavlIterator) Close() error {
 	close(iter.quitCh)
 	// wait iterCh to close
 	for range iter.iterCh {
 	}
+
+	return nil
 }
 
 // Error performs a no-op.

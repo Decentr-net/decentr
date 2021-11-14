@@ -1,0 +1,12 @@
+version: v1
+lint:
+  ignore:
+    - confio
+    - cosmos
+    - cosmos_proto
+    - gogoproto
+    - google
+    - tendermint
+breaking:
+  use:
+    - FILE
