@@ -143,3 +143,4 @@ Your data is value. Decentr makes your data payable and tradeable online.
 * [Medium](https://medium.com/@DecentrNet)
 * [Twitter](https://twitter.com/DecentrNet)
 * [Telegram](https://t.me/DecentrNet)
+* [Discord](https://discord.gg/9cSxwKyEjR)
