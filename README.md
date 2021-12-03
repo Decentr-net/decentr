@@ -59,7 +59,7 @@ At block 145000, you will need to update your binary to a new version:
 
 ```bash
 #Enter the folder Decentr and change to the new version
-cd ~/decentr && git checkout v1.4.6
+cd $HOME/decentr && git checkout v1.4.6
 
 # Compile and install Decentr
 make install
