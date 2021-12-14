@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -32,9 +33,18 @@ func main() {
 		cosmoscmd.AddSubCmd(
 			AddGenesisModeratorsCmd(),
 			AddGenesisSupervisorsCmd(),
-			MigrateGenesisCmd(),
 		),
 	)
+
+	// overwrite cosmos migrate cmd
+	for _, cmd := range rootCmd.Commands() {
+		if strings.HasPrefix(cmd.Use, "migrate") {
+			rootCmd.RemoveCommand(cmd)
+			break
+		}
+	}
+	rootCmd.AddCommand(MigrateGenesisCmd())
+
 	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
 		os.Exit(1)
 	}

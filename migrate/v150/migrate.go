@@ -32,7 +32,7 @@ func migrateCommunity(appState types.AppMap, v039Codec *codec.LegacyAmino, v040C
 		var oldState CommunityState
 		v039Codec.MustUnmarshalJSON(appState["community"], &oldState)
 
-		var newState communitytypes.GenesisState
+		newState := communitytypes.DefaultGenesis()
 
 		for _, v := range oldState.Params.Moderators {
 			addr, err := sdk.AccAddressFromBech32(v)
@@ -75,7 +75,7 @@ func migrateCommunity(appState types.AppMap, v039Codec *codec.LegacyAmino, v040C
 			newState.Following[owner] = communitytypes.GenesisState_AddressList{Address: aa}
 		}
 
-		appState["community"] = v040Codec.MustMarshalJSON(&newState)
+		appState["community"] = v040Codec.MustMarshalJSON(newState)
 	}
 
 	return appState
@@ -86,7 +86,7 @@ func migrateOperations(appState types.AppMap, v039Codec *codec.LegacyAmino, v040
 		var oldState OperationsState
 		v039Codec.MustUnmarshalJSON(appState["operations"], &oldState)
 
-		var newState operationstypes.GenesisState
+		newState := operationstypes.DefaultGenesis()
 
 		for _, v := range oldState.Params.Supervisors {
 			addr, err := sdk.AccAddressFromBech32(v)
@@ -98,7 +98,7 @@ func migrateOperations(appState types.AppMap, v039Codec *codec.LegacyAmino, v040
 		newState.Params.FixedGas = operationstypes.FixedGasParams(oldState.Params.FixedGas)
 		newState.Params.MinGasPrice = oldState.Params.MinGasPrice
 
-		appState["operations"] = v040Codec.MustMarshalJSON(&newState)
+		appState["operations"] = v040Codec.MustMarshalJSON(newState)
 	}
 
 	return appState
@@ -109,7 +109,7 @@ func migrateToken(appState types.AppMap, v039Codec *codec.LegacyAmino, v040Codec
 		var oldState TokenState
 		v039Codec.MustUnmarshalJSON(appState["token"], &oldState)
 
-		var newState tokentypes.GenesisState
+		newState := tokentypes.DefaultGenesis()
 
 		newState.Params.RewardsBlockInterval = uint64(oldState.Params.RewardsBlockInterval)
 		for k, v := range oldState.Balances {
@@ -119,7 +119,7 @@ func migrateToken(appState types.AppMap, v039Codec *codec.LegacyAmino, v040Codec
 			newState.Deltas[k] = sdk.DecProto{Dec: sdk.NewDecFromInt(v)}
 		}
 
-		appState["token"] = v040Codec.MustMarshalJSON(&newState)
+		appState["token"] = v040Codec.MustMarshalJSON(newState)
 	}
 
 	return appState
