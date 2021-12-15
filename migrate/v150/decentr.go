@@ -73,7 +73,10 @@ func migrateDecentrAppState(appState genutiltypes.AppMap, clientCtx client.Conte
 	return appState
 }
 
-func migrateCommunity(appState genutiltypes.AppMap, v039Codec *codec.LegacyAmino, v040Codec codec.Codec) genutiltypes.AppMap {
+func migrateCommunity(
+	appState genutiltypes.AppMap,
+	v039Codec *codec.LegacyAmino, v040Codec codec.Codec,
+) genutiltypes.AppMap {
 	if appState["community"] != nil {
 		var oldState CommunityState
 		v039Codec.MustUnmarshalJSON(appState["community"], &oldState)
@@ -127,7 +130,10 @@ func migrateCommunity(appState genutiltypes.AppMap, v039Codec *codec.LegacyAmino
 	return appState
 }
 
-func migrateOperations(appState genutiltypes.AppMap, v039Codec *codec.LegacyAmino, v040Codec codec.Codec) genutiltypes.AppMap {
+func migrateOperations(
+	appState genutiltypes.AppMap,
+	v039Codec *codec.LegacyAmino, v040Codec codec.Codec,
+) genutiltypes.AppMap {
 	if appState["operations"] != nil {
 		var oldState OperationsState
 		v039Codec.MustUnmarshalJSON(appState["operations"], &oldState)
@@ -150,7 +156,10 @@ func migrateOperations(appState genutiltypes.AppMap, v039Codec *codec.LegacyAmin
 	return appState
 }
 
-func migrateToken(appState genutiltypes.AppMap, v039Codec *codec.LegacyAmino, v040Codec codec.Codec) genutiltypes.AppMap {
+func migrateToken(
+	appState genutiltypes.AppMap,
+	v039Codec *codec.LegacyAmino, v040Codec codec.Codec,
+) genutiltypes.AppMap {
 	if appState["token"] != nil {
 		var oldState TokenState
 		v039Codec.MustUnmarshalJSON(appState["token"], &oldState)

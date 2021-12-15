@@ -12,9 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/spf13/cast"
-	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/log"
 	db "github.com/tendermint/tm-db"
 
@@ -22,7 +20,7 @@ import (
 	"github.com/Decentr-net/decentr/app/params"
 )
 
-// appCreator holds functions used by the sdk server to control the kava app.
+// appCreator holds functions used by the sdk server to control the decentr app.
 // The methods implement types in cosmos-sdk/server/types
 type appCreator struct {
 	encodingConfig params.EncodingConfig
@@ -123,9 +121,4 @@ func (ac appCreator) appExport(
 	}
 
 	return decentrApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs)
-}
-
-// addStartCmdFlags adds flags to the server start command.
-func (ac appCreator) addStartCmdFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
 }

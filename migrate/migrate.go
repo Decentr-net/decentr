@@ -15,8 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 )
 
-const flagGenesisTime = "genesis-time"
-
 // MigrateGenesisCmd returns a command to execute genesis state migration.
 func MigrateGenesisCmd() *cobra.Command {
 	return &cobra.Command{

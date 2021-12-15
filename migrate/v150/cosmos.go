@@ -2,13 +2,11 @@ package v150
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	v040genutil "github.com/cosmos/cosmos-sdk/x/genutil/legacy/v040"
 	v043genutil "github.com/cosmos/cosmos-sdk/x/genutil/legacy/v043"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	ibchost "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
