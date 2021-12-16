@@ -3,7 +3,7 @@
   "info": {
     "title": "Decentr - gRPC Gateway docs",
     "description": "A REST interface for state queries",
-    "version": "1.0.0"
+    "version": "1.5.3"
   },
   "apis": [
     {
@@ -69,5 +69,5 @@
         ]
       }
     }
-  ],
+  ]
 }
