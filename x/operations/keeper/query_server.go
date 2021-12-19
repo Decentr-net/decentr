@@ -3,8 +3,9 @@ package keeper
 import (
 	"context"
 
-	"github.com/Decentr-net/decentr/x/operations/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/decentr/x/operations/types"
 )
 
 var _ types.QueryServer = queryServer{}
@@ -31,16 +32,5 @@ func (s queryServer) MinGasPrice(
 
 	return &types.MinGasPriceResponse{
 		MinGasPrice: s.keeper.GetParams(ctx).MinGasPrice,
-	}, nil
-}
-
-func (s queryServer) IsAccountBanned(
-	goCtx context.Context,
-	r *types.IsAccountBannedRequest,
-) (*types.IsAccountBannedResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	return &types.IsAccountBannedResponse{
-		IsBanned: s.tokenKeeper.IsBanned(ctx, r.Address),
 	}, nil
 }

@@ -7,8 +7,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/client"
+
+	"github.com/Decentr-net/decentr/x/token/types"
 )
 
 func GetQueryCmd(_ string) *cobra.Command {
@@ -22,7 +23,6 @@ func GetQueryCmd(_ string) *cobra.Command {
 
 	cmd.AddCommand(
 		NewBalanceCmd(),
-		NewPoolCmd(),
 	)
 
 	return cmd
@@ -48,32 +48,6 @@ func NewBalanceCmd() *cobra.Command {
 			out, err := queryClient.Balance(cmd.Context(), &types.BalanceRequest{
 				Address: address,
 			})
-			if err != nil {
-				return err
-			}
-			return clientCtx.PrintProto(out)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func NewPoolCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "pool",
-		Short: "Query pool balance",
-		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryClient(clientCtx)
-
-			out, err := queryClient.Pool(cmd.Context(), &types.PoolRequest{})
 			if err != nil {
 				return err
 			}

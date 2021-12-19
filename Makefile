@@ -95,4 +95,4 @@ proto-update-deps:
 	mv cosmos-sdk/proto/cosmos ./proto/3rdparty/cosmos
 	rm -rf cosmos-sdk
 
-.PHONY: proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps
+.PHONY: build vendor proto-all proto-gen proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps

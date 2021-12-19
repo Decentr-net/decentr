@@ -43,7 +43,6 @@ func TestGenesis(t *testing.T) {
 					Supervisors: []sdk.AccAddress{addr},
 					FixedGas: types.FixedGasParams{
 						ResetAccount:      1,
-						BanAccount:        2,
 						DistributeRewards: 3,
 					},
 					MinGasPrice: sdk.NewDecCoin(config.DefaultBondDenom, sdk.NewInt(1)),
@@ -54,7 +53,6 @@ func TestGenesis(t *testing.T) {
 					Supervisors: []sdk.AccAddress{addr},
 					FixedGas: types.FixedGasParams{
 						ResetAccount:      1,
-						BanAccount:        2,
 						DistributeRewards: 3,
 					},
 					MinGasPrice: sdk.NewDecCoin(config.DefaultBondDenom, sdk.NewInt(1)),

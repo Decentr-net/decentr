@@ -74,7 +74,6 @@ func setupKeeper(t testing.TB) (keeperSet, sdk.Context) {
 	set.tokenKeeper = *tokenkeeper.NewKeeper(
 		cdc,
 		keys[tokentypes.StoreKey],
-		paramsKeeper.Subspace(tokentypes.StoreKey),
 	)
 	set.communityKeeper = *communitykeeper.NewKeeper(
 		cdc,
@@ -151,7 +150,6 @@ func TestKeeper_GetParams(t *testing.T) {
 		Supervisors: []sdk.AccAddress{NewAccAddress()},
 		FixedGas: types.FixedGasParams{
 			ResetAccount:      1,
-			BanAccount:        2,
 			DistributeRewards: 3,
 		},
 		MinGasPrice: sdk.NewDecCoin(config.DefaultBondDenom, sdk.NewInt(10)),

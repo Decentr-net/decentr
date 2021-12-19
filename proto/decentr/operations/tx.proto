@@ -11,7 +11,6 @@ service Msg {
   rpc DistributeRewards(MsgDistributeRewards)
       returns (MsgDistributeRewardsResponse);
   rpc ResetAccount(MsgResetAccount) returns (MsgResetAccountResponse);
-  rpc BanAccount(MsgBanAccount) returns (MsgBanAccountResponse);
   rpc Mint(MsgMint) returns (MsgMintResponse);
   rpc Burn(MsgBurn) returns (MsgBurnResponse);
 }
@@ -41,18 +40,6 @@ message MsgResetAccount {
                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
 message MsgResetAccountResponse {}
-
-message MsgBanAccount {
-  option (gogoproto.equal) = false;
-  option (gogoproto.goproto_getters) = false;
-
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes address = 2 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bool ban = 3;
-}
-message MsgBanAccountResponse {}
 
 message MsgMint {
   option (gogoproto.equal) = false;

@@ -16,11 +16,5 @@ const (
 
 // KVStore keys
 var (
-	CalcPrefix = []byte{0x00}
-
-	BalancePrefix      = []byte{0x01} // prefix for keys that store balance
-	BalanceDeltaPrefix = []byte{0x02} // prefix for keys that store pdv delta between accruals
-	BanListPrefix      = []byte{0x03} // prefix for keys that store bans
-
-	AccumulatedDeltaKey = []byte{0x01}
+	BalancePrefix = []byte{0x01} // prefix for keys that store balance
 )

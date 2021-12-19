@@ -25,8 +25,6 @@ func GetTxCmd() *cobra.Command {
 	txCmd.AddCommand(
 		NewDistributeRewardsCmd(),
 		NewResetAccountCmd(),
-		NewBanAccountCmd(),
-		NewUnbanAccountCmd(),
 		NewMintCmd(),
 		NewBurnCmd(),
 	)
@@ -100,74 +98,6 @@ func NewResetAccountCmd() *cobra.Command {
 			}
 
 			msg := types.NewMsgResetAccount(clientCtx.GetFromAddress(), address)
-			if err := msg.ValidateBasic(); err != nil {
-				return fmt.Errorf("invalid msg: %w", err)
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
-		},
-	}
-
-	flags.AddTxFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func NewBanAccountCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "ban-account [address]",
-		Short: "Ban account by [address]",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			if clientCtx.GetFromAddress().Empty() {
-				return fmt.Errorf("--from flag should be specified")
-			}
-
-			address, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid address: %w", err)
-			}
-
-			msg := types.NewMsgBanAccount(clientCtx.GetFromAddress(), address, true)
-			if err := msg.ValidateBasic(); err != nil {
-				return fmt.Errorf("invalid msg: %w", err)
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
-		},
-	}
-
-	flags.AddTxFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func NewUnbanAccountCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "unban-account [address]",
-		Short: "Unban account by [address]",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			if clientCtx.GetFromAddress().Empty() {
-				return fmt.Errorf("--from flag should be specified")
-			}
-
-			address, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid address: %w", err)
-			}
-
-			msg := types.NewMsgBanAccount(clientCtx.GetFromAddress(), address, false)
 			if err := msg.ValidateBasic(); err != nil {
 				return fmt.Errorf("invalid msg: %w", err)
 			}

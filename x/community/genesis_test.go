@@ -3,11 +3,11 @@ package community_test
 import (
 	"testing"
 
-	"github.com/Decentr-net/decentr/x/community"
-	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
-	tokentypes "github.com/Decentr-net/decentr/x/token/types"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
+
+	"github.com/Decentr-net/decentr/x/community"
+	tokentypes "github.com/Decentr-net/decentr/x/token/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -112,13 +112,6 @@ func TestGenesis(t *testing.T) {
 				keys[paramstypes.StoreKey],
 				tkeys[paramstypes.TStoreKey],
 			)
-
-			tokenKeeper := *tokenkeeper.NewKeeper(
-				cdc,
-				keys[tokentypes.StoreKey],
-				paramsKeeper.Subspace(tokentypes.StoreKey),
-			)
-			tokenKeeper.SetParams(ctx, tokentypes.DefaultParams())
 
 			k := keeper.NewKeeper(
 				cdc,

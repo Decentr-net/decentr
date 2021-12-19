@@ -17,6 +17,5 @@ message Params {
 
 message FixedGasParams {
   uint64 reset_account = 1;
-  uint64 ban_account = 2;
-  uint64 distribute_rewards = 3;
+  uint64 distribute_rewards = 2;
 }
