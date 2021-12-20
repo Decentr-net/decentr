@@ -40,7 +40,7 @@ func TestGenesis(t *testing.T) {
 			name: "predefined",
 			init: types.GenesisState{
 				Params: &types.Params{
-					Supervisors: []sdk.AccAddress{addr},
+					Supervisors: []string{addr.String()},
 					FixedGas: types.FixedGasParams{
 						ResetAccount:      1,
 						DistributeRewards: 3,
@@ -50,7 +50,7 @@ func TestGenesis(t *testing.T) {
 			},
 			exported: types.GenesisState{
 				Params: &types.Params{
-					Supervisors: []sdk.AccAddress{addr},
+					Supervisors: []string{addr.String()},
 					FixedGas: types.FixedGasParams{
 						ResetAccount:      1,
 						DistributeRewards: 3,

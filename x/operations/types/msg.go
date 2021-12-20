@@ -8,14 +8,14 @@ import (
 // NewMsgDistributeRewards is a constructor function for MsgDistributeRewards
 func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistributeRewards {
 	return MsgDistributeRewards{
-		Owner:   owner,
+		Owner:   owner.String(),
 		Rewards: rewards,
 	}
 }
 
 func NewReward(address sdk.AccAddress, reward sdk.Dec) Reward {
 	return Reward{
-		Receiver: address,
+		Receiver: address.String(),
 		Reward:   sdk.DecProto{Dec: reward},
 	}
 }
@@ -28,7 +28,12 @@ func (m MsgDistributeRewards) Type() string { return "distribute_rewards" }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgDistributeRewards) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+	owner, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	if err := sdk.VerifyAddressFormat(owner); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
 	}
 
@@ -41,7 +46,12 @@ func (m MsgDistributeRewards) ValidateBasic() error {
 	}
 
 	for i, v := range m.Rewards {
-		if err := sdk.VerifyAddressFormat(v.Receiver); err != nil {
+		receiver, err := sdk.AccAddressFromBech32(v.Receiver)
+		if err != nil {
+			return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid reward %d: invalid receiver", i+1)
+		}
+
+		if err := sdk.VerifyAddressFormat(receiver); err != nil {
 			return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid reward %d: invalid receiver", i+1)
 		}
 
@@ -61,13 +71,14 @@ func (m MsgDistributeRewards) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgDistributeRewards) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	addr, _ := sdk.AccAddressFromBech32(m.Owner)
+	return []sdk.AccAddress{addr}
 }
 
 func NewMsgResetAccount(owner, address sdk.AccAddress) MsgResetAccount {
 	return MsgResetAccount{
-		Owner:   owner,
-		Address: address,
+		Owner:   owner.String(),
+		Address: address.String(),
 	}
 }
 
@@ -84,17 +95,26 @@ func (m MsgResetAccount) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgResetAccount) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	addr, _ := sdk.AccAddressFromBech32(m.Owner)
+	return []sdk.AccAddress{addr}
 }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgResetAccount) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
+	owner, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+	if err := sdk.VerifyAddressFormat(owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner: %s", err)
 	}
 
-	if err := sdk.VerifyAddressFormat(m.Address); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid address")
+	address, err := sdk.AccAddressFromBech32(m.Address)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address address: %s", err)
+	}
+	if err := sdk.VerifyAddressFormat(address); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address: %s", err)
 	}
 
 	return nil
@@ -102,7 +122,7 @@ func (m MsgResetAccount) ValidateBasic() error {
 
 func NewMsgMint(owner sdk.AccAddress, coin sdk.Coin) MsgMint {
 	return MsgMint{
-		Owner: owner,
+		Owner: owner.String(),
 		Coin:  coin,
 	}
 }
@@ -120,13 +140,19 @@ func (m MsgMint) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgMint) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	addr, _ := sdk.AccAddressFromBech32(m.Owner)
+	return []sdk.AccAddress{addr}
 }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgMint) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
+	owner, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	if err := sdk.VerifyAddressFormat(owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner: %s", err)
 	}
 
 	if m.Coin.IsNil() || !m.Coin.IsValid() || m.Coin.IsZero() || m.Coin.IsNegative() {
@@ -137,7 +163,7 @@ func (m MsgMint) ValidateBasic() error {
 
 func NewMsgBurn(owner sdk.AccAddress, coin sdk.Coin) MsgBurn {
 	return MsgBurn{
-		Owner: owner,
+		Owner: owner.String(),
 		Coin:  coin,
 	}
 }
@@ -155,13 +181,18 @@ func (m MsgBurn) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (m MsgBurn) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	addr, _ := sdk.AccAddressFromBech32(m.Owner)
+	return []sdk.AccAddress{addr}
 }
 
 // ValidateBasic runs stateless checks on the message
 func (m MsgBurn) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
+	owner, err := sdk.AccAddressFromBech32(m.Owner)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+	if err := sdk.VerifyAddressFormat(owner); err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner: %s", err)
 	}
 
 	if m.Coin.IsNil() || !m.Coin.IsValid() || m.Coin.IsZero() || m.Coin.IsNegative() {

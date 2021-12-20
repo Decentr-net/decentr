@@ -17,7 +17,7 @@ import (
 func TestQueryServer_Moderators(t *testing.T) {
 	set, ctx := setupKeeper(t)
 	p := types.Params{
-		Moderators: []sdk.AccAddress{NewAccAddress(), NewAccAddress()},
+		Moderators: []string{NewAccAddress().String(), NewAccAddress().String()},
 		FixedGas:   types.FixedGasParams{},
 	}
 	set.keeper.SetParams(ctx, p)
@@ -31,7 +31,7 @@ func TestQueryServer_Moderators(t *testing.T) {
 func TestQueryServer_GetPost(t *testing.T) {
 	set, ctx := setupKeeper(t)
 	p := types.Post{
-		Owner:        NewAccAddress(),
+		Owner:        NewAccAddress().String(),
 		Uuid:         uuid.Must(uuid.NewV1()).String(),
 		Title:        "title",
 		PreviewImage: "http://decentr.xyz/preview.png",
@@ -67,7 +67,7 @@ func TestQueryServer_ListUserPosts(t *testing.T) {
 	posts := make([]types.Post, 10)
 	for i := range posts {
 		p := types.Post{
-			Owner:        owner,
+			Owner:        owner.String(),
 			Uuid:         uuid.Must(uuid.NewV1()).String(),
 			Title:        "title",
 			PreviewImage: "http://decentr.xyz/preview.png",
@@ -82,7 +82,7 @@ func TestQueryServer_ListUserPosts(t *testing.T) {
 
 	t.Run("ok default", func(t *testing.T) {
 		resp, err := s.ListUserPosts(sdk.WrapSDKContext(ctx), &types.ListUserPostsRequest{
-			Owner:      owner,
+			Owner:      owner.String(),
 			Pagination: query.PageRequest{},
 		})
 		require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestQueryServer_ListUserPosts(t *testing.T) {
 
 	t.Run("limited", func(t *testing.T) {
 		resp, err := s.ListUserPosts(sdk.WrapSDKContext(ctx), &types.ListUserPostsRequest{
-			Owner: owner,
+			Owner: owner.String(),
 			Pagination: query.PageRequest{
 				Limit: 1,
 			},
@@ -105,17 +105,18 @@ func TestQueryServer_ListFollowed(t *testing.T) {
 	set, ctx := setupKeeper(t)
 
 	owner := NewAccAddress()
-	followed := make([]sdk.AccAddress, 10)
+	followed := make([]string, 10)
 	for i := range followed {
-		followed[i] = NewAccAddress()
-		set.keeper.Follow(ctx, owner, followed[i])
+		addr := NewAccAddress()
+		followed[i] = addr.String()
+		set.keeper.Follow(ctx, owner, addr)
 	}
 
 	s := NewQueryServer(set.keeper)
 
 	t.Run("ok default", func(t *testing.T) {
 		resp, err := s.ListFollowed(sdk.WrapSDKContext(ctx), &types.ListFollowedRequest{
-			Owner:      owner,
+			Owner:      owner.String(),
 			Pagination: query.PageRequest{},
 		})
 		require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestQueryServer_ListFollowed(t *testing.T) {
 
 	t.Run("limited", func(t *testing.T) {
 		resp, err := s.ListFollowed(sdk.WrapSDKContext(ctx), &types.ListFollowedRequest{
-			Owner: owner,
+			Owner: owner.String(),
 			Pagination: query.PageRequest{
 				Limit: 1,
 			},

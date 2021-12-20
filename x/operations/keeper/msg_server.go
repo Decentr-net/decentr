@@ -40,12 +40,20 @@ func (s msgServer) DistributeRewards(
 ) (*types.MsgDistributeRewardsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+	if !s.keeper.IsSupervisor(ctx, owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	for _, v := range msg.Rewards {
-		s.tokenKeeper.IncTokens(ctx, v.Receiver, v.Reward.Dec)
+		receiver, err := sdk.AccAddressFromBech32(v.Receiver)
+		if err != nil {
+			return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+		}
+		s.tokenKeeper.IncTokens(ctx, receiver, v.Reward.Dec)
 	}
 
 	return &types.MsgDistributeRewardsResponse{}, nil
@@ -57,13 +65,23 @@ func (s msgServer) ResetAccount(
 ) (*types.MsgResetAccountResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	if !s.keeper.IsSupervisor(ctx, msg.Owner) && !msg.Owner.Equals(msg.Address) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	address, err := sdk.AccAddressFromBech32(msg.Address)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address: %s", err)
+	}
+
+	if !s.keeper.IsSupervisor(ctx, owner) && !owner.Equals(address) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not an owner or supervisor", msg.Owner)
 	}
 
 	// reset account in other modules
-	s.tokenKeeper.ResetAccount(ctx, msg.Address)
-	s.communityKeeper.ResetAccount(ctx, msg.Address)
+	s.tokenKeeper.ResetAccount(ctx, address)
+	s.communityKeeper.ResetAccount(ctx, address)
 
 	return &types.MsgResetAccountResponse{}, nil
 }
@@ -71,7 +89,12 @@ func (s msgServer) ResetAccount(
 func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMintResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	if !s.keeper.IsSupervisor(ctx, owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
@@ -80,7 +103,7 @@ func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 		return nil, err
 	}
 	if err := s.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, types.ModuleName, msg.Owner, sdk.NewCoins(msg.Coin)); err != nil {
+		ctx, types.ModuleName, owner, sdk.NewCoins(msg.Coin)); err != nil {
 		return nil, err
 	}
 
@@ -90,13 +113,18 @@ func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 func (s msgServer) Burn(goCtx context.Context, msg *types.MsgBurn) (*types.MsgBurnResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
+	owner, err := sdk.AccAddressFromBech32(msg.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	if !s.keeper.IsSupervisor(ctx, owner) {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
 	}
 
 	// send tokens to module and burn it
 	if err := s.bankKeeper.SendCoinsFromAccountToModule(
-		ctx, msg.Owner, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
+		ctx, owner, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {
 		return nil, err
 	}
 	if err := s.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(msg.Coin)); err != nil {

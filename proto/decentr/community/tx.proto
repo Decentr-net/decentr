@@ -27,11 +27,9 @@ message MsgDeletePost {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes post_owner = 1 [ (gogoproto.casttype) =
-                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string post_owner = 1;
   string post_uuid = 2;
-  bytes owner = 3 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 3;
 }
 message MsgDeletePostResponse {}
 
@@ -47,10 +45,8 @@ message MsgFollow {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes whom = 2 [ (gogoproto.casttype) =
-                       "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
+  string whom = 2;
 }
 message MsgFollowResponse {}
 
@@ -58,9 +54,7 @@ message MsgUnfollow {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes whom = 2 [ (gogoproto.casttype) =
-                       "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
+  string whom = 2;
 }
 message MsgUnfollowResponse {}

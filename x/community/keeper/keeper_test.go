@@ -80,7 +80,7 @@ func TestKeeper_GetParams(t *testing.T) {
 	require.Equal(t, types.DefaultParams(), k.GetParams(ctx))
 
 	p := types.Params{
-		Moderators: []sdk.AccAddress{NewAccAddress()},
+		Moderators: []string{NewAccAddress().String()},
 		FixedGas: types.FixedGasParams{
 			CreatePost: 1,
 			DeletePost: 2,
@@ -101,7 +101,7 @@ func TestKeeper_IsModerator(t *testing.T) {
 	a1, a2, a3 := NewAccAddress(), NewAccAddress(), NewAccAddress()
 
 	p := types.DefaultParams()
-	p.Moderators = []sdk.AccAddress{a1, a2}
+	p.Moderators = []string{a1.String(), a2.String()}
 	k.SetParams(ctx, p)
 
 	require.True(t, k.IsModerator(ctx, a1))
@@ -127,7 +127,7 @@ func TestKeeper_SetPost(t *testing.T) {
 	id := uuid.Must(uuid.NewV1())
 
 	p := types.Post{
-		Owner:        owner,
+		Owner:        owner.String(),
 		Uuid:         id.String(),
 		Title:        "title",
 		PreviewImage: "image",
@@ -154,7 +154,7 @@ func TestKeeper_DeletePost(t *testing.T) {
 	id := uuid.Must(uuid.NewV1())
 
 	p := types.Post{
-		Owner:        owner,
+		Owner:        owner.String(),
 		Uuid:         id.String(),
 		Title:        "title",
 		PreviewImage: "image",
@@ -176,7 +176,7 @@ func TestKeeper_IteratePosts(t *testing.T) {
 	exp := make([]types.Post, 10)
 	for i := 0; i < 10; i++ {
 		exp[i] = types.Post{
-			Owner:        NewAccAddress(),
+			Owner:        NewAccAddress().String(),
 			Uuid:         uuid.Must(uuid.NewV1()).String(),
 			Title:        "title",
 			PreviewImage: "image",
@@ -204,7 +204,7 @@ func TestKeeper_ListUserPosts(t *testing.T) {
 	exp := make([]types.Post, 10)
 	for i := 0; i < 10; i++ {
 		exp[i] = types.Post{
-			Owner: owner,
+			Owner: owner.String(),
 			Uuid:  uuid.Must(uuid.NewV1()).String(),
 			Title: fmt.Sprintf("title #%d", i),
 		}
@@ -282,8 +282,8 @@ func TestKeeper_SetLike(t *testing.T) {
 	id := uuid.Must(uuid.NewV1())
 
 	l := types.Like{
-		Owner:     owner,
-		PostOwner: postOwner,
+		Owner:     owner.String(),
+		PostOwner: postOwner.String(),
 		PostUuid:  id.String(),
 		Weight:    types.LikeWeight_LIKE_WEIGHT_UP,
 	}
@@ -313,8 +313,8 @@ func TestKeeper_IterateLikes(t *testing.T) {
 	exp := make([]types.Like, 10)
 	for i := 0; i < 10; i++ {
 		exp[i] = types.Like{
-			Owner:     NewAccAddress(),
-			PostOwner: NewAccAddress(),
+			Owner:     NewAccAddress().String(),
+			PostOwner: NewAccAddress().String(),
 			PostUuid:  uuid.Must(uuid.NewV1()).String(),
 			Weight:    []types.LikeWeight{-1, 1}[i%2],
 		}
@@ -489,7 +489,7 @@ func TestKeeper_ResetAccount(t *testing.T) {
 	id := uuid.Must(uuid.NewV1())
 
 	k.SetPost(ctx, types.Post{
-		Owner:        owner,
+		Owner:        owner.String(),
 		Uuid:         id.String(),
 		Title:        "title",
 		PreviewImage: "image",
@@ -498,8 +498,8 @@ func TestKeeper_ResetAccount(t *testing.T) {
 	})
 
 	k.SetLike(ctx, types.Like{
-		Owner:     addr,
-		PostOwner: owner,
+		Owner:     addr.String(),
+		PostOwner: owner.String(),
 		PostUuid:  id.String(),
 		Weight:    1,
 	})

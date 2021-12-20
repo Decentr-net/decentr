@@ -40,8 +40,13 @@ func (s queryServer) GetPost(
 		)
 	}
 
+	postOwner, err := sdk.AccAddressFromBech32(r.PostOwner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid post_owner address: %s", err)
+	}
+
 	return &types.GetPostResponse{
-		Post: s.keeper.GetPost(ctx, postKey(r.PostOwner, id)),
+		Post: s.keeper.GetPost(ctx, postKey(postOwner, id)),
 	}, nil
 }
 
@@ -59,7 +64,12 @@ func (s queryServer) ListUserPosts(
 		r.Pagination.Limit = defaultLimit
 	}
 
-	posts, next, total := s.keeper.ListUserPosts(ctx, r.Owner, r.Pagination)
+	owner, err := sdk.AccAddressFromBech32(r.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	posts, next, total := s.keeper.ListUserPosts(ctx, owner, r.Pagination)
 
 	return &types.ListUserPostsResponse{
 		Posts: posts,
@@ -92,10 +102,21 @@ func (s queryServer) ListFollowed(
 		r.Pagination.Limit = defaultLimit
 	}
 
-	followed, next, total := s.keeper.ListFollowed(ctx, r.Owner, r.Pagination)
+	owner, err := sdk.AccAddressFromBech32(r.Owner)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid owner address: %s", err)
+	}
+
+	followed, next, total := s.keeper.ListFollowed(ctx, owner, r.Pagination)
 
 	return &types.ListFollowedResponse{
-		Followed: followed,
+		Followed: func() []string {
+			out := make([]string, len(followed))
+			for i, v := range followed {
+				out[i] = v.String()
+			}
+			return out
+		}(),
 		Pagination: query.PageResponse{
 			NextKey: next,
 			Total:   total,

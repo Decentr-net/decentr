@@ -84,7 +84,8 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 func (k Keeper) IsModerator(ctx sdk.Context, address sdk.AccAddress) bool {
 	for _, v := range k.GetParams(ctx).Moderators {
-		if address.Equals(v) {
+		addr, _ := sdk.AccAddressFromBech32(v)
+		if address.Equals(addr) {
 			return true
 		}
 	}
@@ -104,7 +105,9 @@ func (k Keeper) SetPost(ctx sdk.Context, p types.Post) {
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal post %s/%s: %w", p.Owner, p.Uuid, err))
 	}
-	store.Set(postKey(p.Owner, id), bz)
+
+	owner, _ := sdk.AccAddressFromBech32(p.Owner)
+	store.Set(postKey(owner, id), bz)
 }
 
 func (k Keeper) DeletePost(ctx sdk.Context, key []byte) {
@@ -194,8 +197,8 @@ func (k Keeper) GetLike(ctx sdk.Context, key []byte) types.Like {
 	postOwner, postUUID, owner := parseLikeKey(key)
 
 	return types.Like{
-		Owner:     owner,
-		PostOwner: postOwner,
+		Owner:     owner.String(),
+		PostOwner: postOwner.String(),
 		PostUuid:  postUUID.String(),
 		Weight:    types.LikeWeight(int8(store.Get(key)[0])),
 	}
@@ -209,7 +212,10 @@ func (k Keeper) SetLike(ctx sdk.Context, l types.Like) {
 		panic(fmt.Sprintf("invalid uuid in like: %+v", l))
 	}
 
-	key := likeKey(postKey(l.PostOwner, postUUID), l.Owner)
+	owner, _ := sdk.AccAddressFromBech32(l.Owner)
+	postOwner, _ := sdk.AccAddressFromBech32(l.PostOwner)
+
+	key := likeKey(postKey(postOwner, postUUID), owner)
 
 	if l.Weight == types.LikeWeight_LIKE_WEIGHT_ZERO {
 		store.Delete(key)

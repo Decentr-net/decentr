@@ -29,7 +29,12 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 		if err != nil {
 			panic(fmt.Sprintf("invalid owner: %s", err.Error()))
 		}
-		for _, whom := range addressList.Address {
+		for _, v := range addressList.Address {
+			whom, err := sdk.AccAddressFromBech32(v)
+			if err != nil {
+				panic(fmt.Sprintf("invalid whom address: %s", err.Error()))
+			}
+
 			k.Follow(ctx, owner, whom)
 		}
 	}
@@ -53,7 +58,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	following := map[string]types.GenesisState_AddressList{}
 	k.IterateFollowings(ctx, func(who, whom sdk.AccAddress) (stop bool) {
 		l := following[who.String()]
-		l.Address = append(l.Address, whom)
+		l.Address = append(l.Address, whom.String())
 		following[who.String()] = l
 		return false
 	})

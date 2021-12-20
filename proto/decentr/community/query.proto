@@ -33,8 +33,7 @@ message GetPostRequest {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes post_owner = 1 [ (gogoproto.casttype) =
-                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string post_owner = 1;
   string post_uuid = 2;
 }
 message GetPostResponse { Post post = 1 [ (gogoproto.nullable) = false ]; }
@@ -43,8 +42,7 @@ message ListUserPostsRequest {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
   cosmos.base.query.v1beta1.PageRequest pagination = 2
       [ (gogoproto.nullable) = false ];
 }
@@ -59,24 +57,19 @@ message ModeratorsRequest {
   option (gogoproto.goproto_getters) = false;
 }
 message ModeratorsResponse {
-  repeated bytes moderators = 1
-      [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string moderators = 1;
 }
 
 message ListFollowedRequest {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
   cosmos.base.query.v1beta1.PageRequest pagination = 2
       [ (gogoproto.nullable) = false ];
 }
 message ListFollowedResponse {
-  repeated bytes followed = 1
-      [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string followed = 1;
   cosmos.base.query.v1beta1.PageResponse pagination = 2
       [ (gogoproto.nullable) = false ];
 }

@@ -88,13 +88,13 @@ func migrateCommunity(
 			if err != nil {
 				panic(fmt.Errorf("failed to parse community/moderators: %w", err))
 			}
-			newState.Params.Moderators = append(newState.Params.Moderators, addr)
+			newState.Params.Moderators = append(newState.Params.Moderators, addr.String())
 		}
 		newState.Params.FixedGas = communitytypes.FixedGasParams(oldState.Params.FixedGas)
 
 		for _, v := range oldState.Posts {
 			newState.Posts = append(newState.Posts, communitytypes.Post{
-				Owner:        v.Owner,
+				Owner:        v.Owner.String(),
 				Uuid:         v.UUID,
 				Title:        v.Title,
 				PreviewImage: v.PreviewImage,
@@ -105,21 +105,20 @@ func migrateCommunity(
 
 		for _, v := range oldState.Likes {
 			newState.Likes = append(newState.Likes, communitytypes.Like{
-				Owner:     v.Owner,
-				PostOwner: v.PostOwner,
+				Owner:     v.Owner.String(),
+				PostOwner: v.PostOwner.String(),
 				PostUuid:  v.PostUUID,
 				Weight:    communitytypes.LikeWeight(v.Weight),
 			})
 		}
 
 		for owner, followed := range oldState.Followers {
-			var aa []sdk.AccAddress
+			var aa []string
 			for _, v := range followed {
-				addr, err := sdk.AccAddressFromBech32(v)
-				if err != nil {
-					panic(fmt.Errorf("failed to parse follower for %s: %w", owner, addr))
+				if _, err := sdk.AccAddressFromBech32(v); err != nil {
+					panic(fmt.Errorf("failed to parse follower for %s: %s", owner, v))
 				}
-				aa = append(aa, addr)
+				aa = append(aa, v)
 			}
 			newState.Following[owner] = communitytypes.GenesisState_AddressList{Address: aa}
 		}
@@ -145,7 +144,7 @@ func migrateOperations(
 			if err != nil {
 				panic(fmt.Errorf("failed to parse operations/supervisors: %w", err))
 			}
-			newState.Params.Supervisors = append(newState.Params.Supervisors, addr)
+			newState.Params.Supervisors = append(newState.Params.Supervisors, addr.String())
 		}
 		newState.Params.FixedGas = operationstypes.FixedGasParams(oldState.Params.FixedGas)
 		newState.Params.MinGasPrice = oldState.Params.MinGasPrice

@@ -39,14 +39,12 @@ func NewBalanceCmd() *cobra.Command {
 				return err
 			}
 
-			address, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid address: %w", err)
+			if _, err := sdk.AccAddressFromBech32(args[0]); err != nil {
+				return fmt.Errorf("invalid owner")
 			}
-			queryClient := types.NewQueryClient(clientCtx)
 
-			out, err := queryClient.Balance(cmd.Context(), &types.BalanceRequest{
-				Address: address,
+			out, err := types.NewQueryClient(clientCtx).Balance(cmd.Context(), &types.BalanceRequest{
+				Address: args[0],
 			})
 			if err != nil {
 				return err
