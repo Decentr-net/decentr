@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	appparams "github.com/Decentr-net/decentr/app/params"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -84,6 +83,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
+
+	appparams "github.com/Decentr-net/decentr/app/params"
 
 	"github.com/tendermint/spm/cosmoscmd"
 	"github.com/tendermint/spm/openapiconsole"
@@ -352,9 +353,8 @@ func New(
 		&stakingKeeper, govRouter,
 	)
 
-	app.TokenKeeper = *tokenkeeper.NewKeeper(appCodec, keys[tokentypes.StoreKey],
-		app.GetSubspace(tokentypes.ModuleName))
-	tokenModule := token.NewAppModule(appCodec, app.TokenKeeper, app.DistrKeeper)
+	app.TokenKeeper = *tokenkeeper.NewKeeper(appCodec, keys[tokentypes.StoreKey])
+	tokenModule := token.NewAppModule(appCodec, app.TokenKeeper)
 
 	app.CommunityKeeper = *communitykeeper.NewKeeper(appCodec, keys[communitytypes.StoreKey],
 		app.GetSubspace(communitytypes.ModuleName))

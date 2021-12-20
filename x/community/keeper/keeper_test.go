@@ -53,9 +53,7 @@ func setupKeeper(t testing.TB) (keeperSet, sdk.Context) {
 	tokenKeeper := tokenkeeper.NewKeeper(
 		cdc,
 		keys[tokentypes.StoreKey],
-		paramsKeeper.Subspace(tokentypes.StoreKey),
 	)
-	tokenKeeper.SetParams(ctx, tokentypes.DefaultParams())
 	set.tokenKeeper = tokenKeeper
 
 	set.keeper = *NewKeeper(

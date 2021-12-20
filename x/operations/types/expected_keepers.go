@@ -12,8 +12,6 @@ type BankKeeper interface {
 type TokenKeeper interface {
 	IncTokens(ctx sdk.Context, address sdk.AccAddress, amount sdk.Dec)
 	ResetAccount(ctx sdk.Context, address sdk.AccAddress)
-	SetBan(ctx sdk.Context, address sdk.AccAddress, ban bool)
-	IsBanned(ctx sdk.Context, address sdk.AccAddress) bool
 }
 
 type CommunityKeeper interface {

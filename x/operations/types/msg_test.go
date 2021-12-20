@@ -3,10 +3,11 @@ package types
 import (
 	"testing"
 
-	"github.com/Decentr-net/decentr/config"
-	. "github.com/Decentr-net/decentr/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/Decentr-net/decentr/config"
+	. "github.com/Decentr-net/decentr/testutil"
 )
 
 func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
@@ -67,24 +68,6 @@ func TestMsgResetAccount_ValidateBasic(t *testing.T) {
 		m.Owner = nil
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Address = nil
-	}).ValidateBasic())
-}
-
-func TestMsgBanAccount_ValidateBasic(t *testing.T) {
-	valid := NewMsgBanAccount(NewAccAddress(), NewAccAddress(), true)
-
-	alter := func(f func(m *MsgBanAccount)) MsgBanAccount {
-		cp := valid
-		f(&cp)
-		return cp
-	}
-
-	require.NoError(t, valid.ValidateBasic())
-	require.Error(t, alter(func(m *MsgBanAccount) {
-		m.Owner = nil
-	}).ValidateBasic())
-	require.Error(t, alter(func(m *MsgBanAccount) {
 		m.Address = nil
 	}).ValidateBasic())
 }

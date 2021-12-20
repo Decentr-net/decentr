@@ -11,7 +11,6 @@ import (
 
 	. "github.com/Decentr-net/decentr/testutil"
 	"github.com/Decentr-net/decentr/x/community/types"
-	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 )
 
 func TestMsgServer_CreatePost(t *testing.T) {
@@ -164,7 +163,6 @@ func TestMsgServer_SetLike(t *testing.T) {
 	})
 
 	t.Run("like", func(t *testing.T) {
-		tk := set.tokenKeeper.(*tokenkeeper.Keeper)
 		likeOwner := NewAccAddress()
 
 		createPost()
@@ -177,7 +175,6 @@ func TestMsgServer_SetLike(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, sdk.OneDec(), tk.GetBalanceDelta(ctx, owner))
 
 		_, err = s.SetLike(sdk.WrapSDKContext(ctx), &types.MsgSetLike{
 			Like: types.Like{
@@ -188,7 +185,6 @@ func TestMsgServer_SetLike(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, sdk.OneDec().Neg(), tk.GetBalanceDelta(ctx, owner))
 	})
 }
 

@@ -68,18 +68,6 @@ func (s msgServer) ResetAccount(
 	return &types.MsgResetAccountResponse{}, nil
 }
 
-func (s msgServer) BanAccount(goCtx context.Context, msg *types.MsgBanAccount) (*types.MsgBanAccountResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	if !s.keeper.IsSupervisor(ctx, msg.Owner) {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "%s is not a supervisor", msg.Owner)
-	}
-
-	s.tokenKeeper.SetBan(ctx, msg.Address, msg.Ban)
-
-	return &types.MsgBanAccountResponse{}, nil
-}
-
 func (s msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMintResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 

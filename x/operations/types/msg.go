@@ -100,43 +100,6 @@ func (m MsgResetAccount) ValidateBasic() error {
 	return nil
 }
 
-func NewMsgBanAccount(owner, address sdk.AccAddress, ban bool) MsgBanAccount {
-	return MsgBanAccount{
-		Owner:   owner,
-		Address: address,
-		Ban:     ban,
-	}
-}
-
-// Route should return the name of the module
-func (m MsgBanAccount) Route() string { return RouterKey }
-
-// Type should return the action
-func (m MsgBanAccount) Type() string { return "ban_account" }
-
-// GetSignBytes encodes the message for signing
-func (m MsgBanAccount) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners defines whose signature is required
-func (m MsgBanAccount) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
-}
-
-// ValidateBasic runs stateless checks on the message
-func (m MsgBanAccount) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
-	}
-
-	if err := sdk.VerifyAddressFormat(m.Address); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid address")
-	}
-
-	return nil
-}
-
 func NewMsgMint(owner sdk.AccAddress, coin sdk.Coin) MsgMint {
 	return MsgMint{
 		Owner: owner,

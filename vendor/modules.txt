@@ -488,6 +488,7 @@ github.com/rakyll/statik/fs
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 github.com/rcrowley/go-metrics
 # github.com/regen-network/cosmos-proto v0.3.1
+## explicit
 github.com/regen-network/cosmos-proto
 # github.com/rs/cors v1.7.0
 github.com/rs/cors

@@ -3,13 +3,14 @@ package v150
 import (
 	"fmt"
 
-	communitytypes "github.com/Decentr-net/decentr/x/community/types"
-	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
-	tokentypes "github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
+	communitytypes "github.com/Decentr-net/decentr/x/community/types"
+	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
+	tokentypes "github.com/Decentr-net/decentr/x/token/types"
 )
 
 type CommunityState struct {
@@ -45,7 +46,6 @@ type OperationsState struct {
 		Supervisors []string `json:"supervisors" yaml:"supervisors"`
 		FixedGas    struct {
 			ResetAccount      sdk.Gas `json:"reset_account" yaml:"reset_account"`
-			BanAccount        sdk.Gas `json:"ban_account" yaml:"ban_account"`
 			DistributeRewards sdk.Gas `json:"distribute_rewards" yaml:"distribute_rewards"`
 		} `json:"fixed_gas" yaml:"fixed_gas"`
 		MinGasPrice sdk.DecCoin `json:"min_gas_price" yaml:"min_gas_price"`
@@ -166,12 +166,8 @@ func migrateToken(
 
 		newState := tokentypes.DefaultGenesis()
 
-		newState.Params.RewardsBlockInterval = uint64(oldState.Params.RewardsBlockInterval)
 		for k, v := range oldState.Balances {
 			newState.Balances[k] = sdk.DecProto{Dec: sdk.NewDecFromInt(v)}
-		}
-		for k, v := range oldState.Deltas {
-			newState.Deltas[k] = sdk.DecProto{Dec: sdk.NewDecFromInt(v)}
 		}
 
 		appState["token"] = v040Codec.MustMarshalJSON(newState)

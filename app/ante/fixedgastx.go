@@ -21,9 +21,6 @@ func NewFixedGasTxDecorator(pk operationskeeper.Keeper, ck communitykeeper.Keepe
 		reflect.TypeOf(operationstypes.MsgResetAccount{}): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetParams(ctx).FixedGas.ResetAccount
 		},
-		reflect.TypeOf(operationstypes.MsgBanAccount{}): func(ctx sdk.Context) sdk.Gas {
-			return pk.GetParams(ctx).FixedGas.BanAccount
-		},
 		reflect.TypeOf(operationstypes.MsgDistributeRewards{}): func(ctx sdk.Context) sdk.Gas {
 			return pk.GetParams(ctx).FixedGas.DistributeRewards
 		},

@@ -13,13 +13,6 @@ service Query {
   rpc MinGasPrice(MinGasPriceRequest) returns (MinGasPriceResponse) {
     option (google.api.http).get = "/decentr/operations/min-gas-price";
   }
-
-  // IsAccountBanned
-  rpc IsAccountBanned(IsAccountBannedRequest)
-      returns (IsAccountBannedResponse) {
-    option (google.api.http).get =
-        "/decentr/operations/is-account-banned/{address}";
-  }
 }
 
 message MinGasPriceRequest {
@@ -30,13 +23,3 @@ message MinGasPriceResponse {
   cosmos.base.v1beta1.DecCoin min_gas_price = 1
       [ (gogoproto.nullable) = false ];
 }
-
-message IsAccountBannedRequest {
-  option (gogoproto.equal) = false;
-  option (gogoproto.goproto_getters) = false;
-
-  // address is the address to query balances for.
-  bytes address = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-}
-message IsAccountBannedResponse { bool is_banned = 1; }

@@ -3,8 +3,9 @@ package keeper
 import (
 	"testing"
 
-	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 	"github.com/stretchr/testify/require"
+
+	tokenkeeper "github.com/Decentr-net/decentr/x/token/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -95,49 +96,6 @@ func TestMsgServer_ResetAccount_Unauthorized(t *testing.T) {
 	_, err := s.ResetAccount(sdk.WrapSDKContext(ctx), &types.MsgResetAccount{
 		Owner:   owner,
 		Address: address,
-	})
-	require.Error(t, err)
-	require.True(t, sdkerrors.IsOf(err, sdkerrors.ErrUnauthorized))
-}
-
-func TestMsgServer_BanAccount(t *testing.T) {
-	set, ctx := setupKeeper(t)
-	s := NewMsgServer(set.keeper, set.bankKeeper, set.tokenKeeper, set.communityKeeper)
-
-	owner, address := NewAccAddress(), NewAccAddress()
-	set.keeper.SetParams(ctx, types.Params{
-		Supervisors: []sdk.AccAddress{owner},
-		FixedGas:    types.DefaultFixedGasParams(),
-		MinGasPrice: types.DefaultMinGasPrice,
-	})
-
-	_, err := s.BanAccount(sdk.WrapSDKContext(ctx), &types.MsgBanAccount{
-		Owner:   owner,
-		Address: address,
-		Ban:     true,
-	})
-	require.NoError(t, err)
-	require.True(t, set.tokenKeeper.IsBanned(ctx, address))
-
-	_, err = s.BanAccount(sdk.WrapSDKContext(ctx), &types.MsgBanAccount{
-		Owner:   owner,
-		Address: address,
-		Ban:     false,
-	})
-	require.NoError(t, err)
-	require.False(t, set.tokenKeeper.IsBanned(ctx, address))
-}
-
-func TestMsgServer_BanAccount_Unauthorized(t *testing.T) {
-	set, ctx := setupKeeper(t)
-	s := NewMsgServer(set.keeper, set.bankKeeper, set.tokenKeeper, set.communityKeeper)
-
-	owner, address := NewAccAddress(), NewAccAddress()
-
-	_, err := s.BanAccount(sdk.WrapSDKContext(ctx), &types.MsgBanAccount{
-		Owner:   owner,
-		Address: address,
-		Ban:     true,
 	})
 	require.Error(t, err)
 	require.True(t, sdkerrors.IsOf(err, sdkerrors.ErrUnauthorized))
