@@ -16,16 +16,14 @@ service Msg {
 }
 
 message Reward {
-  bytes receiver = 1 [ (gogoproto.casttype) =
-                           "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string receiver = 1;
   cosmos.base.v1beta1.DecProto reward = 2 [ (gogoproto.nullable) = false ];
 }
 message MsgDistributeRewards {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
   repeated Reward rewards = 2 [ (gogoproto.nullable) = false ];
 }
 message MsgDistributeRewardsResponse {}
@@ -34,10 +32,8 @@ message MsgResetAccount {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes address = 2 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
+  string address = 2;
 }
 message MsgResetAccountResponse {}
 
@@ -45,8 +41,7 @@ message MsgMint {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
   cosmos.base.v1beta1.Coin coin = 2 [ (gogoproto.nullable) = false ];
 }
 message MsgMintResponse {}
@@ -55,8 +50,7 @@ message MsgBurn {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
   cosmos.base.v1beta1.Coin coin = 2 [ (gogoproto.nullable) = false ];
 }
 message MsgBurnResponse {}

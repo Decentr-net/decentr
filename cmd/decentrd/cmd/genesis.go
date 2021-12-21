@@ -50,7 +50,7 @@ func AddGenesisModeratorsCmd() *cobra.Command {
 			}
 
 			communityGenState := communitytypes.GetGenesisStateFromAppState(cdc, appState)
-			communityGenState.Params.Moderators = append(communityGenState.Params.Moderators, moderator)
+			communityGenState.Params.Moderators = append(communityGenState.Params.Moderators, moderator.String())
 
 			communityGenStateBz, err := cdc.MarshalJSON(&communityGenState)
 			if err != nil {
@@ -94,7 +94,7 @@ func AddGenesisSupervisorsCmd() *cobra.Command {
 			}
 
 			operationsGenState := operationstypes.GetGenesisStateFromAppState(cdc, appState)
-			operationsGenState.Params.Supervisors = append(operationsGenState.Params.Supervisors, supervisor)
+			operationsGenState.Params.Supervisors = append(operationsGenState.Params.Supervisors, supervisor.String())
 
 			operationsGenStateBz, err := cdc.MarshalJSON(&operationsGenState)
 			if err != nil {

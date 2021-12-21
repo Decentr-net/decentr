@@ -18,7 +18,7 @@ func TestQueryServer_Balance(t *testing.T) {
 	set.keeper.IncTokens(ctx, address, sdk.OneDec())
 
 	out, err := s.Balance(sdk.WrapSDKContext(ctx), &types.BalanceRequest{
-		Address: address,
+		Address: address.String(),
 	})
 	require.NoError(t, err)
 	require.Equal(t, &types.BalanceResponse{

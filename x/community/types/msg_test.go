@@ -25,10 +25,10 @@ func TestMsgResetAccount_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgDeletePost) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDeletePost) {
-		m.PostOwner = nil
+		m.PostOwner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDeletePost) {
 		m.PostUuid = ""
@@ -54,10 +54,10 @@ func TestMsgFollow_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgFollow) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgFollow) {
-		m.Whom = nil
+		m.Whom = ""
 	}).ValidateBasic())
 }
 
@@ -72,9 +72,9 @@ func TestMsgUnfollow_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgUnfollow) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgUnfollow) {
-		m.Whom = nil
+		m.Whom = ""
 	}).ValidateBasic())
 }

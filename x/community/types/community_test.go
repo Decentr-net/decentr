@@ -3,7 +3,6 @@ package types
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 
@@ -13,7 +12,7 @@ import (
 func TestPost_validatePost(t *testing.T) {
 	validPost := Post{
 		Uuid:         uuid.Must(uuid.NewV1()).String(),
-		Owner:        NewAccAddress(),
+		Owner:        NewAccAddress().String(),
 		Title:        "test",
 		PreviewImage: "https://tf-decentr-cerberusd-bucket-mainnet.s3.amazonaws.com/decentr1cehgxxyskvn39f9sj46jqjewp805x4prad6ds5/ce5b7147-211e-4f35-9732-ec4c200daf75",
 		Category:     8,
@@ -46,7 +45,7 @@ func TestPost_validatePost(t *testing.T) {
 		{
 			name: "invalid owner",
 			alterFunc: func(p *Post) {
-				p.Owner = nil
+				p.Owner = ""
 			},
 			valid: false,
 		},
@@ -147,9 +146,9 @@ func TestPost_validatePost(t *testing.T) {
 
 func TestLike_Validate(t *testing.T) {
 	validLike := Like{
-		Owner:     NewAccAddress(),
+		Owner:     NewAccAddress().String(),
 		PostUuid:  uuid.Must(uuid.NewV1()).String(),
-		PostOwner: NewAccAddress(),
+		PostOwner: NewAccAddress().String(),
 		Weight:    LikeWeight_LIKE_WEIGHT_UP,
 	}
 
@@ -165,7 +164,7 @@ func TestLike_Validate(t *testing.T) {
 		{
 			name: "empty owner",
 			alterFunc: func(l *Like) {
-				l.Owner = nil
+				l.Owner = ""
 			},
 			valid: false,
 		},
@@ -186,7 +185,7 @@ func TestLike_Validate(t *testing.T) {
 		{
 			name: "empty post_owner",
 			alterFunc: func(l *Like) {
-				l.PostOwner = nil
+				l.PostOwner = ""
 			},
 			valid: false,
 		},
@@ -222,37 +221,37 @@ func Test_ValidateFollowers(t *testing.T) {
 	tt := []struct {
 		name  string
 		who   string
-		whom  []sdk.AccAddress
+		whom  []string
 		valid bool
 	}{
 		{
 			name:  "valid",
 			who:   NewAccAddress().String(),
-			whom:  []sdk.AccAddress{NewAccAddress(), NewAccAddress()},
+			whom:  []string{NewAccAddress().String(), NewAccAddress().String()},
 			valid: true,
 		},
 		{
 			name:  "empty who",
 			who:   "",
-			whom:  []sdk.AccAddress{NewAccAddress(), NewAccAddress()},
+			whom:  []string{NewAccAddress().String(), NewAccAddress().String()},
 			valid: false,
 		},
 		{
 			name:  "invalid who",
 			who:   "123",
-			whom:  []sdk.AccAddress{NewAccAddress(), NewAccAddress()},
+			whom:  []string{NewAccAddress().String(), NewAccAddress().String()},
 			valid: false,
 		},
 		{
 			name:  "invalid_who_whom",
 			who:   NewAccAddress().String(),
-			whom:  []sdk.AccAddress{NewAccAddress(), nil},
+			whom:  []string{NewAccAddress().String(), ""},
 			valid: false,
 		},
 		{
 			name:  "invalid_whom",
 			who:   NewAccAddress().String(),
-			whom:  nil,
+			whom:  []string{NewAccAddress().String(), "invalid"},
 			valid: false,
 		},
 		{

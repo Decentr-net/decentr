@@ -147,7 +147,7 @@ func TestKeeper_GetParams(t *testing.T) {
 	require.Equal(t, types.DefaultParams(), k.GetParams(ctx))
 
 	p := types.Params{
-		Supervisors: []sdk.AccAddress{NewAccAddress()},
+		Supervisors: []string{NewAccAddress().String()},
 		FixedGas: types.FixedGasParams{
 			ResetAccount:      1,
 			DistributeRewards: 3,
@@ -166,7 +166,7 @@ func TestKeeper_IsSupervisor(t *testing.T) {
 	a1, a2, a3 := NewAccAddress(), NewAccAddress(), NewAccAddress()
 
 	p := types.DefaultParams()
-	p.Supervisors = []sdk.AccAddress{a1, a2}
+	p.Supervisors = []string{a1.String(), a2.String()}
 	k.SetParams(ctx, p)
 
 	require.True(t, k.IsSupervisor(ctx, a1))

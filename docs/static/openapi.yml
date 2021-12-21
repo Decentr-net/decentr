@@ -19,14 +19,6 @@ paths:
                   dec:
                     type: string
                 description: DecProto defines a Protobuf wrapper around a Dec object.
-              balance_delta:
-                type: object
-                properties:
-                  dec:
-                    type: string
-                description: DecProto defines a Protobuf wrapper around a Dec object.
-              is_banned:
-                type: boolean
         default:
           description: An unexpected error response.
           schema:
@@ -54,65 +46,6 @@ paths:
           in: path
           required: true
           type: string
-          format: byte
-      tags:
-        - Token
-  /decentr/token/pool:
-    get:
-      operationId: TokenPool
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              size:
-                type: object
-                properties:
-                  denom:
-                    type: string
-                  amount:
-                    type: string
-                description: >-
-                  DecCoin defines a token with a denomination and a decimal
-                  amount.
-
-
-                  NOTE: The amount field is an Dec which implements the custom
-                  method
-
-                  signatures required by gogoproto.
-              total_delta:
-                type: object
-                properties:
-                  dec:
-                    type: string
-                description: DecProto defines a Protobuf wrapper around a Dec object.
-              next_distribution_height:
-                type: string
-                format: uint64
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
       tags:
         - Token
   /decentr/community/followers/{owner}/followed:
@@ -128,7 +61,6 @@ paths:
                 type: array
                 items:
                   type: string
-                  format: byte
               pagination:
                 type: object
                 properties:
@@ -183,7 +115,6 @@ paths:
           in: path
           required: true
           type: string
-          format: byte
         - name: pagination.key
           description: |-
             key is a value returned in PageResponse.next_key to begin
@@ -252,7 +183,6 @@ paths:
                 type: array
                 items:
                   type: string
-                  format: byte
         default:
           description: An unexpected error response.
           schema:
@@ -293,7 +223,6 @@ paths:
                   properties:
                     owner:
                       type: string
-                      format: byte
                     uuid:
                       type: string
                     title:
@@ -370,7 +299,6 @@ paths:
           in: path
           required: true
           type: string
-          format: byte
         - name: pagination.key
           description: |-
             key is a value returned in PageResponse.next_key to begin
@@ -440,7 +368,6 @@ paths:
                 properties:
                   owner:
                     type: string
-                    format: byte
                   uuid:
                     type: string
                   title:
@@ -490,56 +417,12 @@ paths:
           in: path
           required: true
           type: string
-          format: byte
         - name: post_uuid
           in: path
           required: true
           type: string
       tags:
         - Community
-  /decentr/operations/is-account-banned/{address}:
-    get:
-      summary: IsAccountBanned
-      operationId: OperationsIsAccountBanned
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              is_banned:
-                type: boolean
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: address
-          description: address is the address to query balances for.
-          in: path
-          required: true
-          type: string
-          format: byte
-      tags:
-        - Operations
   /decentr/operations/min-gas-price:
     get:
       summary: MinGasPrice returns set gas price
@@ -22844,18 +22727,6 @@ paths:
       tags:
         - Query
 definitions:
-  cosmos.base.v1beta1.DecCoin:
-    type: object
-    properties:
-      denom:
-        type: string
-      amount:
-        type: string
-    description: |-
-      DecCoin defines a token with a denomination and a decimal amount.
-
-      NOTE: The amount field is an Dec which implements the custom method
-      signatures required by gogoproto.
   cosmos.base.v1beta1.DecProto:
     type: object
     properties:
@@ -23200,38 +23071,6 @@ definitions:
           dec:
             type: string
         description: DecProto defines a Protobuf wrapper around a Dec object.
-      balance_delta:
-        type: object
-        properties:
-          dec:
-            type: string
-        description: DecProto defines a Protobuf wrapper around a Dec object.
-      is_banned:
-        type: boolean
-  token.PoolResponse:
-    type: object
-    properties:
-      size:
-        type: object
-        properties:
-          denom:
-            type: string
-          amount:
-            type: string
-        description: |-
-          DecCoin defines a token with a denomination and a decimal amount.
-
-          NOTE: The amount field is an Dec which implements the custom method
-          signatures required by gogoproto.
-      total_delta:
-        type: object
-        properties:
-          dec:
-            type: string
-        description: DecProto defines a Protobuf wrapper around a Dec object.
-      next_distribution_height:
-        type: string
-        format: uint64
   community.Category:
     type: string
     enum:
@@ -23254,7 +23093,6 @@ definitions:
         properties:
           owner:
             type: string
-            format: byte
           uuid:
             type: string
           title:
@@ -23284,7 +23122,6 @@ definitions:
         type: array
         items:
           type: string
-          format: byte
       pagination:
         type: object
         properties:
@@ -23320,7 +23157,6 @@ definitions:
           properties:
             owner:
               type: string
-              format: byte
             uuid:
               type: string
             title:
@@ -23375,13 +23211,11 @@ definitions:
         type: array
         items:
           type: string
-          format: byte
   community.Post:
     type: object
     properties:
       owner:
         type: string
-        format: byte
       uuid:
         type: string
       title:
@@ -23479,11 +23313,18 @@ definitions:
                repeated Bar results = 1;
                PageResponse page = 2;
        }
-  operations.IsAccountBannedResponse:
+  cosmos.base.v1beta1.DecCoin:
     type: object
     properties:
-      is_banned:
-        type: boolean
+      denom:
+        type: string
+      amount:
+        type: string
+    description: |-
+      DecCoin defines a token with a denomination and a decimal amount.
+
+      NOTE: The amount field is an Dec which implements the custom method
+      signatures required by gogoproto.
   operations.MinGasPriceResponse:
     type: object
     properties:

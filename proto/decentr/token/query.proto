@@ -18,8 +18,7 @@ message BalanceRequest {
   option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
 
-  bytes address = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string address = 1;
 }
 
 message BalanceResponse {

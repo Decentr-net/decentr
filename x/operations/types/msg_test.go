@@ -23,7 +23,7 @@ func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = nil
@@ -38,7 +38,7 @@ func TestMsgDistributeRewards_ValidateBasic(t *testing.T) {
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
 		m.Rewards = []Reward{
-			{Receiver: nil, Reward: sdk.DecProto{sdk.OneDec()}},
+			{Receiver: "", Reward: sdk.DecProto{sdk.OneDec()}},
 		}
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgDistributeRewards) {
@@ -65,10 +65,10 @@ func TestMsgResetAccount_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgResetAccount) {
-		m.Address = nil
+		m.Address = ""
 	}).ValidateBasic())
 }
 
@@ -83,7 +83,7 @@ func TestMsgMint_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgMint) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgMint) {
 		m.Coin.Denom = ""
@@ -110,7 +110,7 @@ func TestMsgBurn_ValidateBasic(t *testing.T) {
 
 	require.NoError(t, valid.ValidateBasic())
 	require.Error(t, alter(func(m *MsgBurn) {
-		m.Owner = nil
+		m.Owner = ""
 	}).ValidateBasic())
 	require.Error(t, alter(func(m *MsgBurn) {
 		m.Coin.Denom = ""

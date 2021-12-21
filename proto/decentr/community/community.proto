@@ -6,9 +6,7 @@ import "gogoproto/gogo.proto";
 option go_package = "github.com/Decentr-net/decentr/x/community/types";
 
 message Params {
-  repeated bytes moderators = 1
-      [ (gogoproto.casttype) =
-            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  repeated string moderators = 1;
   FixedGasParams fixed_gas = 2 [ (gogoproto.nullable) = false ];
 }
 
@@ -34,8 +32,7 @@ enum Category {
 }
 
 message Post {
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
   string uuid = 2;
   string title = 3;
   string preview_image = 4;
@@ -50,10 +47,8 @@ enum LikeWeight {
 }
 
 message Like {
-  bytes owner = 1 [ (gogoproto.casttype) =
-                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  bytes post_owner = 2 [ (gogoproto.casttype) =
-                             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string owner = 1;
+  string post_owner = 2;
   string post_uuid = 3;
   LikeWeight weight = 4;
 }
