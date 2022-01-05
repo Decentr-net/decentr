@@ -82,7 +82,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
-git clone -b v1.5.0 https://github.com/Decentr-net/decentr
+git clone -b v1.5.5 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
@@ -101,18 +101,18 @@ nano ~/.decentrd/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "95a70f0119af52e54697fa7feb8b09b4e7c7ec21@ares.testnet.decentr.xyz:26656,b6d499b2b0146627b9bf6f33a9a7e4013312c6d1@hera.testnet.decentr.xyz:26656,576d044b24cc449366850a95f7616f03ab8d14b3@hermes.testnet.decentr.xyz:26656,c98511455134b4450ebb20fce57308a9fb300b89@poseidon.testnet.decentr.xyz:26656,acc5524b4ff34591357a28d5fccf4efb5ad883c5@zeus.testnet.decentr.xyz:26656"
+seeds = "d7646a3cf1d7a703caaecde4fe49b9e973667c52@ares.testnet.decentr.xyz:26656,b3b33dff80c7577939dbebd43d9b6529b055879a@hera.testnet.decentr.xyz:26656,58bd5f5a7383f151867645168f2c1a85b25c99e2@hermes.testnet.decentr.xyz:26656,b3783b7fc98e310229de4813adb3b9fd61efe6a8@poseidon.testnet.decentr.xyz:26656,1839e5b87b158859f27edc8aa096092672f4162a@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/2.0/genesis.json
+wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.5.0/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
-decentrcli status
+decentrd status
 ```
 
 Welcome to the Decentr Testnet!
