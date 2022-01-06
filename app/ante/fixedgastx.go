@@ -53,7 +53,7 @@ func (fgm FixedGasTxDecorator) AnteHandle(
 	next sdk.AnteHandler,
 ) (newCtx sdk.Context, err error) {
 	for _, msg := range tx.GetMsgs() {
-		if fixedGas, ok := fgm.config[reflect.TypeOf(msg)]; ok {
+		if fixedGas, ok := fgm.config[reflect.Indirect(reflect.ValueOf(msg)).Type()]; ok {
 			limit := ctx.GasMeter().Limit()
 
 			// pass infinite gas meter since fixedGas requires gas to read parameters from keeper

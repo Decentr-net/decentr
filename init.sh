@@ -1,7 +1,6 @@
-decentrd init test --chain-id=local
+decentrd init test --chain-id=local -o
 
 decentrd config output json
-decentrd config trust-node true
 decentrd config chain-id local
 decentrd config keyring-backend test
 
