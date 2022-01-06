@@ -113,7 +113,7 @@ func (s msgServer) SetLike(goCtx context.Context, msg *types.MsgSetLike) (*types
 	}
 
 	diff := msg.Like.Weight - s.keeper.GetLike(ctx, likeKey(postKey(postOwner, postUUID), owner)).Weight
-	s.tokenKeeper.IncTokens(ctx, postOwner, sdk.NewDec(int64(diff)))
+	s.tokenKeeper.IncTokens(ctx, postOwner, sdk.NewDecWithPrec(int64(diff), 6))
 
 	s.keeper.SetLike(ctx, msg.Like)
 

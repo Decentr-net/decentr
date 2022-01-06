@@ -29,7 +29,7 @@ func init() {
 
 type keeperSet struct {
 	keeper      Keeper
-	tokenKeeper types.TokenKeeper
+	tokenKeeper *tokenkeeper.Keeper
 }
 
 func setupKeeper(t testing.TB) (keeperSet, sdk.Context) {

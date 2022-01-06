@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -185,6 +186,8 @@ func TestMsgServer_SetLike(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
+
+		assert.Equal(t, sdk.NewDecWithPrec(999999, 6), set.tokenKeeper.GetBalance(ctx, owner))
 	})
 }
 

@@ -18,7 +18,7 @@ import (
 // MigrateGenesisCmd returns a command to execute genesis state migration.
 func MigrateGenesisCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "migrate [target-version] [genesis-file]",
+		Use:   "migrate [genesis-file]",
 		Short: "Migrate genesis to a specified target version",
 		Long: fmt.Sprintf(`Migrate the source genesis into the target version and print to STDOUT.
 
