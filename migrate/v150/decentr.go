@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	"github.com/gofrs/uuid"
 
 	communitytypes "github.com/Decentr-net/decentr/x/community/types"
 	operationstypes "github.com/Decentr-net/decentr/x/operations/types"
@@ -25,7 +26,7 @@ type CommunityState struct {
 		} `json:"fixed_gas" yaml:"fixed_gas"`
 	} `json:"params"`
 	Posts []struct {
-		UUID         string         `json:"uuid"`
+		UUID         uuid.UUID      `json:"uuid"`
 		Owner        sdk.AccAddress `json:"owner"`
 		Title        string         `json:"title"`
 		PreviewImage string         `json:"previewImage"`
@@ -35,7 +36,7 @@ type CommunityState struct {
 	Likes []struct {
 		Owner     sdk.AccAddress `json:"owner"`
 		PostOwner sdk.AccAddress `json:"postOwner"`
-		PostUUID  string         `json:"postUuid"`
+		PostUUID  uuid.UUID      `json:"postUuid"`
 		Weight    int8           `json:"weight"`
 	} `json:"likes"`
 	Followers map[string][]string `json:"followers"`
@@ -95,7 +96,7 @@ func migrateCommunity(
 		for _, v := range oldState.Posts {
 			newState.Posts = append(newState.Posts, communitytypes.Post{
 				Owner:        v.Owner.String(),
-				Uuid:         v.UUID,
+				Uuid:         v.UUID.String(),
 				Title:        v.Title,
 				PreviewImage: v.PreviewImage,
 				Category:     communitytypes.Category(v.Category),
@@ -107,7 +108,7 @@ func migrateCommunity(
 			newState.Likes = append(newState.Likes, communitytypes.Like{
 				Owner:     v.Owner.String(),
 				PostOwner: v.PostOwner.String(),
-				PostUuid:  v.PostUUID,
+				PostUuid:  v.PostUUID.String(),
 				Weight:    communitytypes.LikeWeight(v.Weight),
 			})
 		}
