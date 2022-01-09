@@ -95,7 +95,7 @@ Add Seeds:
 
 ```bash
 # Edit config.toml
-nano ~/.decentrd/config/config.toml
+nano ~/.decentr/config/config.toml
 ```
 
 Scroll down to `seeds` in `config.toml`, and replace with
@@ -108,7 +108,7 @@ Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
-wget -O $HOME/.decentrd/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.5.0/genesis.json
+wget -O $HOME/.decentr/config/genesis.json https://raw.githubusercontent.com/Decentr-net/testnets/master/1.5.0/genesis.json
 # Start Decentrd
 decentrd start
 # Check your node's status with decentrcli
