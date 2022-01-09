@@ -101,7 +101,7 @@ nano ~/.decentr/config/config.toml
 Scroll down to `seeds` in `config.toml`, and replace with
 
 ```
-seeds = "d7646a3cf1d7a703caaecde4fe49b9e973667c52@ares.testnet.decentr.xyz:26656,b3b33dff80c7577939dbebd43d9b6529b055879a@hera.testnet.decentr.xyz:26656,58bd5f5a7383f151867645168f2c1a85b25c99e2@hermes.testnet.decentr.xyz:26656,b3783b7fc98e310229de4813adb3b9fd61efe6a8@poseidon.testnet.decentr.xyz:26656,1839e5b87b158859f27edc8aa096092672f4162a@zeus.testnet.decentr.xyz:26656"
+seeds = "6ae322ed10db6af2c9178ae62ef8d667cb42d23b@ares.testnet.decentr.xyz:26656,6d75c934b5eec42d3b6cabe648604a8354c87a76@hera.testnet.decentr.xyz:26656,8836831f518c23b127e4ebc032f457a43461778a@hermes.testnet.decentr.xyz:26656,a09f312c09ca158f70b025ee38396744e861543f@poseidon.testnet.decentr.xyz:26656,9a2509f640aefd0100e9e58ca1a0c4362815722d@zeus.testnet.decentr.xyz:26656"
 ```
 
 Download Genesis, Start your Node, Check your Node Status:
