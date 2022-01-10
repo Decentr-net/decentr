@@ -11,7 +11,7 @@
 ```
 3. Export your key
 ```shell
-   decentrcli keys export <name> > <name>.key
+   decentrd keys export <name> > <name>.key
 ```
 4. Get new version and install
 5. Migrate your genesis with next command
