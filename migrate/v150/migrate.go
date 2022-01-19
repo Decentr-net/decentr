@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	GenesisTime = time.Date(2021, 12, 30, 11, 0, 0, 0, time.UTC)
-	ChainID     = "mainnet-2"
+	GenesisTime         = time.Date(2021, 01, 14, 15, 0, 0, 0, time.UTC)
+	InitialHeight int64 = 1688950
+	ChainID             = "mainnet-2"
 )
 
 func Migrate(genDoc *tmtypes.GenesisDoc, ctx client.Context) (*tmtypes.GenesisDoc, error) {
@@ -34,6 +35,7 @@ func Migrate(genDoc *tmtypes.GenesisDoc, ctx client.Context) (*tmtypes.GenesisDo
 	}
 
 	genDoc.GenesisTime = GenesisTime
+	genDoc.InitialHeight = InitialHeight
 	genDoc.ChainID = ChainID
 	return genDoc, nil
 }

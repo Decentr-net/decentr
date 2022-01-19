@@ -1,57 +1,136 @@
-## Decentr-1.5.0 Upgrade Instructions 
+## Decentr-1.5.7 Upgrade Instructions
 
-1. Backup .decentrd and .decentrcli
+decentr-2 Upgrade Instructions
+
+###Software Version and Key Dates*
+
+We will be upgrading from chain-id "mainnet-1" to chain-id "mainnet-2".
+The version of decentr for mainnet-2 is v1.5.7
+The mainnet-1 chain will be shutdown with a SoftwareUpgradeProposal that activates at block height 1688950, which is approximately 13:00 UTC on January, 24 2022.
+mainnet-2 genesis time is set to January 24th, 2022 at 15:00 UTC
+The version of cosmos-sdk for mainnet-2 is v0.44.3
+The version of tendermint for mainnet-2 is v0.34.14
+The recommended version of golang for mainnet-2 is 1.16.
+
+###Risks
+
+As a validator, performing the upgrade procedure on your consensus nodes carries a heightened risk of double-signing and being slashed. The most important piece of this procedure is verifying your software version and genesis file hash before starting your validator and signing.
+
+The riskiest thing a validator can do is discover that they made a mistake and repeat the upgrade procedure again during the network startup. If you discover a mistake in the process, the best thing to do is wait for the network to start before correcting it. If the network is halted and you have started with a different genesis file than the expected one, seek advice from a Decentr developer before resetting your validator.
+
+###Recovery
+
+Prior to exporting mainnet-1 state, validators are encouraged to take a full data snapshot at the export height before proceeding. Snap-shotting depends heavily on infrastructure, but generally this can be done by backing up the .decentrd and .decentrcli directories.
+
+It is critically important to back-up the .decentrd/data/priv_validator_state.json file after stopping your decentrd process. This file is updated every block as your validator participates in consensus rounds. It is a critical file needed to prevent double-signing, in case the upgrade fails and the previous chain needs to be restarted.
+
+In the event that the upgrade does not succeed, validators and operators must restore their nodes from backup and upgrade to v1.4.8 of the decentr software.
+
+###Upgrade Procedure
+
+####Before the upgrade
+
+Decentr has submitted a SoftwareUpgradeProposal that specifies block height 1688950 as the final block height for mainnet-1. This height corresponds to approximately 13:00 UTC on January 24th. Once the proposal passes, the chain will shutdown automatically at the specified height and does not require manual intervention by validators.
+
+####On the day of the upgrade
+
+The decentr chain is expected to halt at block height 1688950, at approximately 13:00 UTC, and restart with new software at 15:00 UTC January 24th. Do not stop your node and begin the upgrade before 13:00UTC on January 24th, or you may go offline and be unable to recover until after the upgrade!
+
+Make sure the decentrd process is stopped before proceeding and that you have backed up your validator. Failure to backup your validator could make it impossible to restart your node if the upgrade fails.
+
+#### Guide
+
+1. Stop the service that's running the node
 ```shell
-   cp -rf $HOME/.decentrd $HOME/.decentrd.bak
-   cp -rf $HOME/.decentrcli $HOME/.decentrcli.bak
-```
-2. Export your genesis file with the next command:
-```shell
-   decentrd export > $HOME/.decentrd/genesis.json
-```
-3. Export your key
-```shell
-   decentrd keys export <name> > <name>.key
-```
-4. Get new version and install
-5. Migrate your genesis with next command
-```shell
-   decentrd migrate $HOME/.decentrd/genesis.json > /tmp/genesis.json
-```
-6. Initialize decentr 1.5.0
-```shell
-   decentrd init <moniker>
-```
-7. Replace priv_validator_key.json with your old one
-```shell
-   cp -rf $HOME/.decentrd/config/priv_validator_key.json $HOME/.decentr/config/priv_validator_key.json
-```
-8. Replace genesis.json with migrated one
-```shell
-   cp -rf /tmp/genesis.json $HOME/.decentr/config/genesis.json
-```
-9. Patch seeds
-```shell
-    sed -E -i 's/seeds = \".*\"/seeds = \"f9b77dd93f28d2a45b00d4e3041b89a3c08788ef@calliope.mainnet.decentr.xyz:26656,987b5ce87b1b922793069756f594533eedf0f060@euterpe.mainnet.decentr.xyz:26656,2caebc4dad8d2ff95400918572d455392e10a63c@hera.mainnet.decentr.xyz:26656,c37f32e202e13b0725515570f794b68573a6f58c@hermes.mainnet.decentr.xyz:26656,4520b3221c91fa98a947a4c7f518ba5aab4e5b08@melpomene.mainnet.decentr.xyz:26656,c17bc88591115e52a686811630ad8c053de19f83@poseidon.mainnet.decentr.xyz:26656,c4ba719d38c871a93fb06cbfe0891ab11fedb9f7@terpsichore.mainnet.decentr.xyz:26656,9e9e0243610fadc0f65d3d927e2d682d86f71ea9@thalia.mainnet.decentr.xyz:26656,e1f3ce208776ff1fad0e8190f5475b68e841d788@zeus.mainnet.decentr.xyz:26656\"/' $HOME/.decentr/config/config.toml
-```
-10. Reset new version node state
-```shell
-    decentrd unsafe-reset-all
-```
-11. Start your node with
-```shell
-    decentrd start
-```
-12. Import your key back
-```shell
-    decentrd keys import <name> <name>.key
-```
-13. Verify you truly imported key
-```shell
-    decentrd keys show <name>
-```
-14. Remove exported key for security purposes
-```shell
-    rm <name>.key
+sudo systemctl stop decentr_node
 ```
 
+2. Backup .decentrd and .decentrcli
+```shell
+cp -rf $HOME/.decentrd $HOME/.decentrd.bak
+cp -rf $HOME/.decentrcli $HOME/.decentrcli.bak
+```
+
+3. Export your genesis file with the next command
+```shell
+decentrd export > $HOME/.decentrd/genesis.json
+```
+
+4. Export your key
+```shell
+decentrd keys export <name> > <name>.key
+```
+
+5. Clone Decentr from the latest release
+```shell
+git clone -b v1.5.7 https://github.com/Decentr-net/decentr
+```
+
+6. Compile and install new version of Decentr
+```shell
+make install
+```
+
+7. Migrate your genesis with next command
+```shell
+decentrd migrate $HOME/.decentrd/genesis.json > /tmp/genesis.json
+```
+
+8. Compare hashsum of migrated genesis with published on discord one
+```shell
+md5 /tmp/genesis.json
+```
+
+9. Initialize mainnet-2
+```shell
+decentrd init <moniker>
+```
+
+10. Replace priv_validator_key.json with your old one
+```shell
+cp -rf $HOME/.decentrd/config/priv_validator_key.json $HOME/.decentr/config/priv_validator_key.json
+```
+
+11. Replace genesis.json with migrated one
+```shell
+cp -rf /tmp/genesis.json $HOME/.decentr/config/genesis.json
+```
+
+12. Patch seeds
+```shell
+sed -E -i 's/seeds = \".*\"/seeds = \"f9b77dd93f28d2a45b00d4e3041b89a3c08788ef@calliope.mainnet.decentr.xyz:26656,987b5ce87b1b922793069756f594533eedf0f060@euterpe.mainnet.decentr.xyz:26656,2caebc4dad8d2ff95400918572d455392e10a63c@hera.mainnet.decentr.xyz:26656,c37f32e202e13b0725515570f794b68573a6f58c@hermes.mainnet.decentr.xyz:26656,4520b3221c91fa98a947a4c7f518ba5aab4e5b08@melpomene.mainnet.decentr.xyz:26656,c17bc88591115e52a686811630ad8c053de19f83@poseidon.mainnet.decentr.xyz:26656,c4ba719d38c871a93fb06cbfe0891ab11fedb9f7@terpsichore.mainnet.decentr.xyz:26656,9e9e0243610fadc0f65d3d927e2d682d86f71ea9@thalia.mainnet.decentr.xyz:26656,e1f3ce208776ff1fad0e8190f5475b68e841d788@zeus.mainnet.decentr.xyz:26656\"/' $HOME/.decentr/config/config.toml
+```
+
+13. Reset the state
+```shell
+decentrd unsafe-reset-all
+```
+
+14. Import your key back
+```shell
+decentrd keys import <name> <name>.key
+```
+
+15. Verify you truly imported key
+```shell
+decentrd keys show <name>
+```
+
+16. Remove exported key for security purposes
+```shell
+rm <name>.key
+```
+
+17. Start your node back
+```shell
+sudo systemctl start decentr_node
+```
+
+18. Validate your node is up
+```shell
+sudo journalctl -u decentr_node.service -f
+```
+
+## Coordination
+
+If the mainnet-2 chain does not launch by January 24, 2022 at 17:00 UTC, the launch should be considered a failure and validators should refer to the rollback instructions to restart the previous mainnet-1 chain. In the event of launch failure, coordination will occur in the Decentr discord.
