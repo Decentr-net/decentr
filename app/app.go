@@ -443,6 +443,7 @@ func (app *decentrApp) SimulationManager() *module.SimulationManager {
 
 func (app *decentrApp) setUpgrades() {
 	app.upgradeKeeper.SetUpgradeHandler("v1.4.6", app.Upgrade146)
+	app.upgradeKeeper.SetUpgradeHandler("v1.4.8", func(_ sdk.Context, _ upgrade.Plan) {}) // recovery if mainnet-2 fails
 }
 
 func (app *decentrApp) Upgrade146(ctx sdk.Context, _ upgrade.Plan) {
