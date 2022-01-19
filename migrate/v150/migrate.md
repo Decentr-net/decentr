@@ -2,7 +2,7 @@
 
 decentr-2 Upgrade Instructions
 
-###Software Version and Key Dates*
+### Software Version and Key Dates*
 
 We will be upgrading from chain-id "mainnet-1" to chain-id "mainnet-2".
 The version of decentr for mainnet-2 is v1.5.7
@@ -12,13 +12,13 @@ The version of cosmos-sdk for mainnet-2 is v0.44.3
 The version of tendermint for mainnet-2 is v0.34.14
 The recommended version of golang for mainnet-2 is 1.16.
 
-###Risks
+### Risks
 
 As a validator, performing the upgrade procedure on your consensus nodes carries a heightened risk of double-signing and being slashed. The most important piece of this procedure is verifying your software version and genesis file hash before starting your validator and signing.
 
 The riskiest thing a validator can do is discover that they made a mistake and repeat the upgrade procedure again during the network startup. If you discover a mistake in the process, the best thing to do is wait for the network to start before correcting it. If the network is halted and you have started with a different genesis file than the expected one, seek advice from a Decentr developer before resetting your validator.
 
-###Recovery
+### Recovery
 
 Prior to exporting mainnet-1 state, validators are encouraged to take a full data snapshot at the export height before proceeding. Snap-shotting depends heavily on infrastructure, but generally this can be done by backing up the .decentrd and .decentrcli directories.
 
@@ -26,13 +26,13 @@ It is critically important to back-up the .decentrd/data/priv_validator_state.js
 
 In the event that the upgrade does not succeed, validators and operators must restore their nodes from backup and upgrade to v1.4.8 of the decentr software.
 
-###Upgrade Procedure
+### Upgrade Procedure
 
-####Before the upgrade
+#### Before the upgrade
 
 Decentr has submitted a SoftwareUpgradeProposal that specifies block height 1688950 as the final block height for mainnet-1. This height corresponds to approximately 13:00 UTC on January 24th. Once the proposal passes, the chain will shutdown automatically at the specified height and does not require manual intervention by validators.
 
-####On the day of the upgrade
+#### On the day of the upgrade
 
 The decentr chain is expected to halt at block height 1688950, at approximately 13:00 UTC, and restart with new software at 15:00 UTC January 24th. Do not stop your node and begin the upgrade before 13:00UTC on January 24th, or you may go offline and be unable to recover until after the upgrade!
 
