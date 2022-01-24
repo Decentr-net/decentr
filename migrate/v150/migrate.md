@@ -84,10 +84,11 @@ make install
 decentrd migrate $HOME/.decentrd/genesis.json > /tmp/genesis.json
 ```
 
-8. Compare hashsum of migrated genesis with published on discord one
+8. Compare hashsum of migrated genesis
 ```shell
 md5 /tmp/genesis.json
 ```
+It has to be `35bdd2a3fff849e3e0eba7d849764126`
 
 9. Initialize mainnet-2
 ```shell
