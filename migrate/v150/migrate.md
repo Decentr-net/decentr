@@ -58,9 +58,16 @@ decentrd export > $HOME/.decentrd/genesis.json
 
 4. Export your key
 ```shell
-decentrd keys export <name> > <name>.key
+decentrcli keys export <name>
 ```
-
+save the output to <name>.key file. The easiest way is to execute 
+```shell
+nano <name>.key
+```
+paste and save.
+  
+The file shold start with `-----BEGIN TENDERMINT PRIVATE KEY-----` and ends with `-----END TENDERMINT PRIVATE KEY-----`
+  
 5. Clone Decentr from the latest release
 ```shell
 git clone -b v1.5.7 https://github.com/Decentr-net/decentr
