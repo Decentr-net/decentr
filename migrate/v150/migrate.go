@@ -14,7 +14,7 @@ import (
 var (
 	GenesisTime         = time.Date(2021, 01, 14, 15, 0, 0, 0, time.UTC)
 	InitialHeight int64 = 1688950
-	ChainID             = "mainnet-2"
+	ChainID             = "mainnet-3"
 )
 
 func Migrate(genDoc *tmtypes.GenesisDoc, ctx client.Context) (*tmtypes.GenesisDoc, error) {
