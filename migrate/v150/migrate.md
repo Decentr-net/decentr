@@ -78,6 +78,12 @@ cd decentr
 ```shell
 make install
 ```
+and check version
+  
+```shell
+decentrd version
+```
+It has to be `1.5.7`
 
 7. Migrate your genesis with next command
 ```shell
