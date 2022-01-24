@@ -71,8 +71,9 @@ The file shold start with `-----BEGIN TENDERMINT PRIVATE KEY-----` and ends with
 5. Clone Decentr from the latest release
 ```shell
 git clone -b v1.5.7 https://github.com/Decentr-net/decentr
+cd decentr
 ```
-
+  
 6. Compile and install new version of Decentr
 ```shell
 make install
