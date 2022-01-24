@@ -167,7 +167,7 @@ func migrateToken(
 		newState := tokentypes.DefaultGenesis()
 
 		for k, v := range oldState.Balances {
-			newState.Balances[k] = sdk.DecProto{Dec: sdk.NewDecFromInt(v)}
+			newState.Balances[k] = sdk.DecProto{Dec: sdk.NewDecFromInt(v).QuoInt(sdk.NewIntWithDecimal(1, 6))}
 		}
 
 		appState["token"] = v040Codec.MustMarshalJSON(newState)
