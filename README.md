@@ -68,7 +68,7 @@ cd decentr
 # Compile and install Decentr
 make install
 # Initialize decentrd in ~/.decentrd and name your node
-decentrd init yournodenamehere
+decentrd init <yournodenamehere>
 ```
 
 Patch Seeds:
