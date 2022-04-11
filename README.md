@@ -54,6 +54,14 @@ decentrd start
 decentrd status
 ```
 
+Download snapshot:
+
+```shell
+cd $HOME/.decentr/
+SNAP_NAME=$(curl -s https://snapshots.mainnet.decentr.xyz | egrep -o ">decentr-.*tar.gz" | tr -d ">" | tail -n 1)
+wget -O - https://snapshots.mainnet.decentr.xyz/${SNAP_NAME} | tar xf -
+```
+
 Welcome to the Decentr Mainnet!
 
 ### Testnet
