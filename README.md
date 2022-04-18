@@ -57,7 +57,12 @@ decentrd status
 Download snapshot:
 
 ```shell
-cd $HOME/.decentr/
+# remove old data in ~/.decentr/data/
+rm -rf ~/.decentr/data/; \
+mkdir -p ~/.decentr/data/; \
+cd ~/.decentr/data/
+
+# download snapshot
 SNAP_NAME=$(curl -s https://snapshots.mainnet.decentr.xyz | egrep -o ">decentr-.*tar.gz" | tr -d ">" | tail -n 1)
 wget -O - https://snapshots.mainnet.decentr.xyz/${SNAP_NAME} | tar xzf -
 ```
