@@ -24,7 +24,7 @@ rm -rf ~/.decentr
 
 ### Mainnet
 
-Build, Install, and Name your Node:
+#### Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
@@ -37,13 +37,13 @@ make install
 decentrd init <yournodenamehere>
 ```
 
-Patch Seeds:
+#### Patch Seeds:
 
 ```bash
 sed -E -i 's/seeds = \".*\"/seeds = \"7708addcfb9d4ff394b18fbc6c016b4aaa90a10a@ares.mainnet.decentr.xyz:26656,8a3485f940c3b2b9f0dd979a16ea28de154f14dd@calliope.mainnet.decentr.xyz:26656,87490fd832f3226ac5d090f6a438d402670881d0@euterpe.mainnet.decentr.xyz:26656,3261bff0b7c16dcf6b5b8e62dd54faafbfd75415@hera.mainnet.decentr.xyz:26656,5f3cfa2e3d5ed2c2ef699c8593a3d93c902406a9@hermes.mainnet.decentr.xyz:26656,a529801b5390f56d5c280eaff4ae95b7163e385f@melpomene.mainnet.decentr.xyz:26656,385129dbe71bceff982204afa11ed7fa0ee39430@poseidon.mainnet.decentr.xyz:26656,35a934228c32ad8329ac917613a25474cc79bc08@terpsichore.mainnet.decentr.xyz:26656,0fd62bcd1de6f2e3cfc15852cdde9f3f8a7987e4@thalia.mainnet.decentr.xyz:26656,bd99693d0dbc855b0367f781fb48bf1ca6a6a58b@zeus.mainnet.decentr.xyz:26656\"/' $HOME/.decentr/config/config.toml
 ```
 
-Download snapshot:
+#### Download snapshot:
 
 ```shell
 # remove old data in ~/.decentr/data/
@@ -56,7 +56,7 @@ SNAP_NAME=$(curl -s https://snapshots.mainnet.decentr.xyz | egrep -o ">decentr-.
 wget -O - https://snapshots.mainnet.decentr.xyz/${SNAP_NAME} | tar xzf -
 ```
 
-Download Genesis, Start your Node, Check your Node Status:
+#### Download Genesis, Start your Node, Check your Node Status:
 
 ```bash
 # Download genesis.json
