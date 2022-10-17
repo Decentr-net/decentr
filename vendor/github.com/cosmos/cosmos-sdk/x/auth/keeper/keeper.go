@@ -22,6 +22,9 @@ type AccountKeeperI interface {
 	// Return a new account with the next account number. Does not save the new account to the store.
 	NewAccount(sdk.Context, types.AccountI) types.AccountI
 
+	// Check if an account exists in the store.
+	HasAccount(sdk.Context, sdk.AccAddress) bool
+
 	// Retrieve an account from the store.
 	GetAccount(sdk.Context, sdk.AccAddress) types.AccountI
 
@@ -68,7 +71,6 @@ func NewAccountKeeper(
 	cdc codec.BinaryCodec, key sdk.StoreKey, paramstore paramtypes.Subspace, proto func() types.AccountI,
 	maccPerms map[string][]string,
 ) AccountKeeper {
-
 	// set KeyTable if it has not already been set
 	if !paramstore.HasKeyTable() {
 		paramstore = paramstore.WithKeyTable(types.ParamKeyTable())
@@ -220,7 +222,7 @@ func (ak AccountKeeper) decodeAccount(bz []byte) types.AccountI {
 }
 
 // MarshalAccount protobuf serializes an Account interface
-func (ak AccountKeeper) MarshalAccount(accountI types.AccountI) ([]byte, error) { // nolint:interfacer
+func (ak AccountKeeper) MarshalAccount(accountI types.AccountI) ([]byte, error) { //nolint:interfacer
 	return ak.cdc.MarshalInterface(accountI)
 }
 

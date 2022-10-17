@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.10
-ARG GOLANG_VERSION=1.16.9
+ARG GOLANG_VERSION=1.19.2
 
 FROM golang:${GOLANG_VERSION} AS build-env
 WORKDIR /go/src/github.com/Decentr-net/decentr/

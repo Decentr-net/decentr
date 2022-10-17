@@ -1,10 +1,10 @@
 /*
 Package module contains application module patterns and associated "manager" functionality.
 The module pattern has been broken down by:
- - independent module functionality (AppModuleBasic)
- - inter-dependent module genesis functionality (AppModuleGenesis)
- - inter-dependent module simulation functionality (AppModuleSimulation)
- - inter-dependent module full functionality (AppModule)
+  - independent module functionality (AppModuleBasic)
+  - inter-dependent module genesis functionality (AppModuleGenesis)
+  - inter-dependent module simulation functionality (AppModuleSimulation)
+  - inter-dependent module full functionality (AppModule)
 
 inter-dependent module functionality is module functionality which somehow
 depends on other modules, typically through the module keeper.  Many of the
@@ -30,6 +30,7 @@ package module
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	"github.com/gorilla/mux"
@@ -177,9 +178,17 @@ type AppModule interface {
 	// introduced by the module. To avoid wrong/empty versions, the initial version
 	// should be set to 1.
 	ConsensusVersion() uint64
+}
 
-	// ABCI
+// BeginBlockAppModule is an extension interface that contains information about the AppModule and BeginBlock.
+type BeginBlockAppModule interface {
+	AppModule
 	BeginBlock(sdk.Context, abci.RequestBeginBlock)
+}
+
+// EndBlockAppModule is an extension interface that contains information about the AppModule and EndBlock.
+type EndBlockAppModule interface {
+	AppModule
 	EndBlock(sdk.Context, abci.RequestEndBlock) []abci.ValidatorUpdate
 }
 
@@ -229,11 +238,11 @@ type Manager struct {
 	OrderExportGenesis []string
 	OrderBeginBlockers []string
 	OrderEndBlockers   []string
+	OrderMigrations    []string
 }
 
 // NewManager creates a new Manager object
 func NewManager(modules ...AppModule) *Manager {
-
 	moduleMap := make(map[string]AppModule)
 	modulesStr := make([]string, 0, len(modules))
 	for _, module := range modules {
@@ -252,22 +261,33 @@ func NewManager(modules ...AppModule) *Manager {
 
 // SetOrderInitGenesis sets the order of init genesis calls
 func (m *Manager) SetOrderInitGenesis(moduleNames ...string) {
+	m.assertNoForgottenModules("SetOrderInitGenesis", moduleNames)
 	m.OrderInitGenesis = moduleNames
 }
 
 // SetOrderExportGenesis sets the order of export genesis calls
 func (m *Manager) SetOrderExportGenesis(moduleNames ...string) {
+	m.assertNoForgottenModules("SetOrderExportGenesis", moduleNames)
 	m.OrderExportGenesis = moduleNames
 }
 
 // SetOrderBeginBlockers sets the order of set begin-blocker calls
 func (m *Manager) SetOrderBeginBlockers(moduleNames ...string) {
+	m.assertNoForgottenModules("SetOrderBeginBlockers", moduleNames)
 	m.OrderBeginBlockers = moduleNames
 }
 
 // SetOrderEndBlockers sets the order of set end-blocker calls
 func (m *Manager) SetOrderEndBlockers(moduleNames ...string) {
+	m.assertNoForgottenModules("SetOrderEndBlockers", moduleNames)
 	m.OrderEndBlockers = moduleNames
+}
+
+// SetOrderMigrations sets the order of migrations to be run. If not set
+// then migrations will be run with an order defined in `DefaultMigrationsOrder`.
+func (m *Manager) SetOrderMigrations(moduleNames ...string) {
+	m.assertNoForgottenModules("SetOrderMigrations", moduleNames)
+	m.OrderMigrations = moduleNames
 }
 
 // RegisterInvariants registers all module invariants
@@ -331,11 +351,29 @@ func (m *Manager) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) map[string
 	return genesisData
 }
 
+// assertNoForgottenModules checks that we didn't forget any modules in the
+// SetOrder* functions.
+func (m *Manager) assertNoForgottenModules(setOrderFnName string, moduleNames []string) {
+	ms := make(map[string]bool)
+	for _, m := range moduleNames {
+		ms[m] = true
+	}
+	var missing []string
+	for m := range m.Modules {
+		if !ms[m] {
+			missing = append(missing, m)
+		}
+	}
+	if len(missing) != 0 {
+		panic(fmt.Sprintf(
+			"%s: all modules must be defined when setting %s, missing: %v", setOrderFnName, setOrderFnName, missing))
+	}
+}
+
 // MigrationHandler is the migration function that each module registers.
 type MigrationHandler func(sdk.Context) error
 
-// VersionMap is a map of moduleName -> version, where version denotes the
-// version from which we should perform the migration for each module.
+// VersionMap is a map of moduleName -> version
 type VersionMap map[string]uint64
 
 // RunMigrations performs in-place store migrations for all modules. This
@@ -347,20 +385,25 @@ type VersionMap map[string]uint64
 // returning RunMigrations should be enough:
 //
 // Example:
-//   cfg := module.NewConfigurator(...)
-//   app.UpgradeKeeper.SetUpgradeHandler("my-plan", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-//       return app.mm.RunMigrations(ctx, cfg, fromVM)
-//   })
+//
+//	cfg := module.NewConfigurator(...)
+//	app.UpgradeKeeper.SetUpgradeHandler("my-plan", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+//	    return app.mm.RunMigrations(ctx, cfg, fromVM)
+//	})
 //
 // Internally, RunMigrations will perform the following steps:
 // - create an `updatedVM` VersionMap of module with their latest ConsensusVersion
 // - make a diff of `fromVM` and `udpatedVM`, and for each module:
-//    - if the module's `fromVM` version is less than its `updatedVM` version,
-//      then run in-place store migrations for that module between those versions.
-//    - if the module does not exist in the `fromVM` (which means that it's a new module,
-//      because it was not in the previous x/upgrade's store), then run
-//      `InitGenesis` on that module.
+//   - if the module's `fromVM` version is less than its `updatedVM` version,
+//     then run in-place store migrations for that module between those versions.
+//   - if the module does not exist in the `fromVM` (which means that it's a new module,
+//     because it was not in the previous x/upgrade's store), then run
+//     `InitGenesis` on that module.
+//
 // - return the `updatedVM` to be persisted in the x/upgrade's store.
+//
+// Migrations are run in an order defined by `Manager.OrderMigrations` or (if not set) defined by
+// `DefaultMigrationsOrder` function.
 //
 // As an app developer, if you wish to skip running InitGenesis for your new
 // module "foo", you need to manually pass a `fromVM` argument to this function
@@ -369,18 +412,19 @@ type VersionMap map[string]uint64
 // running anything for foo.
 //
 // Example:
-//   cfg := module.NewConfigurator(...)
-//   app.UpgradeKeeper.SetUpgradeHandler("my-plan", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-//       // Assume "foo" is a new module.
-//       // `fromVM` is fetched from existing x/upgrade store. Since foo didn't exist
-//       // before this upgrade, `v, exists := fromVM["foo"]; exists == false`, and RunMigration will by default
-//       // run InitGenesis on foo.
-//       // To skip running foo's InitGenesis, you need set `fromVM`'s foo to its latest
-//       // consensus version:
-//       fromVM["foo"] = foo.AppModule{}.ConsensusVersion()
 //
-//       return app.mm.RunMigrations(ctx, cfg, fromVM)
-//   })
+//	cfg := module.NewConfigurator(...)
+//	app.UpgradeKeeper.SetUpgradeHandler("my-plan", func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+//	    // Assume "foo" is a new module.
+//	    // `fromVM` is fetched from existing x/upgrade store. Since foo didn't exist
+//	    // before this upgrade, `v, exists := fromVM["foo"]; exists == false`, and RunMigration will by default
+//	    // run InitGenesis on foo.
+//	    // To skip running foo's InitGenesis, you need set `fromVM`'s foo to its latest
+//	    // consensus version:
+//	    fromVM["foo"] = foo.AppModule{}.ConsensusVersion()
+//
+//	    return app.mm.RunMigrations(ctx, cfg, fromVM)
+//	})
 //
 // Please also refer to docs/core/upgrade.md for more information.
 func (m Manager) RunMigrations(ctx sdk.Context, cfg Configurator, fromVM VersionMap) (VersionMap, error) {
@@ -388,19 +432,13 @@ func (m Manager) RunMigrations(ctx sdk.Context, cfg Configurator, fromVM Version
 	if !ok {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "expected %T, got %T", configurator{}, cfg)
 	}
-
-	updatedVM := make(VersionMap)
-	// for deterministic iteration order
-	// (as some migrations depend on other modules
-	// and the order of executing migrations matters)
-	// TODO: make the order user-configurable?
-	sortedModNames := make([]string, 0, len(m.Modules))
-	for key := range m.Modules {
-		sortedModNames = append(sortedModNames, key)
+	modules := m.OrderMigrations
+	if modules == nil {
+		modules = DefaultMigrationsOrder(m.ModuleNames())
 	}
-	sort.Strings(sortedModNames)
 
-	for _, moduleName := range sortedModNames {
+	updatedVM := VersionMap{}
+	for _, moduleName := range modules {
 		module := m.Modules[moduleName]
 		fromVersion, exists := fromVM[moduleName]
 		toVersion := module.ConsensusVersion()
@@ -427,6 +465,7 @@ func (m Manager) RunMigrations(ctx sdk.Context, cfg Configurator, fromVM Version
 			}
 
 			moduleValUpdates := module.InitGenesis(ctx, cfgtor.cdc, module.DefaultGenesis(cfgtor.cdc))
+			ctx.Logger().Info(fmt.Sprintf("adding a new module: %s", moduleName))
 			// The module manager assumes only one module will update the
 			// validator set, and that it will not be by a new module.
 			if len(moduleValUpdates) > 0 {
@@ -447,7 +486,10 @@ func (m *Manager) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) abci.R
 	ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 	for _, moduleName := range m.OrderBeginBlockers {
-		m.Modules[moduleName].BeginBlock(ctx, req)
+		module, ok := m.Modules[moduleName].(BeginBlockAppModule)
+		if ok {
+			module.BeginBlock(ctx, req)
+		}
 	}
 
 	return abci.ResponseBeginBlock{
@@ -463,7 +505,11 @@ func (m *Manager) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 	validatorUpdates := []abci.ValidatorUpdate{}
 
 	for _, moduleName := range m.OrderEndBlockers {
-		moduleValUpdates := m.Modules[moduleName].EndBlock(ctx, req)
+		module, ok := m.Modules[moduleName].(EndBlockAppModule)
+		if !ok {
+			continue
+		}
+		moduleValUpdates := module.EndBlock(ctx, req)
 
 		// use these validator updates if provided, the module manager assumes
 		// only one module will update the validator set
@@ -492,4 +538,36 @@ func (m *Manager) GetVersionMap() VersionMap {
 	}
 
 	return vermap
+}
+
+// ModuleNames returns list of all module names, without any particular order.
+func (m *Manager) ModuleNames() []string {
+	ms := make([]string, len(m.Modules))
+	i := 0
+	for m := range m.Modules {
+		ms[i] = m
+		i++
+	}
+	return ms
+}
+
+// DefaultMigrationsOrder returns a default migrations order: ascending alphabetical by module name,
+// except x/auth which will run last, see:
+// https://github.com/cosmos/cosmos-sdk/issues/10591
+func DefaultMigrationsOrder(modules []string) []string {
+	const authName = "auth"
+	out := make([]string, 0, len(modules))
+	hasAuth := false
+	for _, m := range modules {
+		if m == authName {
+			hasAuth = true
+		} else {
+			out = append(out, m)
+		}
+	}
+	sort.Strings(out)
+	if hasAuth {
+		out = append(out, authName)
+	}
+	return out
 }

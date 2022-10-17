@@ -5,12 +5,20 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/pkg/errors"
 
-	cmn "github.com/cosmos/iavl/common"
+	hexbytes "github.com/cosmos/iavl/internal/bytes"
+	"github.com/cosmos/iavl/internal/encoding"
 	iavlproto "github.com/cosmos/iavl/proto"
 )
+
+var bufPool = &sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
 
 var (
 	// ErrInvalidProof is returned by Verify when a proof cannot be validated.
@@ -24,6 +32,8 @@ var (
 )
 
 //----------------------------------------
+// ProofInnerNode
+// Contract: Left and Right can never both be set. Will result in a empty `[]` roothash
 
 type ProofInnerNode struct {
 	Height  int8   `json:"height"`
@@ -53,42 +63,50 @@ func (pin ProofInnerNode) stringIndented(indent string) string {
 		indent)
 }
 
-func (pin ProofInnerNode) Hash(childHash []byte) []byte {
+func (pin ProofInnerNode) Hash(childHash []byte) ([]byte, error) {
 	hasher := sha256.New()
-	buf := new(bytes.Buffer)
 
-	err := encodeVarint(buf, int64(pin.Height))
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+
+	err := encoding.EncodeVarint(buf, int64(pin.Height))
 	if err == nil {
-		err = encodeVarint(buf, pin.Size)
+		err = encoding.EncodeVarint(buf, pin.Size)
 	}
 	if err == nil {
-		err = encodeVarint(buf, pin.Version)
+		err = encoding.EncodeVarint(buf, pin.Version)
+	}
+
+	if len(pin.Left) > 0 && len(pin.Right) > 0 {
+		return nil, errors.New("both left and right child hashes are set")
 	}
 
 	if len(pin.Left) == 0 {
 		if err == nil {
-			err = encodeBytes(buf, childHash)
+			err = encoding.EncodeBytes(buf, childHash)
 		}
 		if err == nil {
-			err = encodeBytes(buf, pin.Right)
+			err = encoding.EncodeBytes(buf, pin.Right)
 		}
 	} else {
 		if err == nil {
-			err = encodeBytes(buf, pin.Left)
+			err = encoding.EncodeBytes(buf, pin.Left)
 		}
 		if err == nil {
-			err = encodeBytes(buf, childHash)
+			err = encoding.EncodeBytes(buf, childHash)
 		}
 	}
+
 	if err != nil {
-		panic(fmt.Sprintf("Failed to hash ProofInnerNode: %v", err))
+		return nil, fmt.Errorf("failed to hash ProofInnerNode: %v", err)
 	}
 
 	_, err = hasher.Write(buf.Bytes())
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return hasher.Sum(nil)
+	return hasher.Sum(nil), nil
 }
 
 // toProto converts the inner node proof to Protobuf, for use in ProofOps.
@@ -122,9 +140,9 @@ func proofInnerNodeFromProto(pbInner *iavlproto.ProofInnerNode) (ProofInnerNode,
 //----------------------------------------
 
 type ProofLeafNode struct {
-	Key       cmn.HexBytes `json:"key"`
-	ValueHash cmn.HexBytes `json:"value"`
-	Version   int64        `json:"version"`
+	Key       hexbytes.HexBytes `json:"key"`
+	ValueHash hexbytes.HexBytes `json:"value"`
+	Version   int64             `json:"version"`
 }
 
 func (pln ProofLeafNode) String() string {
@@ -143,33 +161,36 @@ func (pln ProofLeafNode) stringIndented(indent string) string {
 		indent)
 }
 
-func (pln ProofLeafNode) Hash() []byte {
+func (pln ProofLeafNode) Hash() ([]byte, error) {
 	hasher := sha256.New()
-	buf := new(bytes.Buffer)
 
-	err := encodeVarint(buf, 0)
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+
+	err := encoding.EncodeVarint(buf, 0)
 	if err == nil {
-		err = encodeVarint(buf, 1)
+		err = encoding.EncodeVarint(buf, 1)
 	}
 	if err == nil {
-		err = encodeVarint(buf, pln.Version)
+		err = encoding.EncodeVarint(buf, pln.Version)
 	}
 	if err == nil {
-		err = encodeBytes(buf, pln.Key)
+		err = encoding.EncodeBytes(buf, pln.Key)
 	}
 	if err == nil {
-		err = encodeBytes(buf, pln.ValueHash)
+		err = encoding.EncodeBytes(buf, pln.ValueHash)
 	}
 	if err != nil {
-		panic(fmt.Sprintf("Failed to hash ProofLeafNode: %v", err))
+		return nil, fmt.Errorf("failed to hash ProofLeafNode: %v", err)
 	}
 	_, err = hasher.Write(buf.Bytes())
 	if err != nil {
-		panic(err)
+		return nil, err
 
 	}
 
-	return hasher.Sum(nil)
+	return hasher.Sum(nil), nil
 }
 
 // toProto converts the leaf node proof to Protobuf, for use in ProofOps.
@@ -221,26 +242,47 @@ func (node *Node) pathToLeaf(t *ImmutableTree, key []byte, path *PathToLeaf) (*N
 	// already stored in the next ProofInnerNode in PathToLeaf.
 	if bytes.Compare(key, node.key) < 0 {
 		// left side
+		rightNode, err := node.getRightNode(t)
+		if err != nil {
+			return nil, err
+		}
+
 		pin := ProofInnerNode{
 			Height:  node.height,
 			Size:    node.size,
 			Version: node.version,
 			Left:    nil,
-			Right:   node.getRightNode(t).hash,
+			Right:   rightNode.hash,
 		}
 		*path = append(*path, pin)
-		n, err := node.getLeftNode(t).pathToLeaf(t, key, path)
+
+		leftNode, err := node.getLeftNode(t)
+		if err != nil {
+			return nil, err
+		}
+		n, err := leftNode.pathToLeaf(t, key, path)
 		return n, err
 	}
 	// right side
+	leftNode, err := node.getLeftNode(t)
+	if err != nil {
+		return nil, err
+	}
+
 	pin := ProofInnerNode{
 		Height:  node.height,
 		Size:    node.size,
 		Version: node.version,
-		Left:    node.getLeftNode(t).hash,
+		Left:    leftNode.hash,
 		Right:   nil,
 	}
 	*path = append(*path, pin)
-	n, err := node.getRightNode(t).pathToLeaf(t, key, path)
+
+	rightNode, err := node.getRightNode(t)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := rightNode.pathToLeaf(t, key, path)
 	return n, err
 }
