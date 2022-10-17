@@ -7,7 +7,7 @@
 Decentr blockchain
 
 ## Run Local Node Quick Start
-This assumes that you're running Linux or MacOS and have installed [Go 1.16+](https://golang.org/dl/).  This guide helps you:
+This assumes that you're running Linux or MacOS and have installed [Go 1.19+](https://golang.org/dl/).  This guide helps you:
 
 * build and install Decentr
 * allow you to name your node
@@ -107,7 +107,7 @@ Welcome to the Decentr Testnet!
 
 ### Requirements
 To build project you should have:
-- go >= 1.16
+- go >= 1.19
 - docker
 
 ### Guide
