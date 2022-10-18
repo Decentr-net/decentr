@@ -30,31 +30,32 @@ import (
 // the case.
 func Repair013Orphans(db dbm.DB) (uint64, error) {
 	ndb := newNodeDB(db, 0, &Options{Sync: true})
-	version := ndb.getLatestVersion()
+	version, err := ndb.getLatestVersion()
+	if err != nil {
+		return 0, err
+	}
 	if version == 0 {
 		return 0, errors.New("no versions found")
 	}
 
-	var (
-		repaired uint64
-		err      error
-	)
+	var repaired uint64
 	batch := db.NewBatch()
 	defer batch.Close()
-	ndb.traverseRange(orphanKeyFormat.Key(version), orphanKeyFormat.Key(int64(math.MaxInt64)), func(k, v []byte) {
+	err = ndb.traverseRange(orphanKeyFormat.Key(version), orphanKeyFormat.Key(int64(math.MaxInt64)), func(k, v []byte) error {
 		// Sanity check so we don't remove stuff we shouldn't
 		var toVersion int64
 		orphanKeyFormat.Scan(k, &toVersion)
 		if toVersion < version {
 			err = errors.Errorf("Found unexpected orphan with toVersion=%v, lesser than latest version %v",
 				toVersion, version)
-			return
+			return err
 		}
 		repaired++
 		err = batch.Delete(k)
 		if err != nil {
-			return
+			return err
 		}
+		return nil
 	})
 	if err != nil {
 		return 0, err

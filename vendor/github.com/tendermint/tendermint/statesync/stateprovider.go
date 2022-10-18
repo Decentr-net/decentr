@@ -19,9 +19,10 @@ import (
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
+	"github.com/tendermint/tendermint/version"
 )
 
-//go:generate mockery --case underscore --name StateProvider
+//go:generate ../scripts/mockery_generate.sh StateProvider
 
 // StateProvider is a provider of trusted state data for bootstrapping a node. This refers
 // to the state.State object, not the state machine.
@@ -155,6 +156,10 @@ func (s *lightClientStateProvider) State(ctx context.Context, height uint64) (sm
 		return sm.State{}, err
 	}
 
+	state.Version = tmstate.Version{
+		Consensus: currentLightBlock.Version,
+		Software:  version.TMCoreSemVer,
+	}
 	state.LastBlockHeight = lastLightBlock.Height
 	state.LastBlockTime = lastLightBlock.Time
 	state.LastBlockID = lastLightBlock.Commit.BlockID

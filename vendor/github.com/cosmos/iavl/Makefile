@@ -22,9 +22,14 @@ else
 endif
 .PHONY: install
 
+test-short:
+	@echo "--> Running go test"
+	@go test ./... $(LDFLAGS) -v --race --short
+.PHONY: test-short
+
 test:
 	@echo "--> Running go test"
-	@go test ./... $(LDFLAGS) -v --race
+	@go test ./... $(LDFLAGS) -v 
 .PHONY: test
 
 tools:
@@ -33,7 +38,7 @@ tools:
 
 format:
 	find . -name '*.go' -type f -not -path "*.git*" -not -name '*.pb.go' -not -name '*pb_test.go' | xargs gofmt -w -s
-	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w 
+	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -format
 .PHONY: format
 
 # look into .golangci.yml for enabling / disabling linters
@@ -46,21 +51,20 @@ lint:
 # bench is the basic tests that shouldn't crash an aws instance
 bench:
 	cd benchmarks && \
-		go test $(LDFLAGS) -bench=RandomBytes . && \
-		go test $(LDFLAGS) -bench=Small . && \
-		go test $(LDFLAGS) -bench=Medium . && \
-		go test $(LDFLAGS) -bench=BenchmarkMemKeySizes .
+		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Small . && \
+		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Medium . && \
+		go test $(LDFLAGS) -run=NOTEST -bench=RandomBytes .
 .PHONY: bench
 
 # fullbench is extra tests needing lots of memory and to run locally
 fullbench:
 	cd benchmarks && \
-		go test $(LDFLAGS) -bench=RandomBytes . && \
-		go test $(LDFLAGS) -bench=Small . && \
-		go test $(LDFLAGS) -bench=Medium . && \
-		go test $(LDFLAGS) -timeout=30m -bench=Large . && \
-		go test $(LDFLAGS) -bench=Mem . && \
-		go test $(LDFLAGS) -timeout=60m -bench=LevelDB .
+		go test $(LDFLAGS) -run=NOTEST -bench=RandomBytes . && \
+		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Small . && \
+		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Medium . && \
+		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -timeout=30m -bench=Large . && \
+		go test $(LDFLAGS) -run=NOTEST -bench=Mem . && \
+		go test $(LDFLAGS) -run=NOTEST -timeout=60m -bench=LevelDB .
 .PHONY: fullbench
 
 # note that this just profiles the in-memory version, not persistence

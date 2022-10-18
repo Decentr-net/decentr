@@ -96,13 +96,16 @@ func (proof *RangeProof) VerifyItem(key, value []byte) error {
 	if proof == nil {
 		return errors.Wrap(ErrInvalidProof, "proof is nil")
 	}
+
 	if !proof.rootVerified {
 		return errors.New("must call Verify(root) first")
 	}
+
 	leaves := proof.Leaves
 	i := sort.Search(len(leaves), func(i int) bool {
 		return bytes.Compare(key, leaves[i].Key) <= 0
 	})
+
 	if i >= len(leaves) || !bytes.Equal(leaves[i].Key, key) {
 		return errors.Wrap(ErrInvalidProof, "leaf key not found in proof")
 	}
@@ -151,7 +154,7 @@ func (proof *RangeProof) VerifyAbsence(key []byte) error {
 		case cmp < 0:
 			return nil // proof ok
 		case cmp == 0:
-			return errors.New(fmt.Sprintf("absence disproved via item #%v", i))
+			return fmt.Errorf("absence disproved via item #%v", i)
 		default:
 			// if i == len(proof.Leaves)-1 {
 			// If last item, check whether
@@ -207,7 +210,9 @@ func (proof *RangeProof) ComputeRootHash() []byte {
 	if proof == nil {
 		return nil
 	}
+
 	rootHash, _ := proof.computeRootHash()
+
 	return rootHash
 }
 
@@ -225,7 +230,7 @@ func (proof *RangeProof) _computeRootHash() (rootHash []byte, treeEnd bool, err 
 		return nil, false, errors.Wrap(ErrInvalidProof, "no leaves")
 	}
 	if len(proof.InnerNodes)+1 != len(proof.Leaves) {
-		return nil, false, errors.Wrap(ErrInvalidProof, "InnerNodes vs Leaves length mismatch, leaves should be 1 more.")
+		return nil, false, errors.Wrap(ErrInvalidProof, "InnerNodes vs Leaves length mismatch, leaves should be 1 more.") //nolint:revive
 	}
 
 	// Start from the left path and prove each leaf.
@@ -245,10 +250,14 @@ func (proof *RangeProof) _computeRootHash() (rootHash []byte, treeEnd bool, err 
 		leaves = rleaves
 
 		// Compute hash.
-		hash = (pathWithLeaf{
+		hash, err = (pathWithLeaf{
 			Path: path,
 			Leaf: nleaf,
 		}).computeRootHash()
+
+		if err != nil {
+			return nil, treeEnd, false, err
+		}
 
 		// If we don't have any leaves left, we're done.
 		if len(leaves) == 0 {
@@ -279,9 +288,11 @@ func (proof *RangeProof) _computeRootHash() (rootHash []byte, treeEnd bool, err 
 			if err != nil {
 				return nil, treeEnd, false, errors.Wrap(err, "recursive COMPUTEHASH call")
 			}
+
 			if !bytes.Equal(derivedRoot, lpath.Right) {
 				return nil, treeEnd, false, errors.Wrapf(ErrInvalidRoot, "intermediate root hash %X doesn't match, got %X", lpath.Right, derivedRoot)
 			}
+
 			if done {
 				return hash, treeEnd, true, nil
 			}
@@ -370,19 +381,24 @@ func RangeProofFromProto(pbProof *iavlproto.RangeProof) (RangeProof, error) {
 // If keyStart or keyEnd don't exist, the leaf before keyStart
 // or after keyEnd will also be included, but not be included in values.
 // If keyEnd-1 exists, no later leaves will be included.
-// If keyStart >= keyEnd and both not nil, panics.
+// If keyStart >= keyEnd and both not nil, errors out.
 // Limit is never exceeded.
+
 func (t *ImmutableTree) getRangeProof(keyStart, keyEnd []byte, limit int) (proof *RangeProof, keys, values [][]byte, err error) {
 	if keyStart != nil && keyEnd != nil && bytes.Compare(keyStart, keyEnd) >= 0 {
-		panic("if keyStart and keyEnd are present, need keyStart < keyEnd.")
+		return nil, nil, nil, fmt.Errorf("if keyStart and keyEnd are present, need keyStart < keyEnd")
 	}
 	if limit < 0 {
-		panic("limit must be greater or equal to 0 -- 0 means no limit")
+		return nil, nil, nil, fmt.Errorf("limit must be greater or equal to 0 -- 0 means no limit")
 	}
 	if t.root == nil {
 		return nil, nil, nil, nil
 	}
-	t.root.hashWithCount() // Ensure that all hashes are calculated.
+
+	_, _, err = t.root.hashWithCount() // Ensure that all hashes are calculated.
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	// Get the first key/value pair proof, which provides us with the left key.
 	path, left, err := t.root.PathToLeaf(t, keyStart)
@@ -433,8 +449,8 @@ func (t *ImmutableTree) getRangeProof(keyStart, keyEnd []byte, limit int) (proof
 	var leafCount = 1 // from left above.
 	var pathCount = 0
 
-	t.root.traverseInRange(t, afterLeft, nil, true, false, 0, false,
-		func(node *Node, depth uint8) (stop bool) {
+	t.root.traverseInRange(t, afterLeft, nil, true, false, false,
+		func(node *Node) (stop bool) {
 
 			// Track when we diverge from path, or when we've exhausted path,
 			// since the first allPathToLeafs shouldn't include it.

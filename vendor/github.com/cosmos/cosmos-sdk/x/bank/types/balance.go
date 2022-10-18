@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -15,12 +14,7 @@ var _ exported.GenesisBalance = (*Balance)(nil)
 
 // GetAddress returns the account address of the Balance object.
 func (b Balance) GetAddress() sdk.AccAddress {
-	addr, err := sdk.AccAddressFromBech32(b.Address)
-	if err != nil {
-		panic(fmt.Errorf("couldn't convert %q to account address: %v", b.Address, err))
-	}
-
-	return addr
+	return sdk.MustAccAddressFromBech32(b.Address)
 }
 
 // GetCoins returns the account coins of the Balance object.
@@ -30,32 +24,13 @@ func (b Balance) GetCoins() sdk.Coins {
 
 // Validate checks for address and coins correctness.
 func (b Balance) Validate() error {
-	_, err := sdk.AccAddressFromBech32(b.Address)
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(b.Address); err != nil {
 		return err
 	}
-	seenDenoms := make(map[string]bool)
 
-	// NOTE: we perform a custom validation since the coins.Validate function
-	// errors on zero balance coins
-	for _, coin := range b.Coins {
-		if seenDenoms[coin.Denom] {
-			return fmt.Errorf("duplicate denomination %s", coin.Denom)
-		}
-
-		if err := sdk.ValidateDenom(coin.Denom); err != nil {
-			return err
-		}
-
-		if coin.IsNegative() {
-			return fmt.Errorf("coin %s amount is cannot be negative", coin.Denom)
-		}
-
-		seenDenoms[coin.Denom] = true
+	if err := b.Coins.Validate(); err != nil {
+		return err
 	}
-
-	// sort the coins post validation
-	b.Coins = b.Coins.Sort()
 
 	return nil
 }
@@ -69,6 +44,7 @@ func (b balanceByAddress) Len() int { return len(b.addresses) }
 func (b balanceByAddress) Less(i, j int) bool {
 	return bytes.Compare(b.addresses[i], b.addresses[j]) < 0
 }
+
 func (b balanceByAddress) Swap(i, j int) {
 	b.addresses[i], b.addresses[j] = b.addresses[j], b.addresses[i]
 	b.balances[i], b.balances[j] = b.balances[j], b.balances[i]

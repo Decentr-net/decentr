@@ -1,13 +1,72 @@
 # Changelog
 
-
 ## Unreleased
+
+## 0.19.3 (October 8, 2022)
+
+- `ProofInner.Hash()` prevents both right and left from both being set. Only one is allowed to be set. 
+
+> Note: It is recommended to not use the native proof structure of IAVL in its current form. Please refer to [ics23](https://github.com/confio/ics23/tree/master/go) for IAVL proofs
+
+## 0.19.2 (October 6, 2022)
+
+ - [#547](https://github.com/cosmos/iavl/pull/547) Implement `skipFastStorageUpgrade` in order to skip fast storage upgrade and usage. 
+ - [#531](https://github.com/cosmos/iavl/pull/531) Upgrade to fast storage in batches. 
+
+## 0.19.1 (August 3, 2022)
+
+### Improvements
+
+- [#525](https://github.com/cosmos/iavl/pull/525) Optimization: use fast unsafe bytes->string conversion.
+- [#506](https://github.com/cosmos/iavl/pull/506) Implement cache abstraction.
+
+### Bug Fixes
+
+- [#524](https://github.com/cosmos/iavl/pull/524) Fix: `MutableTree.Get`.
+
+## 0.19.0 (July 6, 2022)
+
+### Breaking Changes
+
+- [#514](https://github.com/cosmos/iavl/pull/514) Downgrade Tendermint to 0.34.x
+- [#500](https://github.com/cosmos/iavl/pull/500) Return errors instead of panicking.
+
+### Improvements
+
+- [#514](https://github.com/cosmos/iavl/pull/514) Use Go v1.18
+
+## 0.18.0 (March 10, 2022)
+
+### Breaking Changes
+
+- Bumped Tendermint to 0.35.1
+
+### Improvements
+
+- [\#468](https://github.com/cosmos/iavl/pull/468) Fast storage optimization for queries and iterations
+- [\#452](https://github.com/cosmos/iavl/pull/452) Optimization: remove unnecessary (\*bytes.Buffer).Reset right after creating buffer.
+- [\#445](https://github.com/cosmos/iavl/pull/445) Bump github.com/tendermint/tendermint to v0.35.0
+- [\#453](https://github.com/cosmos/iavl/pull/453),[\#456](https://github.com/cosmos/iavl/pull/456) Optimization: buffer reuse
+- [\#474](https://github.com/cosmos/iavl/pull/474) bump github.com/confio/ics23 to v0.7
+- [\#475](https://github.com/cosmos/iavl/pull/475) Use go v1.17
+
+## 0.17.3 (December 1, 2021)
+
+### Bug Fixes
+
+- [\#448](https://github.com/cosmos/iavl/pull/448) Change RMutex to Mutex in `VersionExists()`.
+
+## 0.17.2 (November 13, 2021)
+
+### Improvements
+
+- [\#440](https://github.com/cosmos/iavl/pull/440) Introduce Cosmos SDK iterator type directly into IAVL. Improves the iterator performance by 40%.
 
 ## 0.17.1 (September 15, 2021)
 
 ### Bug Fixes
 
-+ [\#432](https://github.com/cosmos/iavl/pull/432) Fix race condition related to Cosmos SDK and nodeDB usage.
+- [\#432](https://github.com/cosmos/iavl/pull/432) Fix race condition related to Cosmos SDK and nodeDB usage.
 
 ## 0.17.0 (August 31, 2021)
 
@@ -23,15 +82,17 @@
 ## 0.16.0 (May 04, 2021)
 
 ### Breaking Changes
+
 - [\#355](https://github.com/cosmos/iavl/pull/355) `Get` in `iavlServer` no longer returns an error if the requested key does not exist. `GetResponse` now contains a `NotFound` boolean to indicate that a key does not exist, and the returned index will be that of the next occupied key.
 
 ### Improvements
+
 - [\#355](https://github.com/cosmos/iavl/pull/355) Add support for `GetByIndex` to `iavlServer` and RPC interface.
 
 ### Bug Fixes
-+ [\#385](https://github.com/cosmos/iavl/pull/385) Fix `GetVersioned` - now it works with `LazyLoadVersion`.
-+ [\#374](https://github.com/cosmos/iavl/pull/374) Fix large genesis file commit.
 
+- [\#385](https://github.com/cosmos/iavl/pull/385) Fix `GetVersioned` - now it works with `LazyLoadVersion`.
+- [\#374](https://github.com/cosmos/iavl/pull/374) Fix large genesis file commit.
 
 ## 0.15.3 (December 21, 2020)
 
@@ -132,17 +193,17 @@ not change their pruning settings while on 0.13.
 
 Make sure to follow these instructions when upgrading, to avoid data corruption:
 
-* If using `KeepEvery: 1` (the default) then upgrading to 0.14 is safe.
+- If using `KeepEvery: 1` (the default) then upgrading to 0.14 is safe.
 
-* Otherwise, upgrade after saving a multiple of `KeepEvery` - for example, with `KeepEvery: 1000`
+- Otherwise, upgrade after saving a multiple of `KeepEvery` - for example, with `KeepEvery: 1000`
   stop 0.13 after saving e.g. version `7000` to disk. A later version must never have been saved
   to the tree. Upgrading to 0.14 is then safe.
 
-* Otherwise, consider using the `Repair013Orphans()` function to repair faulty data in databases
+- Otherwise, consider using the `Repair013Orphans()` function to repair faulty data in databases
   last written to by 0.13. This must be done before opening the database with IAVL 0.14, and a
   database backup should be taken first. Upgrading to 0.14 is then safe.
 
-* Otherwise, after upgrading to 0.14, do not delete the last version saved to disk by 0.13 - this
+- Otherwise, after upgrading to 0.14, do not delete the last version saved to disk by 0.13 - this
   contains incorrect data that may cause data corruption when deleted, making the database
   unusable. For example, with `KeepEvery: 1000` then stopping 0.13 at version `7364` (saving
   `7000` to disk) and upgrading to 0.14 means version `7000` must never be deleted.
@@ -180,7 +241,7 @@ Users wishing to prune historical versions can do so via `MutableTree.DeleteVers
 
 ### Bug Fixes
 
-- [import] [\#230](https://github.com/tendermint/iavl/pull/230) Set correct version when committing an empty import.
+- [import][\#230](https://github.com/tendermint/iavl/pull/230) Set correct version when committing an empty import.
 
 ## 0.13.2 (March 18, 2020)
 
@@ -192,11 +253,11 @@ Users wishing to prune historical versions can do so via `MutableTree.DeleteVers
 
 ### Improvements
 
-- [dep] [\#220](https://github.com/tendermint/iavl/pull/220) Update tm-db to 0.5.0, which includes a new B-tree based MemDB used by IAVL for non-persisted versions.
+- [dep][\#220](https://github.com/tendermint/iavl/pull/220) Update tm-db to 0.5.0, which includes a new B-tree based MemDB used by IAVL for non-persisted versions.
 
 ### Bug Fixes
 
-- [nodedb] [\#219](https://github.com/tendermint/iavl/pull/219) Fix a concurrent database access issue when deleting orphans.
+- [nodedb][\#219](https://github.com/tendermint/iavl/pull/219) Fix a concurrent database access issue when deleting orphans.
 
 ## 0.13.0 (January 16, 2020)
 
@@ -205,14 +266,14 @@ Special thanks to external contributors on this release:
 
 ### BREAKING CHANGES
 
-- [pruning] [\#158](https://github.com/tendermint/iavl/pull/158) NodeDB constructor must provide `keepRecent` and `keepEvery` fields to define PruningStrategy. All Save functionality must specify whether they should flushToDisk as well using `flushToDisk` boolean argument. All Delete functionality must specify whether object should be deleted from memory only using the `memOnly` boolean argument.
-- [dep] [\#194](https://github.com/tendermint/iavl/pull/194) Update tm-db to 0.4.0 this includes interface breaking to return errors.
+- [pruning][\#158](https://github.com/tendermint/iavl/pull/158) NodeDB constructor must provide `keepRecent` and `keepEvery` fields to define PruningStrategy. All Save functionality must specify whether they should flushToDisk as well using `flushToDisk` boolean argument. All Delete functionality must specify whether object should be deleted from memory only using the `memOnly` boolean argument.
+- [dep][\#194](https://github.com/tendermint/iavl/pull/194) Update tm-db to 0.4.0 this includes interface breaking to return errors.
 
 ### IMPROVEMENTS
 
 ### Bug Fix
 
-- [orphans] [#177](https://github.com/tendermint/iavl/pull/177) Collect all orphans after remove (@rickyyangz)
+- [orphans][#177](https://github.com/tendermint/iavl/pull/177) Collect all orphans after remove (@rickyyangz)
 
 ## 0.12.4 (July 31, 2019)
 

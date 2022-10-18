@@ -17,7 +17,7 @@ import (
 	"github.com/tendermint/tendermint/version"
 )
 
-// database keys
+// database key
 var (
 	stateKey = []byte("stateKey")
 )
@@ -175,8 +175,8 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	return sm, nil
 }
 
-// StateFromProto takes a state proto message & returns the local state type
-func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
+// FromProto takes a state proto message & returns the local state type
+func FromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	if pb == nil {
 		return nil, errors.New("nil State")
 	}

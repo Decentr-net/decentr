@@ -3,7 +3,7 @@ package log
 import (
 	"io"
 
-	kitlog "github.com/go-kit/kit/log"
+	kitlog "github.com/go-kit/log"
 )
 
 // Logger is what any Tendermint library should take.
@@ -22,9 +22,9 @@ type Logger interface {
 //
 // If w implements the following interface, so does the returned writer.
 //
-//    interface {
-//        Fd() uintptr
-//    }
+//	interface {
+//	    Fd() uintptr
+//	}
 func NewSyncWriter(w io.Writer) io.Writer {
 	return kitlog.NewSyncWriter(w)
 }
