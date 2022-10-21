@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -29,6 +30,7 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
@@ -75,7 +77,7 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	"github.com/cosmos/ibc-go/modules/apps/transfer"
+	ibctransfer "github.com/cosmos/ibc-go/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/modules/core"
@@ -147,7 +149,7 @@ var (
 		ibc.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
-		transfer.AppModuleBasic{},
+		ibctransfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		token.AppModuleBasic{},
 		community.AppModuleBasic{},
@@ -353,7 +355,8 @@ func New(
 		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
 		app.AccountKeeper, app.BankKeeper, scopedTransferKeeper,
 	)
-	transferModule := transfer.NewAppModule(app.TransferKeeper)
+
+	ibcTransferAppModule := ibctransfer.NewAppModule(app.TransferKeeper)
 
 	// Create evidence Keeper for to register the IBC light client misbehaviour evidence route
 	evidenceKeeper := evidencekeeper.NewKeeper(
@@ -368,21 +371,16 @@ func New(
 	)
 
 	app.TokenKeeper = *tokenkeeper.NewKeeper(appCodec, keys[tokentypes.StoreKey])
-	tokenModule := token.NewAppModule(appCodec, app.TokenKeeper)
 
 	app.CommunityKeeper = *communitykeeper.NewKeeper(appCodec, keys[communitytypes.StoreKey],
 		app.GetSubspace(communitytypes.ModuleName))
-	communityModule := community.NewAppModule(appCodec, app.CommunityKeeper, app.TokenKeeper)
 
 	app.OperationsKeeper = *operationskeeper.NewKeeper(appCodec, keys[operationstypes.StoreKey],
 		app.GetSubspace(operationstypes.ModuleName))
-	operationsModule := operations.NewAppModule(
-		appCodec, app.OperationsKeeper, app.BankKeeper, app.TokenKeeper, app.CommunityKeeper,
-	)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter()
-	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, ibcTransferAppModule)
 
 	app.IBCKeeper.SetRouter(ibcRouter)
 
@@ -396,18 +394,13 @@ func New(
 	// must be passed by reference here.
 
 	app.mm = module.NewManager(
-		genutil.NewAppModule(
-			app.AccountKeeper,
-			app.StakingKeeper,
-			app.BaseApp.DeliverTx,
-			encodingConfig.TxConfig,
-		),
 		auth.NewAppModule(appCodec, app.AccountKeeper, nil),
 		authzmodule.NewAppModule(appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		capability.NewAppModule(appCodec, *app.CapabilityKeeper),
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
+		genutil.NewAppModule(app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx, encodingConfig.TxConfig),
 		crisis.NewAppModule(&app.CrisisKeeper, skipGenesisInvariants),
 		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
 		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
@@ -417,27 +410,59 @@ func New(
 		upgrade.NewAppModule(app.UpgradeKeeper),
 		evidence.NewAppModule(app.EvidenceKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
+		ibcTransferAppModule,
 		params.NewAppModule(app.ParamsKeeper),
-		transferModule,
-
-		tokenModule,
-		communityModule,
-		operationsModule,
+		token.NewAppModule(appCodec, app.TokenKeeper),
+		community.NewAppModule(appCodec, app.CommunityKeeper, app.TokenKeeper),
+		operations.NewAppModule(appCodec, app.OperationsKeeper, app.BankKeeper, app.TokenKeeper, app.CommunityKeeper),
 	)
 
-	// During begin block slashing happens after distr.BeginBlocker so that
-	// there is nothing left over in the validator fee pool, so as to keep the
-	// CanWithdrawInvariant invariant.
-	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(
-		upgradetypes.ModuleName, capabilitytypes.ModuleName, minttypes.ModuleName,
-		distrtypes.ModuleName, slashingtypes.ModuleName, evidencetypes.ModuleName,
-		authz.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName, feegrant.ModuleName,
+		upgradetypes.ModuleName,
+		capabilitytypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		authtypes.ModuleName,
+		banktypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		authz.ModuleName,
+		feegrant.ModuleName,
+		paramstypes.ModuleName,
+		vestingtypes.ModuleName,
+		distrtypes.ModuleName,
+		tokentypes.ModuleName,
+		communitytypes.ModuleName,
+		operationstypes.ModuleName,
 	)
 
 	app.mm.SetOrderEndBlockers(
-		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName,
-		authz.ModuleName, tokentypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		ibchost.ModuleName,
+		feegrant.ModuleName,
+		authz.ModuleName,
+		capabilitytypes.ModuleName,
+		authtypes.ModuleName,
+		banktypes.ModuleName,
+		slashingtypes.ModuleName,
+		minttypes.ModuleName,
+		genutiltypes.ModuleName,
+		evidencetypes.ModuleName,
+		paramstypes.ModuleName,
+		upgradetypes.ModuleName,
+		vestingtypes.ModuleName,
+		distrtypes.ModuleName,
+		tokentypes.ModuleName,
+		communitytypes.ModuleName,
+		operationstypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -456,14 +481,17 @@ func New(
 		govtypes.ModuleName,
 		minttypes.ModuleName,
 		crisistypes.ModuleName,
+		ibctransfertypes.ModuleName,
 		ibchost.ModuleName,
 		evidencetypes.ModuleName,
+		feegrant.ModuleName,
 		authz.ModuleName,
-		ibctransfertypes.ModuleName,
+		genutiltypes.ModuleName,
+		upgradetypes.ModuleName,
 		tokentypes.ModuleName,
 		communitytypes.ModuleName,
 		operationstypes.ModuleName,
-		genutiltypes.ModuleName,
+		vestingtypes.ModuleName,
 	)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
@@ -486,7 +514,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		evidence.NewAppModule(app.EvidenceKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
-		transferModule,
+		ibcTransferAppModule,
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -562,12 +590,13 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 
 // InitChainer application update at chain initialization
 func (app *App) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
-	var genesisState GenesisState
-	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
+	var state map[string]json.RawMessage
+	if err := tmjson.Unmarshal(req.AppStateBytes, &state); err != nil {
 		panic(err)
 	}
 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
-	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
+
+	return app.mm.InitGenesis(ctx, app.appCodec, state)
 }
 
 // LoadHeight loads a particular height

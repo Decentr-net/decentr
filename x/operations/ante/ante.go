@@ -20,7 +20,9 @@ func (mgp MinGasPriceDecorator) AnteHandle(
 	simulate bool,
 	next sdk.AnteHandler,
 ) (newCtx sdk.Context, err error) {
-	price := mgp.keeper.GetParams(ctx.WithGasMeter(sdk.NewInfiniteGasMeter())).MinGasPrice
-	ctx = ctx.WithMinGasPrices(sdk.NewDecCoins(price))
+	price := mgp.keeper.GetMinGasPrice(ctx.WithGasMeter(sdk.NewInfiniteGasMeter()))
+	if !price.IsZero() {
+		ctx = ctx.WithMinGasPrices(sdk.NewDecCoins(price))
+	}
 	return next(ctx, tx, simulate)
 }
