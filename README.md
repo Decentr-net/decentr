@@ -1,7 +1,7 @@
 # Decentr
 ![go version](https://img.shields.io/github/go-mod/go-version/Decentr-net/decentr?color=blue)
-[![testnet version](https://img.shields.io/badge/testnet%20version-v1.6.0-blue.svg)](https://shields.io/)
-[![mainnet version](https://img.shields.io/badge/mainnet%20version-v1.5.8-brightgreen.svg)](https://shields.io/)
+[![testnet version](https://img.shields.io/badge/testnet%20version-v1.6.2-blue.svg)](https://shields.io/)
+[![mainnet version](https://img.shields.io/badge/mainnet%20version-v1.6.2-brightgreen.svg)](https://shields.io/)
 ![latest version](https://img.shields.io/github/v/tag/Decentr-net/decentr?label=latest%20version&color=yellow)
 
 Decentr blockchain
@@ -30,7 +30,7 @@ rm -rf ~/.decentr
 # Clone Decentr from the latest release
 git clone https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
-cd decentr && git checkout v1.5.7
+cd decentr && git checkout v1.6.2
 # Compile and install Decentr
 make install
 # Initialize decentrd in ~/.decentrd and name your node
@@ -75,7 +75,7 @@ Build, Install, and Name your Node:
 
 ```bash
 # Clone Decentr from the latest release
-git clone -b v1.5.7 https://github.com/Decentr-net/decentr
+git clone -b v1.6.2 https://github.com/Decentr-net/decentr
 # Enter the folder Decentr was cloned into
 cd decentr
 # Compile and install Decentr
