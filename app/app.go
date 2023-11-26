@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	ibc07tendermint13 "github.com/Decentr-net/decentr/app/upgrade/07tendermint13"
 	v160 "github.com/Decentr-net/decentr/app/upgrade/v160"
 	v163 "github.com/Decentr-net/decentr/app/upgrade/v163"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -555,6 +556,7 @@ func New(
 
 	app.UpgradeKeeper.SetUpgradeHandler(v160.Name, v160.Handler(app.configurator, app.mm))
 	app.UpgradeKeeper.SetUpgradeHandler(v163.Name, v160.Handler(app.configurator, app.mm))
+	app.UpgradeKeeper.SetUpgradeHandler(ibc07tendermint13.Name, ibc07tendermint13.Handler(app.configurator, app.mm))
 
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
